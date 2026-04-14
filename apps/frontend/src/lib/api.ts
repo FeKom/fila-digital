@@ -1,7 +1,8 @@
 import { cookies } from "next/headers";
 
 const api = (path?: string, options?: RequestInit) => {
-  const baseUrl = process.env.NEXT_PUBLIC_FILA_DIGITAL_BASE_URL ?? "http://localhost:7070";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_FILA_DIGITAL_BASE_URL ?? "http://localhost:7070";
   return fetch(`${baseUrl}${path}`, options);
 };
 

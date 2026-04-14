@@ -19,7 +19,9 @@ const QueueDots = () => (
 );
 
 const Login = () => {
-  const [state, action, pending] = useActionState(submitLoginForm, { error: null });
+  const [state, action, pending] = useActionState(submitLoginForm, {
+    error: null,
+  });
 
   return (
     <div className="auth-layout">
@@ -42,8 +44,14 @@ const Login = () => {
       {/* Form panel */}
       <div className="auth-panel-form">
         <div className="auth-form-inner">
-          <h2 className="auth-form-title">Boas-vindas<br />de volta.</h2>
-          <p className="auth-form-subtitle">Entre com sua conta para continuar</p>
+          <h2 className="auth-form-title">
+            Boas-vindas
+            <br />
+            de volta.
+          </h2>
+          <p className="auth-form-subtitle">
+            Entre com sua conta para continuar
+          </p>
 
           <form action={action}>
             <div className="auth-field">
@@ -72,10 +80,21 @@ const Login = () => {
 
             {state.error && (
               <div className="auth-error" role="alert">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-                  <circle cx="7" cy="7" r="6.5" stroke="#dc2626"/>
-                  <path d="M7 4v3.5" stroke="#dc2626" strokeWidth="1.2" strokeLinecap="round"/>
-                  <circle cx="7" cy="10" r="0.7" fill="#dc2626"/>
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 14 14"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <circle cx="7" cy="7" r="6.5" stroke="#dc2626" />
+                  <path
+                    d="M7 4v3.5"
+                    stroke="#dc2626"
+                    strokeWidth="1.2"
+                    strokeLinecap="round"
+                  />
+                  <circle cx="7" cy="10" r="0.7" fill="#dc2626" />
                 </svg>
                 {state.error}
               </div>
@@ -87,8 +106,7 @@ const Login = () => {
           </form>
 
           <p className="auth-footer-link">
-            Não tem uma conta?{" "}
-            <a href="/registrar">Criar conta</a>
+            Não tem uma conta? <a href="/registrar">Criar conta</a>
           </p>
         </div>
       </div>

@@ -102,7 +102,9 @@ const userController = () => {
     login: async (req: ServerRequest, res: ServerResponse) => {
       const user = req.body as Person;
       try {
-        const userFromDb = await userRepo.getUserByEmail(user.email.toLowerCase());
+        const userFromDb = await userRepo.getUserByEmail(
+          user.email.toLowerCase()
+        );
         if (!userFromDb) {
           res.code(404).send({
             message: "User Not Found",

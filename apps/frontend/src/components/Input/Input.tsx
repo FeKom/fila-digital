@@ -26,7 +26,7 @@ const input = ({
         placeholder={placeholder}
         id={id}
         name={name}
-        className={cnJoin(!label && 'input', className)}
+        className={cnJoin(!label && "input", className)}
       />
     );
   };

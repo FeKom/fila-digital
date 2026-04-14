@@ -29,21 +29,15 @@ const participantService = () => {
       return (await response.json()) as Participant;
     },
     exit: async (commerceId: string) => {
-      const response = await authApi(
-        `/participants-queue/${commerceId}/exit`,
-        {
-          method: "DELETE",
-        }
-      );
+      const response = await authApi(`/participants-queue/${commerceId}/exit`, {
+        method: "DELETE",
+      });
       return response.json();
     },
     removeNext: async (commerceId: string) => {
-      const response = await authApi(
-        `/participants-queue/${commerceId}/next`,
-        {
-          method: "DELETE",
-        }
-      );
+      const response = await authApi(`/participants-queue/${commerceId}/next`, {
+        method: "DELETE",
+      });
       return response.json();
     },
   };

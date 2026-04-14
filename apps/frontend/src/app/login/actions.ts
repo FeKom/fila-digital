@@ -19,7 +19,10 @@ export const submitLoginForm = async (
   try {
     const response = await userService().login({ email, password });
     if (!response.token) {
-      if (response.message === "User Not Found" || response.message === "Invalid User") {
+      if (
+        response.message === "User Not Found" ||
+        response.message === "Invalid User"
+      ) {
         return { error: "E-mail ou senha inválidos." };
       }
       return { error: response.message ?? "E-mail ou senha inválidos." };

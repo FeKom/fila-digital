@@ -7,13 +7,9 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get("digital_queue_jwt")?.value;
   const { pathname } = request.nextUrl;
 
-  const isProtected = protectedPaths.some((path) =>
-    pathname.startsWith(path)
-  );
+  const isProtected = protectedPaths.some((path) => pathname.startsWith(path));
 
-  const isPublicAuth = publicPaths.some((path) =>
-    pathname.startsWith(path)
-  );
+  const isPublicAuth = publicPaths.some((path) => pathname.startsWith(path));
 
   if (isProtected && !token) {
     const loginUrl = new URL("/login", request.url);

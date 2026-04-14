@@ -3,7 +3,6 @@ import { MenuIcon, SearchIcon } from "../icons";
 import { logout } from "@/app/actions";
 
 const Header = ({ authenticated }: { authenticated: boolean }) => {
-
   return (
     <div className="navbar bg-base-100 shadow-sm">
       <div className="navbar-start">

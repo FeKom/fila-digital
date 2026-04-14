@@ -18,10 +18,7 @@ export default async function Home() {
           <Link href="/login" className="btn btn-primary rounded-field">
             Entrar
           </Link>
-          <Link
-            href="/registrar"
-            className="btn btn-secondary rounded-field"
-          >
+          <Link href="/registrar" className="btn btn-secondary rounded-field">
             Criar conta
           </Link>
         </div>

@@ -2,14 +2,14 @@
 
 @plugin "daisyui" {
   themes: light --default;
-};
+}
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --color-primary: #799EFF;
+  --color-primary: #799eff;
   --color-primary-content: #ffffff;
-  --color-secondary: #FFBC4C;
+  --color-secondary: #ffbc4c;
   --color-secondary-content: #171717;
   --auth-dark: #0e1117;
   --auth-dark-2: #181e2a;
@@ -83,18 +83,25 @@ body {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #799EFF;
+  background: #799eff;
   animation: queuePulse 2.4s ease-in-out infinite;
   flex-shrink: 0;
 }
 
 .auth-queue-dot:nth-child(odd) {
-  background: #FFBC4C;
+  background: #ffbc4c;
 }
 
 @keyframes queuePulse {
-  0%, 100% { opacity: 0.3; transform: scale(0.8); }
-  50% { opacity: 1; transform: scale(1.2); }
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
 }
 
 .auth-brand-text {
@@ -109,14 +116,14 @@ body {
 }
 
 .auth-brand-accent {
-  color: #799EFF;
+  color: #799eff;
   display: block;
 }
 
 .auth-brand-tagline {
   font-family: var(--font-body);
   font-size: 0.9rem;
-  color: rgba(255,255,255,0.45);
+  color: rgba(255, 255, 255, 0.45);
   letter-spacing: 0.05em;
   text-transform: uppercase;
   position: relative;
@@ -134,7 +141,7 @@ body {
   padding: 0.4rem 1rem;
   font-family: var(--font-body);
   font-size: 0.8rem;
-  color: rgba(255,255,255,0.6);
+  color: rgba(255, 255, 255, 0.6);
   position: relative;
   z-index: 1;
   margin-top: auto;
@@ -144,7 +151,7 @@ body {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #FFBC4C;
+  background: #ffbc4c;
   animation: queuePulse 1.5s ease-in-out infinite;
 }
 
@@ -210,7 +217,7 @@ body {
 }
 
 .auth-input:focus {
-  border-bottom-color: #799EFF;
+  border-bottom-color: #799eff;
 }
 
 .auth-input::placeholder {
@@ -234,8 +241,14 @@ body {
 }
 
 @keyframes slideDown {
-  from { opacity: 0; transform: translateY(-6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .auth-submit {
@@ -250,13 +263,15 @@ body {
   padding: 1rem;
   border: none;
   cursor: pointer;
-  transition: background 0.2s ease, transform 0.1s ease;
+  transition:
+    background 0.2s ease,
+    transform 0.1s ease;
   margin-top: 0.5rem;
   border-radius: 4px;
 }
 
 .auth-submit:hover:not(:disabled) {
-  background: #799EFF;
+  background: #799eff;
 }
 
 .auth-submit:active:not(:disabled) {
@@ -284,7 +299,7 @@ body {
 }
 
 .auth-footer-link a:hover {
-  color: #799EFF;
+  color: #799eff;
 }
 
 .auth-hint {

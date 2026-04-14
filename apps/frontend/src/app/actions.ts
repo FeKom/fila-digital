@@ -16,7 +16,9 @@ export const getUserCommerces = async (): Promise<Commerce[]> => {
 export const getUserQueues = async (): Promise<UserQueue[]> => {
   try {
     const response = await authApi("/user/queues");
-    const json = (await response.json()) as { data?: { userQueues?: UserQueue[] } };
+    const json = (await response.json()) as {
+      data?: { userQueues?: UserQueue[] };
+    };
     return json.data?.userQueues ?? [];
   } catch {
     return [];

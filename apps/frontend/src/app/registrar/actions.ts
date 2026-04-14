@@ -35,7 +35,12 @@ export const submitRegisterForm = async (
   let token: string;
 
   try {
-    const response = await userService().register({ email, password, name, phone });
+    const response = await userService().register({
+      email,
+      password,
+      name,
+      phone,
+    });
     if (!response.token) {
       return { error: translateError(response.message) };
     }

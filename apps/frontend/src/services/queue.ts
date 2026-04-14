@@ -15,22 +15,16 @@ const queueService = () => {
       queueId: string,
       data: Partial<QueueInput>
     ) => {
-      const response = await authApi(
-        `/queue/${commerceId}/${queueId}/update`,
-        {
-          method: "PUT",
-          body: JSON.stringify(data),
-        }
-      );
+      const response = await authApi(`/queue/${commerceId}/${queueId}/update`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      });
       return (await response.json()) as Queue;
     },
     delete: async (commerceId: string, queueId: string) => {
-      const response = await authApi(
-        `/queue/${commerceId}/${queueId}/delete`,
-        {
-          method: "DELETE",
-        }
-      );
+      const response = await authApi(`/queue/${commerceId}/${queueId}/delete`, {
+        method: "DELETE",
+      });
       return response.json();
     },
   };

@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { getCommerce, getParticipants, deleteCommerce, callNextParticipant } from "./actions";
+import {
+  getCommerce,
+  getParticipants,
+  deleteCommerce,
+  callNextParticipant,
+} from "./actions";
 import { Badge } from "@/components/Badge";
 import { ParticipantList } from "@/components/ParticipantList";
 import { Button } from "@/components";
@@ -42,7 +47,12 @@ const CommerceDetail = async ({ params }: Props) => {
             Editar
           </Link>
           <form action={deleteAction}>
-            <Button type="submit" intent="error" variant="outline" className="btn-sm">
+            <Button
+              type="submit"
+              intent="error"
+              variant="outline"
+              className="btn-sm"
+            >
               Excluir
             </Button>
           </form>
@@ -72,9 +82,7 @@ const CommerceDetail = async ({ params }: Props) => {
             <h2 className="text-2xl font-bold">Fila</h2>
             {commerce.queue ? (
               <Badge
-                variant={
-                  commerce.queue.status === "open" ? "success" : "error"
-                }
+                variant={commerce.queue.status === "open" ? "success" : "error"}
               >
                 {commerce.queue.status === "open" ? "Aberta" : "Fechada"}
               </Badge>

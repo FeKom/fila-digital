@@ -20,7 +20,10 @@ const userService = () => {
         headers,
         method: "POST",
       });
-      const data = (await response.json()) as { token: string; message?: string };
+      const data = (await response.json()) as {
+        token: string;
+        message?: string;
+      };
       if (!response.ok) return { token: "", message: data.message };
       return data;
     },
@@ -33,7 +36,10 @@ const userService = () => {
           headers,
           method: "POST",
         });
-        const data = (await response.json()) as { token: string; message?: string };
+        const data = (await response.json()) as {
+          token: string;
+          message?: string;
+        };
         if (!response.ok) return { token: "", message: data.message };
         return data;
       } catch (error) {
