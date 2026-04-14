@@ -41,10 +41,9 @@ Sentry.init({
   ignoreErrors: ["Not found", "Unauthorized", "No rows returned"],
 });
 
-const setupRoutes = (server: Server) => {
+const setupV1Routes = (server: Server) => {
   registerUserRoutes(server);
   registerCommerceRoutes(server);
-  registerHealthRoute(server);
   registerQueueRoutes(server);
   registerQueueParticipantsRoutes(server);
 };
@@ -128,7 +127,16 @@ export const initServer = async () => {
     routePrefix: "/docs",
   });
 
-  setupRoutes(server);
+  // Infra endpoints — no version prefix
+  registerHealthRoute(server);
+
+  // API v1
+  server.register(
+    async (v1) => {
+      setupV1Routes(v1 as Server);
+    },
+    { prefix: "/v1" }
+  );
 
   // ── Circuit breaker ────────────────────────────────────────────────────────
   // onRequest: if the DB circuit is OPEN (or the HALF_OPEN probe slot is
@@ -175,9 +183,9 @@ export const initServer = async () => {
   // ── Auth middleware ────────────────────────────────────────────────────────
   server.addHook("preHandler", (request, reply, done) => {
     const PUBLIC_PATHS = [
-      "/user/login",
-      "/user/register",
-      "/enter-queue",
+      "/v1/user/login",
+      "/v1/user/register",
+      "/v1/enter-queue",
       "/docs",
       "/healthcheck",
     ];

@@ -11,6 +11,7 @@
     "validate": "pnpm run lint && pnpm run code:format:verify"
   },
   "dependencies": {
+    "@fila-digital/types": "workspace:*",
     "clsx": "^2.1.1",
     "daisyui": "^5.0.46",
     "next": "15.4.2",

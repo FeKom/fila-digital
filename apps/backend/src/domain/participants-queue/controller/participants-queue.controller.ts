@@ -19,6 +19,7 @@ import { findUserById } from "../../user/repository/user.repository";
 import { findCommerceOwnerByUserId } from "../../commerce/repository/commerce.repository";
 import cache from "../../../infra/database/cache";
 import { cacheKeys, cacheTTL } from "../../../utils/cacheKeys";
+import { sendError } from "../../../utils/errors";
 
 const participantsQueueController = () => {
   return {
@@ -26,6 +27,8 @@ const participantsQueueController = () => {
       try {
         const user = req.user;
         const commerce_id = (req.params as { commerce_id: string }).commerce_id;
+
+        if (!user) return sendError(res, 401, "Authentication required");
 
         const c = await cache;
 
@@ -35,39 +38,27 @@ const participantsQueueController = () => {
           cacheTTL.QUEUE_BY_COMMERCE
         );
 
-        if (!user) {
-          return res.code(401).send({
-            message: "User unauthorized to enter queue",
-          });
-        }
-        if (!queue) {
-          return res.status(400).send({
-            message: "To enter participant on queue, need to create one first.",
-          });
-        }
+        if (!queue)
+          return sendError(res, 400, "No queue found for this commerce");
+
         if (await isUserInQueue(user.id, queue.id)) {
-          return res.code(400).send({
-            message: "User is already is this queue",
-          });
+          return sendError(res, 409, "User is already in this queue");
         }
-        const body = {
-          person_id: user?.id,
+
+        const result = await enterQueue({
+          person_id: user.id,
           queue_id: queue.id,
           is_active: true,
-        };
-        const result = await enterQueue(body);
+        });
+
         if (result) {
-          return res.status(201).send({
-            message: "User entered the commerce queue",
-          });
+          return res.code(201).send({ message: "User entered the queue" });
         }
       } catch (error) {
         req.log.error(
-          `[Participants-Queue  Controller] - something went wrong, error: ${error}`
+          `[Participants-Queue Controller] - enter failed, error: ${error}`
         );
-        res.code(500).send({
-          message: "Failed to enter a queue",
-        });
+        return sendError(res, 500, "Failed to enter queue");
       }
     },
 
@@ -86,27 +77,21 @@ const participantsQueueController = () => {
           cacheTTL.QUEUE_BY_COMMERCE
         );
 
-        if (!queue) {
-          return res.status(400).send({
-            message:
-              "To list a participants on queue, need to create one first.",
-          });
-        }
+        if (!queue)
+          return sendError(res, 400, "No queue found for this commerce");
 
         const page = await findParticipantsByQueueId(queue.id, params);
 
         if (!page.data.length) {
-          return res.status(404).send({
-            message: "Participants not found for this queue!",
-            data: {
-              participants: [],
-              nextCursor: null,
-              hasMore: false,
-            },
+          return res.code(404).send({
+            statusCode: 404,
+            error: "Not Found",
+            message: "No participants found for this queue",
+            data: { participants: [], nextCursor: null, hasMore: false },
           });
         }
 
-        return res.status(200).send({
+        return res.code(200).send({
           data: {
             participants: page.data,
             nextCursor: page.nextCursor,
@@ -115,11 +100,9 @@ const participantsQueueController = () => {
         });
       } catch (error) {
         req.log.error(
-          `[Participants-Queue  Controller] - something went wrong, error: ${error}`
+          `[Participants-Queue Controller] - listByCommerce failed, error: ${error}`
         );
-        res.code(500).send({
-          message: "Failed to list all",
-        });
+        return sendError(res, 500, "Failed to list participants");
       }
     },
 
@@ -145,41 +128,35 @@ const participantsQueueController = () => {
             : Promise.resolve(null),
         ]);
 
-        if (!queue) {
-          return res.status(400).send({
-            message:
-              "To list a participants on queue, need to create one first.",
-          });
-        }
+        if (!queue)
+          return sendError(res, 400, "No queue found for this commerce");
+
         if (user && (!commerceData || commerceData.id !== commerce_id)) {
-          return res.code(403).send({
-            message: "You don't have permission to manage this queue.",
-          });
+          return sendError(
+            res,
+            403,
+            "You don't have permission to manage this queue"
+          );
         }
+
         const firstParticipant = await findFirstParticipantsByQueueId(queue.id);
-        if (!firstParticipant) {
-          return res.code(400).send({
-            message: "Queue is empty, no participants to remove",
-          });
-        }
+        if (!firstParticipant) return sendError(res, 400, "Queue is empty");
+
         await softDeleteParticipantsByQueueId(
           queue.id,
           firstParticipant.person_id!,
           { is_active: false }
         );
+
         return res.code(200).send({
           message: "Successfully removed the first participant from the queue",
-          data: {
-            removedParticipant: firstParticipant.person_id,
-          },
+          data: { removedParticipant: firstParticipant.person_id },
         });
       } catch (error) {
         req.log.error(
-          `[Participants-Queue  Controller] - something went wrong, error: ${error}`
+          `[Participants-Queue Controller] - removeFirst failed, error: ${error}`
         );
-        res.code(500).send({
-          message: "Failed to remove Participant",
-        });
+        return sendError(res, 500, "Failed to remove participant");
       }
     },
 
@@ -191,11 +168,7 @@ const participantsQueueController = () => {
           count: number;
         };
 
-        if (!user) {
-          return res.code(401).send({
-            message: "Authentication required.",
-          });
-        }
+        if (!user) return sendError(res, 401, "Authentication required");
 
         const c = await cache;
 
@@ -212,28 +185,23 @@ const participantsQueueController = () => {
           ),
         ]);
 
-        if (!queue) {
-          return res.code(400).send({
-            message: "No queue found for this commerce.",
-          });
-        }
+        if (!queue)
+          return sendError(res, 400, "No queue found for this commerce");
 
         if (!commerceData || commerceData.id !== commerce_id) {
-          return res.code(403).send({
-            message: "You don't have permission to manage this queue.",
-          });
+          return sendError(
+            res,
+            403,
+            "You don't have permission to manage this queue"
+          );
         }
 
         const removed = await softDeleteNextNParticipants(queue.id, count);
 
-        if (removed.length === 0) {
-          return res.code(400).send({
-            message: "Queue is empty, no participants to remove.",
-          });
-        }
+        if (removed.length === 0) return sendError(res, 400, "Queue is empty");
 
         return res.code(200).send({
-          message: `Successfully removed ${removed.length} participant(s) from the queue.`,
+          message: `Successfully removed ${removed.length} participant(s) from the queue`,
           data: {
             removedCount: removed.length,
             removedParticipants: removed.map((p) => p.person_id),
@@ -243,9 +211,7 @@ const participantsQueueController = () => {
         req.log.error(
           `[Participants-Queue Controller] - removeNextN failed, error: ${error}`
         );
-        return res.code(500).send({
-          message: "Failed to remove participants.",
-        });
+        return sendError(res, 500, "Failed to remove participants");
       }
     },
 
@@ -260,89 +226,66 @@ const participantsQueueController = () => {
 
         const queue = await findQueueByIdOnly(queueId);
 
-        if (!queue) {
-          return res.code(404).send({
-            message: "Queue not found.",
-          });
-        }
-
-        if (!queue.active) {
-          return res.code(400).send({
-            message: "This queue is no longer active.",
-          });
-        }
-
-        if (queue.status !== "open") {
-          return res.code(400).send({
-            message: "This queue is not open.",
-          });
-        }
-
-        if (queue.qrcode_token !== qrcodeToken) {
-          return res.code(403).send({
-            message: "Invalid QR code token.",
-          });
-        }
+        if (!queue) return sendError(res, 404, "Queue not found");
+        if (!queue.active)
+          return sendError(res, 400, "This queue is no longer active");
+        if (queue.status !== "open")
+          return sendError(res, 400, "This queue is not open");
+        if (queue.qrcode_token !== qrcodeToken)
+          return sendError(res, 403, "Invalid QR code token");
 
         if (userId) {
           const person = await findUserById(userId);
-          if (!person) {
-            return res.code(404).send({
-              message: "User not found.",
-            });
-          }
+          if (!person) return sendError(res, 404, "User not found");
 
           if (await isUserInQueue(userId, queue.id)) {
-            return res.code(400).send({
-              message: "User is already in this queue.",
-            });
+            return sendError(res, 409, "User is already in this queue");
           }
 
-          await enterQueueByQrCode({
-            queue_id: queue.id,
-            person_id: userId,
-          });
-
-          return res.code(201).send({
-            message: "User entered the queue via QR code.",
-          });
+          await enterQueueByQrCode({ queue_id: queue.id, person_id: userId });
+          return res
+            .code(201)
+            .send({ message: "User entered the queue via QR code" });
         }
 
         if (anonymousId) {
           const uuidRegex =
             /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
           if (!uuidRegex.test(anonymousId)) {
-            return res.code(400).send({
-              message: "Invalid anonymousId format. Must be a valid UUID.",
-            });
+            return sendError(
+              res,
+              400,
+              "Invalid anonymousId format. Must be a valid UUID"
+            );
           }
 
           if (await isAnonymousInQueue(anonymousId, queue.id)) {
-            return res.code(400).send({
-              message: "This anonymous user is already in this queue.",
-            });
+            return sendError(
+              res,
+              409,
+              "This anonymous user is already in this queue"
+            );
           }
 
           await enterQueueByQrCode({
             queue_id: queue.id,
             anonymous_id: anonymousId,
           });
-
-          return res.code(201).send({
-            message: "Anonymous user entered the queue via QR code.",
-          });
+          return res
+            .code(201)
+            .send({ message: "Anonymous user entered the queue via QR code" });
         }
 
-        return res.code(400).send({
-          message: "Either userId or anonymousId must be provided.",
-        });
+        return sendError(
+          res,
+          400,
+          "Either userId or anonymousId must be provided"
+        );
       } catch (error) {
         req.log.error(
           `[Participants-Queue Controller] - enterByQrCode failed, error: ${error}`
         );
-        return res.code(500).send({
-          message: "Failed to enter queue via QR code.",
-        });
+        return sendError(res, 500, "Failed to enter queue via QR code");
       }
     },
 
@@ -350,6 +293,8 @@ const participantsQueueController = () => {
       try {
         const user = req.user?.id;
         const commerce_id = (req.params as { commerce_id: string }).commerce_id;
+
+        if (!user) return sendError(res, 401, "Authentication required");
 
         const c = await cache;
 
@@ -359,35 +304,23 @@ const participantsQueueController = () => {
           cacheTTL.QUEUE_BY_COMMERCE
         );
 
-        if (!queue) {
-          return res.status(400).send({
-            message: "To exit participant on queue, need to create one first.",
-          });
-        }
-        if (!user) {
-          return res.code(401).send({
-            message: "Authentication required.",
-          });
-        }
-        const participantdRecord = await deleteParticipantsByQueueId(
+        if (!queue)
+          return sendError(res, 400, "No queue found for this commerce");
+
+        const participantRecord = await deleteParticipantsByQueueId(
           queue.id,
           user
         );
-        if (!participantdRecord) {
-          return res.code(400).send({
-            message: "You are not in this queue!",
-          });
-        }
-        return res.code(200).send({
-          message: "Successfully exited the queue! ",
-        });
+
+        if (!participantRecord)
+          return sendError(res, 400, "You are not in this queue");
+
+        return res.code(200).send({ message: "Successfully exited the queue" });
       } catch (error) {
         req.log.error(
-          `[Participants-Queue  Controller] - something went wrong, error: ${error}`
+          `[Participants-Queue Controller] - exitQueue failed, error: ${error}`
         );
-        return res.code(500).send({
-          message: "Failed to exit queue",
-        });
+        return sendError(res, 500, "Failed to exit queue");
       }
     },
   };

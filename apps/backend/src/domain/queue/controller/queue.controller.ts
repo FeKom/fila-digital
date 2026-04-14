@@ -9,73 +9,63 @@ import {
 import cache from "../../../infra/database/cache";
 import { cacheKeys, cacheTTL } from "../../../utils/cacheKeys";
 import { generateQrCodeBase64 } from "../../../utils/qrcode";
+import { sendError } from "../../../utils/errors";
 
 const queueController = () => {
   return {
     register: async (req: ServerRequest, res: ServerResponse) => {
       const queue = req.body as Queue;
       try {
-        if (req.user?.id) {
-          const c = await cache;
-
-          const [commerceOwner, commerceWithQueue] = await Promise.all([
-            c.wrap(
-              cacheKeys.commerceOwner(req.user.id),
-              () => findCommerceOwnerByUserId(req.user!.id),
-              cacheTTL.COMMERCE_OWNER
-            ),
-            c.wrap(
-              cacheKeys.queueByCommerce(queue.commerce_id),
-              () => findQueueByCommerceId(queue.commerce_id),
-              cacheTTL.QUEUE_BY_COMMERCE
-            ),
-          ]);
-
-          if (commerceWithQueue) {
-            return await res.code(409).send({
-              message: "This commerce Alreay has a Queue!",
-            });
-          }
-
-          if (commerceOwner.owner_id === req.user.id) {
-            const createdQueue = await createQueue(queue);
-
-            await c.del(cacheKeys.queueByCommerce(queue.commerce_id));
-
-            const qrcodeData = {
-              queueId: createdQueue.id,
-              token: createdQueue.qrcode_token,
-              createdAt: createdQueue.created_at,
-            };
-
-            const qrcode = await generateQrCodeBase64(
-              JSON.stringify(qrcodeData)
-            );
-
-            return res.code(201).send({
-              queue: {
-                id: createdQueue.id,
-                commerce_id: createdQueue.commerce_id,
-              },
-              qrcode,
-              qrcodeData,
-              message: "Queue created with success!",
-            });
-          } else if (commerceOwner.owner_id !== req.user.id) {
-            return res.code(401).send({
-              message: "Only commerce owner can create a queue",
-            });
-          }
-
-          return res.code(401).send({
-            message: "You need to register a commerce first, to create a queue",
-          });
+        if (!req.user?.id) {
+          sendError(res, 401, "Authentication required");
+          return;
         }
+
+        const c = await cache;
+
+        const [commerceOwner, commerceWithQueue] = await Promise.all([
+          c.wrap(
+            cacheKeys.commerceOwner(req.user.id),
+            () => findCommerceOwnerByUserId(req.user!.id),
+            cacheTTL.COMMERCE_OWNER
+          ),
+          c.wrap(
+            cacheKeys.queueByCommerce(queue.commerce_id),
+            () => findQueueByCommerceId(queue.commerce_id),
+            cacheTTL.QUEUE_BY_COMMERCE
+          ),
+        ]);
+
+        if (commerceWithQueue) {
+          sendError(res, 409, "This commerce already has a queue");
+          return;
+        }
+
+        if (commerceOwner.owner_id !== req.user.id) {
+          sendError(res, 403, "Only commerce owner can create a queue");
+          return;
+        }
+
+        const createdQueue = await createQueue(queue);
+        await c.del(cacheKeys.queueByCommerce(queue.commerce_id));
+
+        const qrcodeData = {
+          queueId: createdQueue.id,
+          token: createdQueue.qrcode_token,
+          createdAt: createdQueue.created_at,
+        };
+
+        const qrcode = await generateQrCodeBase64(JSON.stringify(qrcodeData));
+
+        return res.code(201).send({
+          queue: { id: createdQueue.id, commerce_id: createdQueue.commerce_id },
+          qrcode,
+          qrcodeData,
+          message: "Queue created successfully",
+        });
       } catch (error) {
         req.log.error(error);
-        return res.code(500).send({
-          message: "Error for create a Queue!",
-        });
+        return sendError(res, 500, "Failed to create queue");
       }
     },
 
@@ -96,11 +86,7 @@ const queueController = () => {
           cacheTTL.QUEUE_BY_COMMERCE
         );
 
-        if (!queue) {
-          return res.code(404).send({
-            message: "Queue not found!",
-          });
-        }
+        if (!queue) return sendError(res, 404, "Queue not found");
 
         if (user) {
           const commerceOwner = await c.wrap(
@@ -110,33 +96,32 @@ const queueController = () => {
           );
 
           if (!commerceOwner) {
-            return res.code(401).send({
-              message: "You need to be a commerce owner to update a queue",
-            });
+            return sendError(
+              res,
+              403,
+              "You need to be a commerce owner to update a queue"
+            );
           }
 
-          if (commerceOwner.owner_id !== user?.id) {
-            return res.code(401).send({
-              message: "Only commerce owner can update a queue",
-            });
+          if (commerceOwner.owner_id !== user.id) {
+            return sendError(
+              res,
+              403,
+              "Only commerce owner can update a queue"
+            );
           }
         }
 
         await updateQueueById(queue_id, { ...queueToUpdate });
-
         await c.del(cacheKeys.queueByCommerce(commerce_id));
 
         return res.code(200).send({
-          message: "Queue updated with success!",
-          data: {
-            queueToUpdate,
-          },
+          message: "Queue updated successfully",
+          data: { queueToUpdate },
         });
       } catch (error) {
         req.log.error(error);
-        return await res.code(500).send({
-          message: "Error for update a Queue!",
-        });
+        return sendError(res, 500, "Failed to update queue");
       }
     },
 
@@ -156,11 +141,7 @@ const queueController = () => {
           cacheTTL.QUEUE_BY_COMMERCE
         );
 
-        if (!queue) {
-          return res.code(404).send({
-            message: "Queue not found!",
-          });
-        }
+        if (!queue) return sendError(res, 404, "Queue not found");
 
         if (user) {
           const commerce = await c.wrap(
@@ -170,30 +151,29 @@ const queueController = () => {
           );
 
           if (!commerce) {
-            return res.code(401).send({
-              message: "You need to be a commerce owner to delete a queue",
-            });
+            return sendError(
+              res,
+              403,
+              "You need to be a commerce owner to delete a queue"
+            );
           }
 
-          if (commerce.owner_id !== user?.id) {
-            return res.code(401).send({
-              message: "Only commerce owner can delete a queue",
-            });
+          if (commerce.owner_id !== user.id) {
+            return sendError(
+              res,
+              403,
+              "Only commerce owner can delete a queue"
+            );
           }
         }
 
         await updateQueueById(queue_id, { active: false });
-
         await c.del(cacheKeys.queueByCommerce(commerce_id));
 
-        return res.code(200).send({
-          message: "Queue deleted with success!",
-        });
+        return res.code(200).send({ message: "Queue deleted successfully" });
       } catch (error) {
         req.log.error(error);
-        return await res.code(500).send({
-          message: "Error for delete a Queue!",
-        });
+        return sendError(res, 500, "Failed to delete queue");
       }
     },
   };

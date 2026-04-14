@@ -14,6 +14,7 @@ import { logger } from "../../../utils/logger";
 import cache from "../../../infra/database/cache";
 import { cacheKeys, cacheTTL } from "../../../utils/cacheKeys";
 import { parsePaginationParams } from "../../../utils/pagination";
+import { sendError } from "../../../utils/errors";
 
 const commerceController = () => {
   return {
@@ -22,9 +23,7 @@ const commerceController = () => {
       try {
         const valid = validateCNPJ(commerce.document_id);
         if (!valid) {
-          res.code(400).send({
-            message: "Invalid Document ID",
-          });
+          sendError(res, 400, "Invalid Document ID");
           return;
         }
 
@@ -39,9 +38,7 @@ const commerceController = () => {
         if (!req.user?.id) return;
 
         if (commerceFromDb) {
-          res.code(409).send({
-            message: "Commerce already registered",
-          });
+          sendError(res, 409, "Commerce already registered");
           return;
         }
 
@@ -58,9 +55,7 @@ const commerceController = () => {
           c.del(cacheKeys.commerceList()),
         ]);
 
-        await updateUserById(req.user.id, {
-          commerce_id: commerceData?.id,
-        });
+        await updateUserById(req.user.id, { commerce_id: commerceData?.id });
 
         res.code(201).send({
           commerce_id: commerceData?.id,
@@ -71,9 +66,7 @@ const commerceController = () => {
         logger.error(
           `[Commerce Controller] - something went wrong, error: ${error}`
         );
-        res.code(500).send({
-          message: "Error for Register Commerce!",
-        });
+        sendError(res, 500, "Error registering commerce");
       }
     },
 
@@ -83,9 +76,6 @@ const commerceController = () => {
           req.query as Record<string, unknown>
         );
 
-        // Paginated lists are not cached — each (cursor, limit) combination
-        // produces a different result set. Individual commerce entities are
-        // already cached by ID in getCommerceById.
         const page = await listAllCommerces(params);
 
         return res.code(200).send({
@@ -100,9 +90,7 @@ const commerceController = () => {
         logger.error(
           `[Commerce Controller] - Failed to get commerces, error: ${error}`
         );
-        return res.code(500).send({
-          message: "Failed to retrieve commerces",
-        });
+        return sendError(res, 500, "Failed to retrieve commerces");
       }
     },
 
@@ -111,11 +99,7 @@ const commerceController = () => {
         const user = req.user;
         const { commerce_id } = req.params as { commerce_id: string };
 
-        if (!user) {
-          return res.code(401).send({
-            message: "You need to be logged in to delete a commerce",
-          });
-        }
+        if (!user) return sendError(res, 401, "Authentication required");
 
         const c = await cache;
 
@@ -125,16 +109,14 @@ const commerceController = () => {
           cacheTTL.COMMERCE_ID
         );
 
-        if (!commerce) {
-          return res.code(404).send({
-            message: "Commerce not found",
-          });
-        }
+        if (!commerce) return sendError(res, 404, "Commerce not found");
 
         if (commerce.owner_id !== user.id) {
-          return res.code(401).send({
-            message: "Only commerce owner can delete a commerce",
-          });
+          return sendError(
+            res,
+            403,
+            "Only commerce owner can delete a commerce"
+          );
         }
 
         await updateCommerceById(commerce_id, { active: false });
@@ -145,16 +127,12 @@ const commerceController = () => {
           c.del(cacheKeys.commerceOwner(user.id)),
         ]);
 
-        return res.code(200).send({
-          message: "Commerce deleted with success!",
-        });
+        return res.code(200).send({ message: "Commerce deleted successfully" });
       } catch (error) {
         logger.error(
           `[Commerce Controller] - Failed to delete commerce, error: ${error}`
         );
-        return res.code(500).send({
-          message: "Failed to delete commerce",
-        });
+        return sendError(res, 500, "Failed to delete commerce");
       }
     },
 
@@ -164,11 +142,7 @@ const commerceController = () => {
         const commerceToUpdate = req.body as Commerce;
         const { commerce_id } = req.params as { commerce_id: string };
 
-        if (!user) {
-          return res.code(401).send({
-            message: "You need to be logged in to update a commerce",
-          });
-        }
+        if (!user) return sendError(res, 401, "Authentication required");
 
         const c = await cache;
 
@@ -178,16 +152,14 @@ const commerceController = () => {
           cacheTTL.COMMERCE_ID
         );
 
-        if (!commerce) {
-          return res.code(404).send({
-            message: "Commerce not found",
-          });
-        }
+        if (!commerce) return sendError(res, 404, "Commerce not found");
 
         if (commerce.owner_id !== user.id) {
-          return res.code(401).send({
-            message: "Only commerce owner can update a commerce",
-          });
+          return sendError(
+            res,
+            403,
+            "Only commerce owner can update a commerce"
+          );
         }
 
         await updateCommerceById(commerce_id, { ...commerceToUpdate });
@@ -199,17 +171,13 @@ const commerceController = () => {
 
         return res.code(200).send({
           message: "Commerce updated successfully",
-          data: {
-            commerceToUpdate,
-          },
+          data: { commerceToUpdate },
         });
       } catch (error) {
         logger.error(
           `[Commerce Controller] - Failed to update commerce, error: ${error}`
         );
-        return res.code(500).send({
-          message: "Failed to update commerce",
-        });
+        return sendError(res, 500, "Failed to update commerce");
       }
     },
   };

@@ -1,9 +1,11 @@
 import { cookies } from "next/headers";
 
+const API_VERSION = "/v1";
+
 const api = (path?: string, options?: RequestInit) => {
   const baseUrl =
     process.env.NEXT_PUBLIC_FILA_DIGITAL_BASE_URL ?? "http://localhost:7070";
-  return fetch(`${baseUrl}${path}`, options);
+  return fetch(`${baseUrl}${API_VERSION}${path}`, options);
 };
 
 export const authApi = async (path: string, options?: RequestInit) => {

@@ -90,6 +90,9 @@ importers:
       '@eslint/js':
         specifier: ^9.31.0
         version: 9.39.4
+      '@fila-digital/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       '@types/config':
         specifier: ^3.3.5
         version: 3.3.5
@@ -150,6 +153,9 @@ importers:
 
   apps/frontend:
     dependencies:
+      '@fila-digital/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -196,6 +202,8 @@ importers:
       typescript:
         specifier: ^5
         version: 5.9.3
+
+  packages/types: {}
 
 packages:
 

@@ -13,6 +13,7 @@ import {
 } from "../../../utils/validate";
 import { logger } from "../../../utils/logger";
 import { uuidv7 } from "uuidv7";
+import { sendError } from "../../../utils/errors";
 
 const userController = () => {
   return {
@@ -21,46 +22,36 @@ const userController = () => {
       try {
         const isValidPassword = validatePassword(user.password);
         if (!isValidPassword) {
-          res.code(400).send({
-            message:
-              "Invalid Password. Minimum eight characters, at least one uppercase letter, one lowercase letter, one number and one special character",
-          });
+          sendError(
+            res,
+            400,
+            "Invalid Password. Minimum eight characters, at least one uppercase letter, one lowercase letter, one number and one special character"
+          );
           return;
         }
         const isValidName = validateName(user.name);
         if (!isValidName) {
-          res.code(400).send({
-            message: "Invalid Name",
-          });
+          sendError(res, 400, "Invalid Name");
           return;
         }
         const isValidEmail = validateEmail(user.email);
         if (!isValidEmail) {
-          res.code(400).send({
-            message: "Invalid Email",
-          });
+          sendError(res, 400, "Invalid Email");
           return;
         }
         const isValidPhone = validatePhone(user.phone);
         if (!isValidPhone) {
-          res.code(400).send({
-            message: "Invalid Phone",
-          });
+          sendError(res, 400, "Invalid Phone");
           return;
         }
         const userFromDb = await userRepo.getUserByEmail(isValidEmail);
 
         if (userFromDb) {
-          if (userFromDb.email === isValidEmail) {
-            res.code(400).send({
-              message: "User Already Exists",
-            });
-            return;
-          }
-          if (userFromDb.phone === isValidPhone) {
-            res.code(400).send({
-              message: "User Already Exists",
-            });
+          if (
+            userFromDb.email === isValidEmail ||
+            userFromDb.phone === isValidPhone
+          ) {
+            sendError(res, 409, "User Already Exists");
             return;
           }
         }
@@ -75,28 +66,17 @@ const userController = () => {
         if (response) {
           const dayInSeconds = 60 * 60 * 24;
           const token = jwt.sign(
-            {
-              name: response.name,
-              email: response.email,
-              id: response.id,
-            },
+            { name: response.name, email: response.email, id: response.id },
             config.get<string>("token.secret"),
             { expiresIn: dayInSeconds }
           );
-          res.code(201).send({
-            message: "User Created!",
-            token,
-          });
+          res.code(201).send({ message: "User Created!", token });
         }
       } catch (error) {
-        if (error) {
-          logger.error(
-            `[User Controller] - something went wrong, error: ${error}`
-          );
-          res.code(500).send({
-            message: "Failed to create User!",
-          });
-        }
+        logger.error(
+          `[User Controller] - something went wrong, error: ${error}`
+        );
+        sendError(res, 500, "Failed to create User!");
       }
     },
     login: async (req: ServerRequest, res: ServerResponse) => {
@@ -106,9 +86,7 @@ const userController = () => {
           user.email.toLowerCase()
         );
         if (!userFromDb) {
-          res.code(404).send({
-            message: "User Not Found",
-          });
+          sendError(res, 404, "User Not Found");
           return;
         }
         const valid = await verifyPassword(user.password, userFromDb.password);
@@ -124,24 +102,15 @@ const userController = () => {
             config.get<string>("token.secret"),
             { expiresIn: dayInSeconds }
           );
-          res.code(200).send({
-            token,
-            message: "success",
-          });
+          res.code(200).send({ token, message: "success" });
         } else {
-          res.code(403).send({
-            message: "Invalid User",
-          });
+          sendError(res, 403, "Invalid credentials");
         }
       } catch (error) {
-        if (error) {
-          req.log.error(
-            `[User Controller] - something went wrong, error: ${error}`
-          );
-          res.code(500).send({
-            message: "Login failed!",
-          });
-        }
+        req.log.error(
+          `[User Controller] - something went wrong, error: ${error}`
+        );
+        sendError(res, 500, "Login failed!");
       }
     },
   };
