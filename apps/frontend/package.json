@@ -1,0 +1,33 @@
+{
+  "name": "@fila-digital/frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "code:format:verify": "prettier ./src -l",
+    "validate": "pnpm run lint && pnpm run code:format:verify"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "daisyui": "^5.0.46",
+    "next": "15.4.2",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4.1.11",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.4.2",
+    "prettier": "3.6.2",
+    "tailwindcss": "^4.1.11",
+    "typescript": "^5"
+  },
+  "packageManager": "pnpm@8.6.2+sha512.0e68307be4f7e17afa5186932d74a984f4bba24e21d843e46874041fa8fb512a00936d42cee780743d6740b9162700e766426e721a342db2a7b49fbd079c6551"
+}

@@ -1,0 +1,1 @@
+pnpm turbo run validate --filter=[HEAD^1]

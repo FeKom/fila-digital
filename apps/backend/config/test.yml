@@ -1,0 +1,17 @@
+server:
+  port: 7070
+logging:
+  level: debug
+database:
+  name: "fila-digital-test"
+  host: "localhost"
+  user: "fila-digital-user"
+  password: "123321"
+  port: 5435
+  ssl: false
+  connection:
+    max: 10
+cache:
+  host: "localhost"
+  port: 6379
+  ttl: 60

@@ -1,0 +1,46 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Grafana Datasource Provisioning — Fila Digital
+#
+# Grafana loads this file on startup and creates/updates the datasources
+# automatically. No manual UI configuration needed.
+# ─────────────────────────────────────────────────────────────────────────────
+
+apiVersion: 1
+
+deleteDatasources:
+  - name: Prometheus
+    orgId: 1
+  - name: Loki
+    orgId: 1
+
+datasources:
+  # ── Prometheus — metrics ────────────────────────────────────────────────────
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    orgId: 1
+    uid: prometheus-ds
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      httpMethod: POST
+      # How far back the "last 5 minutes" default range resolves
+      timeInterval: "15s"
+      # Enables Exemplars (trace correlation) if you add tracing later
+      exemplarTraceIdDestinations: []
+
+  # ── Loki — logs ─────────────────────────────────────────────────────────────
+  - name: Loki
+    type: loki
+    access: proxy
+    orgId: 1
+    uid: loki-ds
+    url: http://loki:3100
+    isDefault: false
+    editable: false
+    jsonData:
+      # Maximum number of lines returned per query — keeps Grafana snappy
+      maxLines: 1000
+      # Link log lines to traces (configure when you add tracing)
+      derivedFields: []

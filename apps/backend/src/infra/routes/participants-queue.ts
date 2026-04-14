@@ -1,0 +1,52 @@
+import ROUTES from "../../constants";
+import queueParticipantsController from "../../domain/participants-queue/controller/participants-queue.controller";
+import { rateLimits } from "../../utils/rateLimits";
+import {
+  listByCommerceSchema,
+  enterQueueSchema,
+  enterByQrCodeSchema,
+  removeFirstSchema,
+  removeNextNSchema,
+  exitQueueSchema,
+} from "../schemas/participants-queue.schema";
+import { Server } from "../types";
+
+const registerUserRoutes = (server: Server) => {
+  const controller = queueParticipantsController();
+
+  server.get(
+    ROUTES.participantsQueue.list,
+    { schema: listByCommerceSchema, config: { rateLimit: rateLimits.read } },
+    controller.listByCommerce
+  );
+  server.post(
+    ROUTES.participantsQueue.enter,
+    { schema: enterQueueSchema, config: { rateLimit: rateLimits.write } },
+    controller.enter
+  );
+  server.delete(
+    ROUTES.participantsQueue.next,
+    { schema: removeFirstSchema, config: { rateLimit: rateLimits.write } },
+    controller.removeFirst
+  );
+  server.delete(
+    ROUTES.participantsQueue.nextN,
+    { schema: removeNextNSchema, config: { rateLimit: rateLimits.write } },
+    controller.removeNextN
+  );
+  server.delete(
+    ROUTES.participantsQueue.exit,
+    { schema: exitQueueSchema, config: { rateLimit: rateLimits.write } },
+    controller.exiteQueue
+  );
+  server.post(
+    ROUTES.participantsQueue.enterByQrCode,
+    {
+      schema: enterByQrCodeSchema,
+      config: { rateLimit: rateLimits.write },
+    },
+    controller.enterByQrCode
+  );
+};
+
+export default registerUserRoutes;

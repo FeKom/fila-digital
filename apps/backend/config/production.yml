@@ -1,0 +1,20 @@
+server:
+  port: 7070
+logging:
+  level: error
+database:
+  name: "filadigital"
+  host: "dpg-d24dkf15pdvs738886g0-a.virginia-postgres.render.com"
+  user: "userfiladigitalproduction"
+  password: "" # need to use as env-var... get on render dashboard :)
+  port: 5432
+  ssl: true
+  connection:
+    max: 10
+    timeoutInMilli: 10000
+cache:
+  host: ""
+  port: 6379
+  ttl: 3600
+token:
+  secret: ""
