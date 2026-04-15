@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import config from "../infra/config";
 import { ServerRequest, ServerResponse } from "../infra/types";
 import { User } from "../domain/user/type";
+import { sendError } from "./errors";
 
 export const verifyToken = (
   request: ServerRequest,
@@ -13,14 +14,15 @@ export const verifyToken = (
   const JWT_SECRET = config.get<string>("token.secret");
 
   if (!authHeader) {
-    return response.code(401).send({ message: "Not Authorized" });
+    sendError(response, 401, "Authentication required");
+    return;
   }
   try {
     const decoded = jwt.verify(authHeader, JWT_SECRET) as User;
     request.user = decoded;
     return decoded;
-  } catch (error) {
-    return response.code(401).send({ message: "Token Unauthorized" });
+  } catch {
+    sendError(response, 401, "Invalid or expired token");
   }
 };
 

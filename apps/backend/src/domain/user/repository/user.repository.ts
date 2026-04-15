@@ -36,3 +36,13 @@ export const updateUserById = async (
   await (await cache).del(`user:${id}`);
   return result;
 };
+
+export const softDeleteUserById = async (id: string) => {
+  const result = await db
+    .updateTable("person")
+    .set({ active: false })
+    .where("id", "=", id)
+    .executeTakeFirstOrThrow();
+  await (await cache).del(`user:${id}`);
+  return result;
+};

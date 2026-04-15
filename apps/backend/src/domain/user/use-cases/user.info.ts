@@ -2,66 +2,78 @@ import { ServerRequest, ServerResponse } from "../../../infra/types";
 import { findCommerceIdByUserId } from "../../commerce/repository/commerce.repository";
 import { findUserQueuesByUserID } from "../../participants-queue/repository/participants-queue.repository";
 import { findUserById } from "../repository/user.repository";
+import { sendError } from "../../../utils/errors";
 
 const userInfo = () => {
   return {
     getUserInfo: async (req: ServerRequest, res: ServerResponse) => {
-      const user = req.user?.id;
+      if (!req.user?.id) {
+        sendError(res, 401, "Authentication required");
+        return;
+      }
       try {
-        if (user) {
-          const userFromDb = await findUserById(user);
-          if (userFromDb) {
-            res.code(200).send({
-              name: userFromDb?.name,
-              email: userFromDb?.email,
-              phone: userFromDb?.phone,
-            });
-            return;
-          }
+        const userFromDb = await findUserById(req.user.id);
+        if (!userFromDb) {
+          sendError(res, 404, "User not found");
+          return;
         }
+        return res.code(200).send({
+          name: userFromDb.name,
+          email: userFromDb.email,
+          phone: userFromDb.phone,
+        });
       } catch (error) {
-        if (error) {
-          req.log.error(
-            `[User Get Info] - Something went wrong, error: ${error}`
-          );
-        }
-        res.code(500).send({
-          message: "Error for get User Info",
-        });
+        req.log.error(
+          `[User Get Info] - Something went wrong, error: ${error}`
+        );
+        sendError(res, 500, "Error fetching user info");
       }
     },
+
     getUserCommerces: async (req: ServerRequest, res: ServerResponse) => {
-      const user = req.user;
-      if (user) {
-        const userFromDb = await findUserById(user.id);
-        let commercesFromUser;
-        if (userFromDb?.id) {
-          commercesFromUser = await findCommerceIdByUserId(userFromDb.id);
-        }
-        res.code(200).send({
-          commerces: commercesFromUser,
+      if (!req.user?.id) {
+        sendError(res, 401, "Authentication required");
+        return;
+      }
+      try {
+        const commerces = await findCommerceIdByUserId(req.user.id);
+        return res.code(200).send({
+          commerces: commerces.map(
+            ({ id, name, description, phone, open_at, closed_at, active }) => ({
+              id,
+              name,
+              description,
+              phone,
+              open_at,
+              closed_at,
+              active,
+            })
+          ),
         });
+      } catch (error) {
+        req.log.error(
+          `[User Commerces] - Something went wrong, error: ${error}`
+        );
+        sendError(res, 500, "Failed to retrieve commerces");
       }
     },
+
     listUserQueues: async (req: ServerRequest, res: ServerResponse) => {
+      if (!req.user?.id) {
+        sendError(res, 401, "Authentication required");
+        return;
+      }
       try {
-        const user = req.user;
-        if (user) {
-          const userQueues = await findUserQueuesByUserID(user.id);
-          return res.code(200).send({
-            message: "All users queues",
-            data: {
-              userQueues,
-            },
-          });
-        }
+        const userQueues = await findUserQueuesByUserID(req.user.id);
+        return res.code(200).send({
+          message: "All users queues",
+          data: { userQueues },
+        });
       } catch (error) {
         req.log.error(
           `[Queue Controller] - Failed to get user queues, error: ${error}`
         );
-        return res.code(500).send({
-          message: "Failed to retrieve user queues",
-        });
+        sendError(res, 500, "Failed to retrieve user queues");
       }
     },
   };

@@ -27,6 +27,8 @@ const ROUTES = {
     details: "/user",
     commerces: "/user/commerces",
     queues: "/user/queues",
+    update: "/user/update",
+    delete: "/user/delete",
   },
 };
 

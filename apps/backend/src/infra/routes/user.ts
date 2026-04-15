@@ -2,7 +2,12 @@ import ROUTES from "../../constants";
 import userController from "../../domain/user/controller/user.controller";
 import userInfo from "../../domain/user/use-cases/user.info";
 import { rateLimits } from "../../utils/rateLimits";
-import { registerSchema, loginSchema } from "../schemas/user.schema";
+import {
+  registerSchema,
+  loginSchema,
+  updateUserSchema,
+  deleteUserSchema,
+} from "../schemas/user.schema";
 import { Server } from "../types";
 
 const registerUserRoutes = (server: Server) => {
@@ -33,6 +38,16 @@ const registerUserRoutes = (server: Server) => {
     ROUTES.user.queues,
     { config: { rateLimit: rateLimits.read } },
     useCase.listUserQueues
+  );
+  server.put(
+    ROUTES.user.update,
+    { schema: updateUserSchema, config: { rateLimit: rateLimits.write } },
+    controller.update
+  );
+  server.delete(
+    ROUTES.user.delete,
+    { schema: deleteUserSchema, config: { rateLimit: rateLimits.write } },
+    controller.delete
   );
 };
 

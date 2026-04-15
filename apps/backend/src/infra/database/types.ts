@@ -71,6 +71,7 @@ export interface PersonTable {
   password: string;
   commerce_id: string | null;
   queue_id: string | null;
+  active: ColumnType<boolean, boolean | undefined, boolean>;
   created_at: ColumnType<Date, string | undefined, never>;
   updated_at: ColumnType<Date, string | undefined, string>;
 }

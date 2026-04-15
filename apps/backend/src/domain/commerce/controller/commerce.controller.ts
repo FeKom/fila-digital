@@ -35,7 +35,10 @@ const commerceController = () => {
           cacheTTL.COMMERCE_DOCUMENT
         );
 
-        if (!req.user?.id) return;
+        if (!req.user?.id) {
+          sendError(res, 401, "Authentication required");
+          return;
+        }
 
         if (commerceFromDb) {
           sendError(res, 409, "Commerce already registered");

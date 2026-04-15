@@ -69,6 +69,42 @@ export const registerSchema: FastifySchema = {
   },
 };
 
+export const updateUserSchema: FastifySchema = {
+  tags: ["User"],
+  description: "Update the authenticated user's profile (name and/or phone)",
+  body: {
+    type: "object",
+    properties: {
+      name: { type: "string", minLength: 2, maxLength: 100 },
+      phone: { type: "string", minLength: 8, maxLength: 20 },
+    },
+    additionalProperties: false,
+    minProperties: 1,
+  },
+  response: {
+    200: {
+      description: "User updated successfully",
+      type: "object",
+      properties: { message: { type: "string" } },
+    },
+    400: { description: "Validation error", ...errorResponse },
+    401: { description: "Unauthorized", ...errorResponse },
+  },
+};
+
+export const deleteUserSchema: FastifySchema = {
+  tags: ["User"],
+  description: "Soft-delete the authenticated user's account",
+  response: {
+    200: {
+      description: "User deleted successfully",
+      type: "object",
+      properties: { message: { type: "string" } },
+    },
+    401: { description: "Unauthorized", ...errorResponse },
+  },
+};
+
 export const loginSchema: FastifySchema = {
   tags: ["User"],
   description: "Authenticate a user and return a JWT token",

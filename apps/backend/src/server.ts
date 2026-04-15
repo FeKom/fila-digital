@@ -181,7 +181,7 @@ export const initServer = async () => {
   });
 
   // ── Auth middleware ────────────────────────────────────────────────────────
-  server.addHook("preHandler", (request, reply, done) => {
+  server.addHook("preHandler", async (request, reply) => {
     const PUBLIC_PATHS = [
       "/v1/user/login",
       "/v1/user/register",
@@ -192,11 +192,8 @@ export const initServer = async () => {
     const isPublicPath = () =>
       PUBLIC_PATHS.some((path) => request.url.startsWith(path));
 
-    if (isPublicPath()) {
-      done();
-    } else {
+    if (!isPublicPath()) {
       verifyToken(request as ServerRequest, reply);
-      done();
     }
   });
 

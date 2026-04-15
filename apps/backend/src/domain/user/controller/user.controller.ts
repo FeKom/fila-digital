@@ -113,6 +113,55 @@ const userController = () => {
         sendError(res, 500, "Login failed!");
       }
     },
+
+    update: async (req: ServerRequest, res: ServerResponse) => {
+      try {
+        if (!req.user?.id) {
+          sendError(res, 401, "Authentication required");
+          return;
+        }
+        const { name, phone } = req.body as { name?: string; phone?: string };
+        const updates: Record<string, unknown> = {};
+
+        if (name) {
+          const isValidName = validateName(name);
+          if (!isValidName) {
+            sendError(res, 400, "Invalid Name");
+            return;
+          }
+          updates.name = isValidName;
+        }
+
+        if (phone) {
+          const isValidPhone = validatePhone(phone);
+          if (!isValidPhone) {
+            sendError(res, 400, "Invalid Phone");
+            return;
+          }
+          updates.phone = isValidPhone;
+        }
+
+        await userRepo.updateUserById(req.user.id, updates);
+        return res.code(200).send({ message: "User updated successfully" });
+      } catch (error) {
+        logger.error(`[User Controller] - update failed: ${error}`);
+        sendError(res, 500, "Failed to update user");
+      }
+    },
+
+    delete: async (req: ServerRequest, res: ServerResponse) => {
+      try {
+        if (!req.user?.id) {
+          sendError(res, 401, "Authentication required");
+          return;
+        }
+        await userRepo.softDeleteUserById(req.user.id);
+        return res.code(200).send({ message: "User deleted successfully" });
+      } catch (error) {
+        logger.error(`[User Controller] - delete failed: ${error}`);
+        sendError(res, 500, "Failed to delete user");
+      }
+    },
   };
 };
 

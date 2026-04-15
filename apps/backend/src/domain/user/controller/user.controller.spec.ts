@@ -47,6 +47,7 @@ describe("User Controller - Unit Test with Mocks", () => {
       phone: "1234567890",
       queue_id: null,
       commerce_id: null,
+      active: true,
       created_at: new Date(),
       updated_at: new Date(),
     });
@@ -84,6 +85,7 @@ describe("User Controller - Unit Test with Mocks", () => {
       phone: "1234567890",
       commerce_id: null,
       queue_id: null,
+      active: true,
       created_at: new Date(),
       updated_at: new Date(),
     });
