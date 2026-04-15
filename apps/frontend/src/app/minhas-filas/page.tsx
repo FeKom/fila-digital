@@ -1,23 +1,25 @@
 import { getUserQueues, exitQueue } from "./actions";
 import { EmptyState } from "@/components/EmptyState";
-import { Button } from "@/components";
 
 const MyQueues = async () => {
   const queues = await getUserQueues();
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Minhas Filas</h1>
+    <div className="page-container">
+      <div className="page-header">
+        <h1 className="page-title">Minhas Filas</h1>
+      </div>
 
       {queues.length === 0 ? (
         <EmptyState
-          icon="📋"
-          message="Voce nao esta em nenhuma fila no momento."
+          message="Você não está em nenhuma fila no momento."
           ctaLabel="Entrar em uma fila"
           ctaHref="/entrar-fila"
         />
       ) : (
-        <div className="space-y-4">
+        <div
+          style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}
+        >
           {queues.map((queue) => {
             const exitAction = async () => {
               "use server";
@@ -27,32 +29,56 @@ const MyQueues = async () => {
             return (
               <div
                 key={queue.queue_id}
-                className="card bg-base-100 shadow-md border border-base-200"
+                style={{
+                  background: "var(--bg-surface)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "10px",
+                  padding: "1.25rem 1.5rem",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "1rem",
+                }}
               >
-                <div className="card-body p-5 flex-row items-center justify-between">
-                  <div>
-                    <h3 className="card-title text-lg">{queue.queue_name}</h3>
-                    <p className="text-sm text-gray-500">
-                      {queue.commerce_name}
-                    </p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className="badge badge-primary badge-lg text-lg font-bold">
-                        #{queue.position}
-                      </span>
-                      <span className="text-sm text-gray-400">na fila</span>
-                    </div>
+                <div>
+                  <div
+                    style={{
+                      fontWeight: 600,
+                      marginBottom: "0.2rem",
+                      color: "var(--text-1)",
+                    }}
+                  >
+                    {queue.queue_name}
                   </div>
-                  <form action={exitAction}>
-                    <Button
-                      type="submit"
-                      intent="error"
-                      variant="outline"
-                      className="btn-sm"
+                  <div style={{ fontSize: "0.78rem", color: "var(--text-2)" }}>
+                    {queue.commerce_name}
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "baseline",
+                      gap: "0.4rem",
+                      marginTop: "0.75rem",
+                    }}
+                  >
+                    <span className="queue-number" style={{ fontSize: "2rem" }}>
+                      #{queue.position}
+                    </span>
+                    <span
+                      style={{ fontSize: "0.78rem", color: "var(--text-3)" }}
                     >
-                      Sair da fila
-                    </Button>
-                  </form>
+                      na fila
+                    </span>
+                  </div>
                 </div>
+                <form action={exitAction}>
+                  <button
+                    type="submit"
+                    className="fd-btn fd-btn-danger fd-btn-sm"
+                  >
+                    Sair
+                  </button>
+                </form>
               </div>
             );
           })}

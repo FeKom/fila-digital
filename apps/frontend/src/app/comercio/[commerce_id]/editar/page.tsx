@@ -1,5 +1,3 @@
-import { Button } from "@/components";
-import { Input } from "@/components/Input";
 import { getCommerce } from "../actions";
 import { updateCommerce } from "./actions";
 
@@ -17,57 +15,109 @@ const EditCommerce = async ({ params }: Props) => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Editar Comercio</h1>
-      <form action={handleUpdate} className="space-y-4">
-        <Input
-          name="name"
-          label="Nome do Comercio"
-          type="text"
-          defaultValue={commerce.name}
-          className="input-md"
-        />
-        <Input
-          name="description"
-          label="Descricao"
-          type="text"
-          defaultValue={commerce.description}
-          className="input-md"
-        />
-        <Input
-          name="phone"
-          label="Telefone"
-          type="tel"
-          defaultValue={commerce.phone}
-          className="input-md"
-        />
-        <Input
-          name="document_id"
-          label="CNPJ"
-          type="text"
-          defaultValue={commerce.document_id}
-          className="input-md"
-        />
-        <div className="grid grid-cols-2 gap-4">
-          <Input
-            name="open_at"
-            label="Abre as"
-            type="time"
-            defaultValue={commerce.open_at}
-            className="input-md"
-          />
-          <Input
-            name="closed_at"
-            label="Fecha as"
-            type="time"
-            defaultValue={commerce.closed_at}
-            className="input-md"
-          />
+    <div className="page-container-sm">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Editar Comércio</h1>
+          <p className="page-subtitle">
+            Atualize as informações do seu estabelecimento
+          </p>
         </div>
-        <div className="flex justify-end mt-6">
-          <Button type="submit" intent="primary">
-            SALVAR
-          </Button>
+      </div>
+
+      <form action={handleUpdate}>
+        <div className="form-section">
+          <div className="form-section-title">Informações básicas</div>
+          <div className="fd-field" style={{ marginBottom: "1rem" }}>
+            <label className="fd-label" htmlFor="name">
+              Nome do Comércio
+            </label>
+            <input
+              id="name"
+              name="name"
+              type="text"
+              defaultValue={commerce.name}
+              className="fd-input"
+            />
+          </div>
+          <div className="fd-field">
+            <label className="fd-label" htmlFor="description">
+              Descrição
+            </label>
+            <input
+              id="description"
+              name="description"
+              type="text"
+              defaultValue={commerce.description}
+              className="fd-input"
+            />
+          </div>
+        </div>
+
+        <div className="form-section">
+          <div className="form-section-title">Contato & Documentos</div>
+          <div className="form-grid-2">
+            <div className="fd-field">
+              <label className="fd-label" htmlFor="phone">
+                Telefone
+              </label>
+              <input
+                id="phone"
+                name="phone"
+                type="tel"
+                defaultValue={commerce.phone}
+                className="fd-input"
+              />
+            </div>
+            <div className="fd-field">
+              <label className="fd-label" htmlFor="document_id">
+                CNPJ
+              </label>
+              <input
+                id="document_id"
+                name="document_id"
+                type="text"
+                defaultValue={commerce.document_id}
+                className="fd-input"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="form-section">
+          <div className="form-section-title">Horário de funcionamento</div>
+          <div className="form-grid-2">
+            <div className="fd-field">
+              <label className="fd-label" htmlFor="open_at">
+                Abre às
+              </label>
+              <input
+                id="open_at"
+                name="open_at"
+                type="time"
+                defaultValue={commerce.open_at}
+                className="fd-input"
+              />
+            </div>
+            <div className="fd-field">
+              <label className="fd-label" htmlFor="closed_at">
+                Fecha às
+              </label>
+              <input
+                id="closed_at"
+                name="closed_at"
+                type="time"
+                defaultValue={commerce.closed_at}
+                className="fd-input"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="form-actions">
+          <button type="submit" className="fd-btn fd-btn-primary">
+            Salvar
+          </button>
         </div>
       </form>
     </div>

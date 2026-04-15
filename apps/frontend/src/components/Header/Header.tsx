@@ -1,59 +1,88 @@
 import Link from "next/link";
-import { MenuIcon, SearchIcon } from "../icons";
 import { logout } from "@/app/actions";
 
 const Header = ({ authenticated }: { authenticated: boolean }) => {
   return (
-    <div className="navbar bg-base-100 shadow-sm">
-      <div className="navbar-start">
-        <div className="dropdown">
-          <div tabIndex={0} role="button" className="btn btn-ghost btn-circle">
-            <MenuIcon />
-          </div>
-          <ul
-            tabIndex={0}
-            className="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow"
-          >
-            {authenticated ? (
-              <>
-                <li>
-                  <Link href="/comercio/criar">Cadastrar comércio</Link>
-                </li>
-                <li>
-                  <Link href="/minhas-filas">Minhas filas</Link>
-                </li>
-                <li>
-                  <form action={logout}>
-                    <button type="submit" className="w-full text-left">
-                      Sair
-                    </button>
-                  </form>
-                </li>
-              </>
-            ) : (
-              <>
-                <li>
-                  <Link href="/login">Logar</Link>
-                </li>
-                <li>
-                  <Link href="/registrar">Registrar</Link>
-                </li>
-              </>
-            )}
-          </ul>
-        </div>
-      </div>
-      <div className="navbar-center">
-        <Link className="btn btn-ghost text-xl" href="/">
+    <header className="app-header">
+      <div className="app-header-inner">
+        {/* Logo */}
+        <Link href="/" className="app-logo">
+          <span className="app-logo-dot" />
           Fila Digital
         </Link>
+
+        {/* Desktop nav */}
+        {authenticated && (
+          <nav className="app-nav" style={{ display: "flex" }}>
+            <Link href="/" className="app-nav-link">
+              Meus Comércios
+            </Link>
+            <Link href="/minhas-filas" className="app-nav-link">
+              Minhas Filas
+            </Link>
+          </nav>
+        )}
+
+        {/* Right side */}
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          {authenticated ? (
+            <details className="fd-dropdown">
+              <summary
+                className="app-nav-btn app-nav-btn-ghost"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.4rem",
+                }}
+              >
+                Menu
+                <svg
+                  width="10"
+                  height="10"
+                  viewBox="0 0 10 10"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M2 4L5 7L8 4"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </summary>
+              <div className="fd-dropdown-menu">
+                <Link href="/comercio/criar" className="fd-dropdown-item">
+                  Cadastrar Comércio
+                </Link>
+                <Link href="/minhas-filas" className="fd-dropdown-item">
+                  Minhas Filas
+                </Link>
+                <div className="fd-dropdown-separator" />
+                <form action={logout}>
+                  <button type="submit" className="fd-dropdown-item">
+                    Sair
+                  </button>
+                </form>
+              </div>
+            </details>
+          ) : (
+            <>
+              <Link href="/login" className="app-nav-btn app-nav-btn-ghost">
+                Entrar
+              </Link>
+              <Link
+                href="/registrar"
+                className="app-nav-btn app-nav-btn-primary"
+              >
+                Criar conta
+              </Link>
+            </>
+          )}
+        </div>
       </div>
-      <div className="navbar-end">
-        <button className="btn btn-ghost btn-circle">
-          <SearchIcon />
-        </button>
-      </div>
-    </div>
+    </header>
   );
 };
 

@@ -5,16 +5,38 @@ type QRCodeDisplayProps = {
 
 const QRCodeDisplay = ({ base64Image, queueName }: QRCodeDisplayProps) => {
   return (
-    <div className="flex flex-col items-center gap-4">
-      <img
-        src={base64Image}
-        alt={`QR Code para fila ${queueName}`}
-        className="w-64 h-64 border border-base-200 rounded-lg"
-      />
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: "1.25rem",
+      }}
+    >
+      <div
+        style={{
+          background: "var(--bg-surface)",
+          border: "1px solid var(--border)",
+          borderRadius: "12px",
+          padding: "1.25rem",
+          display: "inline-flex",
+        }}
+      >
+        <img
+          src={base64Image}
+          alt={`QR Code para fila ${queueName}`}
+          style={{
+            width: "200px",
+            height: "200px",
+            display: "block",
+            borderRadius: "6px",
+          }}
+        />
+      </div>
       <a
         href={base64Image}
         download={`qrcode-${queueName}.png`}
-        className="btn btn-outline btn-sm rounded-field"
+        className="fd-btn fd-btn-ghost fd-btn-sm"
       >
         Baixar QR Code
       </a>

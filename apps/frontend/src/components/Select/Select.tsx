@@ -1,5 +1,3 @@
-import { cnJoin } from "@/utils/cnjoin";
-
 type SelectOption = {
   value: string;
   label: string;
@@ -20,27 +18,26 @@ const Select = ({
   defaultValue,
   className,
 }: SelectProps) => {
-  const select = (
-    <select
-      name={name}
-      defaultValue={defaultValue}
-      className={cnJoin("select", className)}
-    >
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </select>
-  );
-
-  if (!label) return select;
-
   return (
-    <label className="select">
-      <span className="label">{label}</span>
-      {select}
-    </label>
+    <div className="fd-field">
+      {label && (
+        <label className="fd-label" htmlFor={name}>
+          {label}
+        </label>
+      )}
+      <select
+        id={name}
+        name={name}
+        defaultValue={defaultValue}
+        className={`fd-select${className ? ` ${className}` : ""}`}
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 };
 

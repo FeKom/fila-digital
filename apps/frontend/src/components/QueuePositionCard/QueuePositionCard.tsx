@@ -7,19 +7,38 @@ type QueuePositionCardProps = {
 
 const QueuePositionCard = ({ queue }: QueuePositionCardProps) => {
   return (
-    <Link
-      href={`/comercio/${queue.commerce_id}`}
-      className="card bg-base-100 shadow-md border border-base-200"
-    >
-      <div className="card-body p-5">
-        <h3 className="card-title text-lg">{queue.queue_name}</h3>
-        <p className="text-sm text-gray-500">{queue.commerce_name}</p>
-        <div className="flex items-center gap-2 mt-2">
-          <span className="badge badge-primary badge-lg text-lg font-bold">
-            #{queue.position}
-          </span>
-          <span className="text-sm text-gray-400">na fila</span>
+    <Link href={`/comercio/${queue.commerce_id}`} className="position-card">
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          marginBottom: "0.75rem",
+        }}
+      >
+        <div>
+          <div
+            style={{
+              fontWeight: 600,
+              fontSize: "0.9rem",
+              color: "var(--text-1)",
+              marginBottom: "0.15rem",
+            }}
+          >
+            {queue.queue_name}
+          </div>
+          <div style={{ fontSize: "0.78rem", color: "var(--text-2)" }}>
+            {queue.commerce_name}
+          </div>
         </div>
+      </div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: "0.4rem" }}>
+        <span className="queue-number" style={{ fontSize: "4rem" }}>
+          #{queue.position}
+        </span>
+        <span style={{ fontSize: "0.75rem", color: "var(--text-3)" }}>
+          na fila
+        </span>
       </div>
     </Link>
   );

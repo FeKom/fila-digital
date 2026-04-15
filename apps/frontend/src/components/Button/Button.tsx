@@ -1,52 +1,48 @@
 import { cnJoin } from "@/utils/cnjoin";
 
-type Variant = "dash" | "outline" | "soft";
-type Intent =
-  | "primary"
-  | "secondary"
-  | "accent"
-  | "info"
-  | "success"
-  | "warning"
-  | "error";
+type ButtonIntent = "primary" | "secondary" | "ghost" | "danger";
+type ButtonSize = "sm" | "md" | "lg";
 
-type Button = {
+type ButtonProps = {
   children: React.ReactNode;
-  variant?: Variant;
-  intent: Intent;
+  intent?: ButtonIntent | "accent" | "info" | "success" | "warning" | "error";
+  size?: ButtonSize;
+  variant?: string;
   className?: string;
 } & React.ButtonHTMLAttributes<HTMLButtonElement>;
 
-const button = ({
+const Button = ({
   children,
   intent = "primary",
-  variant,
+  size,
   className,
+  variant: _variant,
   ...props
-}: Button) => {
-  const intents = {
-    primary: "btn-primary",
-    secondary: "btn-secondary",
-    accent: "btn-accent",
-    info: "btn-info",
-    success: "btn-success",
-    warning: "btn-warning",
-    error: "btn-error",
-  } as Record<Button["intent"], string>;
+}: ButtonProps) => {
+  const intentMap: Record<string, string> = {
+    primary: "fd-btn-primary",
+    secondary: "fd-btn-secondary",
+    ghost: "fd-btn-ghost",
+    danger: "fd-btn-danger",
+    error: "fd-btn-danger",
+    accent: "fd-btn-ghost",
+    info: "fd-btn-ghost",
+    success: "fd-btn-ghost",
+    warning: "fd-btn-ghost",
+  };
 
-  const variants = {
-    soft: "btn-soft",
-    outline: "btn-outline",
-    dash: "btn-dash",
-  } as Record<Variant, string>;
+  const sizeMap: Record<string, string> = {
+    sm: "fd-btn-sm",
+    md: "",
+    lg: "fd-btn-lg",
+  };
 
   return (
     <button
       className={cnJoin(
-        "btn",
-        "rounded-field",
-        intents[intent],
-        variant && variants[variant],
+        "fd-btn",
+        intentMap[intent] ?? "fd-btn-primary",
+        size && sizeMap[size],
         className
       )}
       {...props}
@@ -56,4 +52,4 @@ const button = ({
   );
 };
 
-export default button;
+export default Button;

@@ -7,17 +7,17 @@ type BadgeProps = {
 };
 
 const Badge = ({ children, variant = "primary", className }: BadgeProps) => {
-  const variants = {
-    success: "badge-success",
-    error: "badge-error",
-    warning: "badge-warning",
-    info: "badge-info",
-    primary: "badge-primary",
-    secondary: "badge-secondary",
+  const variantMap: Record<string, string> = {
+    success: "fd-badge-success",
+    error: "fd-badge-error",
+    warning: "fd-badge-warning",
+    info: "fd-badge-primary",
+    primary: "fd-badge-primary",
+    secondary: "fd-badge-primary",
   };
 
   return (
-    <span className={cnJoin("badge", variants[variant], className)}>
+    <span className={cnJoin("fd-badge", variantMap[variant], className)}>
       {children}
     </span>
   );

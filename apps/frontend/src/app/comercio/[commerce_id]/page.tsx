@@ -31,75 +31,84 @@ const CommerceDetail = async ({ params }: Props) => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
-      <div className="flex items-start justify-between">
+    <div className="page-container">
+      {/* Page header */}
+      <div className="page-header">
         <div>
-          <h1 className="text-3xl font-bold">{commerce.name}</h1>
+          <h1 className="page-title">{commerce.name}</h1>
           {commerce.description && (
-            <p className="text-gray-500 mt-1">{commerce.description}</p>
+            <p className="page-subtitle">{commerce.description}</p>
           )}
         </div>
-        <div className="flex gap-2">
+        <div style={{ display: "flex", gap: "0.5rem", flexShrink: 0 }}>
           <Link
             href={`/comercio/${commerce_id}/editar`}
-            className="btn btn-outline btn-sm rounded-field"
+            className="fd-btn fd-btn-ghost fd-btn-sm"
           >
             Editar
           </Link>
           <form action={deleteAction}>
-            <Button
-              type="submit"
-              intent="error"
-              variant="outline"
-              className="btn-sm"
-            >
+            <Button type="submit" intent="error" size="sm">
               Excluir
             </Button>
           </form>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="card bg-base-100 shadow border border-base-200 p-4">
-          <p className="text-sm text-gray-400">Telefone</p>
-          <p className="font-semibold">{commerce.phone}</p>
+      {/* Stats row */}
+      <div className="dash-grid-3" style={{ marginBottom: "2rem" }}>
+        <div className="stat-card">
+          <div className="stat-label">Telefone</div>
+          <div className="stat-value">{commerce.phone}</div>
         </div>
-        <div className="card bg-base-100 shadow border border-base-200 p-4">
-          <p className="text-sm text-gray-400">CNPJ</p>
-          <p className="font-semibold">{commerce.document_id}</p>
+        <div className="stat-card">
+          <div className="stat-label">CNPJ</div>
+          <div className="stat-value">{commerce.document_id}</div>
         </div>
-        <div className="card bg-base-100 shadow border border-base-200 p-4">
-          <p className="text-sm text-gray-400">Horario</p>
-          <p className="font-semibold">
-            {commerce.open_at} - {commerce.closed_at}
-          </p>
+        <div className="stat-card">
+          <div className="stat-label">Horário</div>
+          <div className="stat-value">
+            {commerce.open_at} — {commerce.closed_at}
+          </div>
         </div>
       </div>
 
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-bold">Fila</h2>
-            {commerce.queue ? (
+      {/* Queue section */}
+      <div
+        style={{
+          background: "var(--bg-surface)",
+          border: "1px solid var(--border)",
+          borderRadius: "12px",
+          padding: "1.5rem",
+        }}
+      >
+        <div className="section-header">
+          <div
+            style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}
+          >
+            <span className="section-label" style={{ margin: 0 }}>
+              Fila
+            </span>
+            {commerce.queue && (
               <Badge
                 variant={commerce.queue.status === "open" ? "success" : "error"}
               >
                 {commerce.queue.status === "open" ? "Aberta" : "Fechada"}
               </Badge>
-            ) : null}
+            )}
           </div>
-          <div className="flex gap-2">
+          <div style={{ display: "flex", gap: "0.5rem" }}>
             {commerce.queue ? (
               <Link
                 href={`/comercio/${commerce_id}/fila/${commerce.queue.id}/editar`}
-                className="btn btn-outline btn-sm rounded-field"
+                className="fd-btn fd-btn-ghost fd-btn-sm"
               >
                 Editar Fila
               </Link>
             ) : (
               <Link
                 href={`/comercio/${commerce_id}/fila/criar`}
-                className="btn btn-primary btn-sm rounded-field"
+                className="fd-btn fd-btn-primary fd-btn-sm"
               >
                 Criar Fila
               </Link>
@@ -109,24 +118,38 @@ const CommerceDetail = async ({ params }: Props) => {
 
         {commerce.queue ? (
           <>
-            <div className="flex items-center gap-4 mb-4">
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "1rem",
+                margin: "1rem 0",
+              }}
+            >
               <form action={callNextAction}>
-                <Button type="submit" intent="secondary" className="btn-sm">
-                  Chamar Proximo
+                <Button type="submit" intent="secondary" size="sm">
+                  Chamar Próximo
                 </Button>
               </form>
-              <span className="text-sm text-gray-400">
+              <span style={{ fontSize: "0.82rem", color: "var(--text-2)" }}>
                 {participants.length} participante(s) na fila
               </span>
             </div>
             <ParticipantList participants={participants} />
           </>
         ) : (
-          <p className="text-gray-500 text-center py-6">
-            Este comercio ainda nao tem uma fila. Crie uma para comecar.
+          <p
+            style={{
+              fontSize: "0.875rem",
+              color: "var(--text-2)",
+              textAlign: "center",
+              padding: "2rem 0",
+            }}
+          >
+            Este comércio ainda não tem uma fila.
           </p>
         )}
-      </section>
+      </div>
     </div>
   );
 };

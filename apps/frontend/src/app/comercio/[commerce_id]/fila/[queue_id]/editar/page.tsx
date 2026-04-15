@@ -1,6 +1,3 @@
-import { Button } from "@/components";
-import { Input } from "@/components/Input";
-import { Select } from "@/components/Select";
 import { getQueue, updateQueue } from "./actions";
 
 type Props = {
@@ -17,45 +14,81 @@ const EditQueue = async ({ params }: Props) => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Editar Fila</h1>
-      <form action={handleUpdate} className="space-y-4">
-        <Input
-          name="name"
-          label="Nome da Fila"
-          type="text"
-          defaultValue={queue.name}
-          className="input-md"
-        />
-        <Input
-          name="description"
-          label="Descricao"
-          type="text"
-          defaultValue={queue.description}
-          className="input-md"
-        />
-        <Select
-          name="type"
-          label="Tipo"
-          options={[
-            { value: "permanent", label: "Permanente" },
-            { value: "ephemera", label: "Temporaria" },
-          ]}
-          defaultValue={queue.type}
-        />
-        <Select
-          name="status"
-          label="Status"
-          options={[
-            { value: "open", label: "Aberta" },
-            { value: "closed", label: "Fechada" },
-          ]}
-          defaultValue={queue.status}
-        />
-        <div className="flex justify-end mt-6">
-          <Button type="submit" intent="primary">
-            SALVAR
-          </Button>
+    <div className="page-container-sm">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Editar Fila</h1>
+          <p className="page-subtitle">Atualize as configurações da sua fila</p>
+        </div>
+      </div>
+
+      <form action={handleUpdate}>
+        <div className="form-section">
+          <div className="form-section-title">Informações da fila</div>
+          <div className="fd-field" style={{ marginBottom: "1rem" }}>
+            <label className="fd-label" htmlFor="name">
+              Nome da Fila
+            </label>
+            <input
+              id="name"
+              name="name"
+              type="text"
+              defaultValue={queue.name}
+              className="fd-input"
+            />
+          </div>
+          <div className="fd-field">
+            <label className="fd-label" htmlFor="description">
+              Descrição
+            </label>
+            <input
+              id="description"
+              name="description"
+              type="text"
+              defaultValue={queue.description}
+              className="fd-input"
+            />
+          </div>
+        </div>
+
+        <div className="form-section">
+          <div className="form-section-title">Configurações</div>
+          <div className="form-grid-2">
+            <div className="fd-field">
+              <label className="fd-label" htmlFor="type">
+                Tipo
+              </label>
+              <select
+                id="type"
+                name="type"
+                defaultValue={queue.type}
+                className="fd-select"
+              >
+                <option value="permanent">Permanente</option>
+                <option value="ephemera">Temporária</option>
+              </select>
+            </div>
+            <div className="fd-field">
+              <label className="fd-label" htmlFor="status">
+                Status
+              </label>
+              <select
+                id="status"
+                name="status"
+                defaultValue={queue.status}
+                className="fd-select"
+              >
+                <option value="open">Aberta</option>
+                <option value="closed">Fechada</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="form-actions">
+          <button type="submit" className="fd-btn fd-btn-primary">
+            Salvar
+          </button>
         </div>
       </form>
     </div>

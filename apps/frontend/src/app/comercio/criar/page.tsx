@@ -1,58 +1,108 @@
-import { Button } from "@/components";
-import { Input } from "@/components/Input";
 import { createCommerce } from "./actions";
 
 const CreateCommerce = () => {
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Cadastrar Comercio</h1>
-      <form action={createCommerce} className="space-y-4">
-        <Input
-          name="name"
-          label="Nome do Comercio"
-          type="text"
-          placeholder="Meu Comercio"
-          className="input-md"
-        />
-        <Input
-          name="description"
-          label="Descricao"
-          type="text"
-          placeholder="Descreva seu comercio"
-          className="input-md"
-        />
-        <Input
-          name="phone"
-          label="Telefone"
-          type="tel"
-          placeholder="(11) 99999-9999"
-          className="input-md"
-        />
-        <Input
-          name="document_id"
-          label="CNPJ"
-          type="text"
-          placeholder="00.000.000/0000-00"
-          className="input-md"
-        />
-        <div className="grid grid-cols-2 gap-4">
-          <Input
-            name="open_at"
-            label="Abre as"
-            type="time"
-            className="input-md"
-          />
-          <Input
-            name="closed_at"
-            label="Fecha as"
-            type="time"
-            className="input-md"
-          />
+    <div className="page-container-sm">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Cadastrar Comércio</h1>
+          <p className="page-subtitle">
+            Registre seu estabelecimento para gerenciar filas
+          </p>
         </div>
-        <div className="flex justify-end mt-6">
-          <Button type="submit" intent="primary">
-            CADASTRAR
-          </Button>
+      </div>
+
+      <form action={createCommerce}>
+        <div className="form-section">
+          <div className="form-section-title">Informações básicas</div>
+          <div className="fd-field" style={{ marginBottom: "1rem" }}>
+            <label className="fd-label" htmlFor="name">
+              Nome do Comércio
+            </label>
+            <input
+              id="name"
+              name="name"
+              type="text"
+              placeholder="Meu Comércio"
+              className="fd-input"
+            />
+          </div>
+          <div className="fd-field">
+            <label className="fd-label" htmlFor="description">
+              Descrição
+            </label>
+            <input
+              id="description"
+              name="description"
+              type="text"
+              placeholder="Descreva seu comércio"
+              className="fd-input"
+            />
+          </div>
+        </div>
+
+        <div className="form-section">
+          <div className="form-section-title">Contato & Documentos</div>
+          <div className="form-grid-2">
+            <div className="fd-field">
+              <label className="fd-label" htmlFor="phone">
+                Telefone
+              </label>
+              <input
+                id="phone"
+                name="phone"
+                type="tel"
+                placeholder="(11) 99999-9999"
+                className="fd-input"
+              />
+            </div>
+            <div className="fd-field">
+              <label className="fd-label" htmlFor="document_id">
+                CNPJ
+              </label>
+              <input
+                id="document_id"
+                name="document_id"
+                type="text"
+                placeholder="00.000.000/0000-00"
+                className="fd-input"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="form-section">
+          <div className="form-section-title">Horário de funcionamento</div>
+          <div className="form-grid-2">
+            <div className="fd-field">
+              <label className="fd-label" htmlFor="open_at">
+                Abre às
+              </label>
+              <input
+                id="open_at"
+                name="open_at"
+                type="time"
+                className="fd-input"
+              />
+            </div>
+            <div className="fd-field">
+              <label className="fd-label" htmlFor="closed_at">
+                Fecha às
+              </label>
+              <input
+                id="closed_at"
+                name="closed_at"
+                type="time"
+                className="fd-input"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="form-actions">
+          <button type="submit" className="fd-btn fd-btn-primary">
+            Cadastrar
+          </button>
         </div>
       </form>
     </div>

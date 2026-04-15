@@ -1,45 +1,27 @@
-import { cnJoin } from "@/utils/cnjoin";
 import React, { InputHTMLAttributes } from "react";
 
-type Input = {
+type InputProps = {
   label?: string;
-  type?: string;
-  placeholder?: string;
-  id?: string;
   name: string;
-  onChange?: React.ChangeEventHandler;
-} & InputHTMLAttributes<HTMLElement>;
+  hint?: string;
+} & InputHTMLAttributes<HTMLInputElement>;
 
-const input = ({
-  type = "text",
-  placeholder,
-  id,
-  name,
-  onChange,
-  label,
-  className,
-}: Input) => {
-  const RawInput = () => {
-    return (
-      <input
-        type={type}
-        placeholder={placeholder}
-        id={id}
-        name={name}
-        className={cnJoin(!label && "input", className)}
-      />
-    );
-  };
-  if (!label) return <RawInput />;
-
+const Input = ({ label, name, hint, ...props }: InputProps) => {
   return (
-    <>
-      <label className="input">
-        <span className="label">{label}</span>
-        <RawInput />
-      </label>
-    </>
+    <div className="fd-field">
+      {label && (
+        <label className="fd-label" htmlFor={name}>
+          {label}
+        </label>
+      )}
+      <input id={name} name={name} className="fd-input" {...props} />
+      {hint && (
+        <span style={{ fontSize: "0.72rem", color: "var(--text-3)" }}>
+          {hint}
+        </span>
+      )}
+    </div>
   );
 };
 
-export default input;
+export default Input;

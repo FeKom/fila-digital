@@ -1,38 +1,46 @@
 import Link from "next/link";
 import { Commerce } from "@/types";
+import Badge from "../Badge/Badge";
 
 type CommerceCardProps = {
   commerce: Commerce;
 };
 
 const CommerceCard = ({ commerce }: CommerceCardProps) => {
+  const statusClass = commerce.queue
+    ? commerce.queue.status === "open"
+      ? "commerce-card-open"
+      : "commerce-card-closed"
+    : "";
+
   return (
     <Link
       href={`/comercio/${commerce.id}`}
-      className="card bg-base-100 shadow-md hover:shadow-lg transition-shadow border border-base-200"
+      className={`commerce-card ${statusClass}`}
     >
-      <div className="card-body p-5">
-        <h3 className="card-title text-lg">{commerce.name}</h3>
-        {commerce.description && (
-          <p className="text-sm text-gray-500 line-clamp-2">
-            {commerce.description}
-          </p>
-        )}
-        <div className="flex items-center gap-2 mt-2 text-sm text-gray-400">
-          <span>
-            {commerce.open_at} - {commerce.closed_at}
-          </span>
+      <div className="commerce-card-name">{commerce.name}</div>
+      {commerce.description && (
+        <div
+          className="commerce-card-meta"
+          style={{
+            overflow: "hidden",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            marginBottom: "0.5rem",
+          }}
+        >
+          {commerce.description}
         </div>
-        {commerce.queue && (
-          <div className="mt-2">
-            <span
-              className={`badge ${commerce.queue.status === "open" ? "badge-success" : "badge-error"}`}
-            >
-              Fila {commerce.queue.status === "open" ? "aberta" : "fechada"}
-            </span>
-          </div>
-        )}
+      )}
+      <div className="commerce-card-meta" style={{ marginBottom: "0.6rem" }}>
+        {commerce.open_at} — {commerce.closed_at}
       </div>
+      {commerce.queue && (
+        <Badge variant={commerce.queue.status === "open" ? "success" : "error"}>
+          Fila {commerce.queue.status === "open" ? "aberta" : "fechada"}
+        </Badge>
+      )}
     </Link>
   );
 };

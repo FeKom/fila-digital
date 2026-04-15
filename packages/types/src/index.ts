@@ -7,18 +7,6 @@ export type User = {
   phone: string;
 };
 
-export type Commerce = {
-  id: string;
-  name: string;
-  description: string;
-  phone: string;
-  document_id: string;
-  open_at: string;
-  closed_at: string;
-  owner_id: string;
-  active: boolean;
-};
-
 export type QueueType = "ephemera" | "permanent";
 export type QueueStatus = "open" | "closed";
 
@@ -30,7 +18,21 @@ export type Queue = {
   status: QueueStatus;
   commerce_id: string;
   qrcode_token?: string;
+  qrcode?: string;
   created_at: string;
+};
+
+export type Commerce = {
+  id: string;
+  name: string;
+  description: string;
+  phone: string;
+  document_id: string;
+  open_at: string;
+  closed_at: string;
+  owner_id: string;
+  active: boolean;
+  queue?: Queue;
 };
 
 export type ParticipantStatus = "waiting" | "called" | "done" | "exited";

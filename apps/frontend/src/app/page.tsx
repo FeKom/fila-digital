@@ -9,16 +9,41 @@ export default async function Home() {
 
   if (!authenticated) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-8 gap-8 text-center">
-        <h1 className="text-4xl font-bold">Fila Digital</h1>
-        <p className="text-xl text-gray-500 max-w-md">
-          Gerencie filas do seu comercio ou entre em uma fila sem sair do lugar.
+      <div className="landing-hero">
+        <div className="landing-bg">
+          <div className="landing-bg-grid" />
+          <div className="landing-bg-glow" />
+        </div>
+
+        <span className="landing-eyebrow">
+          <span
+            style={{
+              width: "5px",
+              height: "5px",
+              borderRadius: "50%",
+              background: "var(--primary)",
+              display: "inline-block",
+              animation: "logoPulse 2s ease-in-out infinite",
+            }}
+          />
+          Sistema de filas
+        </span>
+
+        <h1 className="landing-title">
+          Filas sem
+          <br />
+          <span>sufoco.</span>
+        </h1>
+
+        <p className="landing-desc">
+          Gerencie filas do seu comércio ou entre em uma fila de qualquer lugar.
         </p>
-        <div className="flex gap-4">
-          <Link href="/login" className="btn btn-primary rounded-field">
+
+        <div className="landing-ctas">
+          <Link href="/login" className="fd-btn fd-btn-primary fd-btn-lg">
             Entrar
           </Link>
-          <Link href="/registrar" className="btn btn-secondary rounded-field">
+          <Link href="/registrar" className="fd-btn fd-btn-ghost fd-btn-lg">
             Criar conta
           </Link>
         </div>
@@ -32,50 +57,56 @@ export default async function Home() {
   ]);
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-10">
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold">Meus Comercios</h2>
-          <Link
-            href="/comercio/criar"
-            className="btn btn-primary btn-sm rounded-field"
-          >
-            + Novo Comercio
-          </Link>
+    <div className="page-container">
+      {/* Commerces section */}
+      <div className="section-header">
+        <h2 className="section-label" style={{ margin: 0 }}>
+          Meus Comércios
+        </h2>
+        <Link
+          href="/comercio/criar"
+          className="fd-btn fd-btn-primary fd-btn-sm"
+        >
+          + Novo
+        </Link>
+      </div>
+
+      {commerces.length > 0 ? (
+        <div className="dash-grid-2" style={{ marginBottom: "2.5rem" }}>
+          {commerces.map((commerce) => (
+            <CommerceCard key={commerce.id} commerce={commerce} />
+          ))}
         </div>
-        {commerces.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {commerces.map((commerce) => (
-              <CommerceCard key={commerce.id} commerce={commerce} />
-            ))}
-          </div>
-        ) : (
+      ) : (
+        <div style={{ marginBottom: "2.5rem" }}>
           <EmptyState
-            icon="🏪"
-            message="Voce ainda nao tem comercios cadastrados."
-            ctaLabel="Cadastrar comercio"
+            message="Você ainda não tem comércios cadastrados."
+            ctaLabel="Cadastrar comércio"
             ctaHref="/comercio/criar"
           />
-        )}
-      </section>
+        </div>
+      )}
 
-      <section>
-        <h2 className="text-2xl font-bold mb-4">Minhas Filas</h2>
-        {queues.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {queues.map((queue) => (
-              <QueuePositionCard key={queue.queue_id} queue={queue} />
-            ))}
-          </div>
-        ) : (
-          <EmptyState
-            icon="📋"
-            message="Voce nao esta em nenhuma fila no momento."
-            ctaLabel="Entrar em uma fila"
-            ctaHref="/entrar-fila"
-          />
-        )}
-      </section>
+      {/* Queues section */}
+      <div className="section-header" style={{ marginTop: "2rem" }}>
+        <h2 className="section-label" style={{ margin: 0 }}>
+          Minhas Posições
+        </h2>
+      </div>
+
+      {queues.length > 0 ? (
+        <div className="dash-grid-2">
+          {queues.map((queue) => (
+            <QueuePositionCard key={queue.queue_id} queue={queue} />
+          ))}
+        </div>
+      ) : (
+        <EmptyState
+          message="Você não está em nenhuma fila no momento."
+          ctaLabel="Entrar em uma fila"
+          ctaHref="/entrar-fila"
+        />
+      )}
     </div>
   );
 }
