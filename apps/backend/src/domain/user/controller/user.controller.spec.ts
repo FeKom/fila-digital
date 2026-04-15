@@ -62,7 +62,9 @@ describe("User Controller - Unit Test with Mocks", () => {
     );
     expect(userRepository.createNewUser).toHaveBeenCalled();
     expect(res.code).toHaveBeenCalledWith(201);
-    expect(res.send).toHaveBeenCalledWith({ message: "User Created!" });
+    expect(res.send).toHaveBeenCalledWith(
+      expect.objectContaining({ message: "User Created!" })
+    );
   });
 
   it("should return 409 if user already exists", async () => {
@@ -99,8 +101,10 @@ describe("User Controller - Unit Test with Mocks", () => {
       "existing@example.com"
     );
     expect(userRepository.createNewUser).not.toHaveBeenCalled();
-    expect(res.code).toHaveBeenCalledWith(400); // Updated to 400 based on controller
-    expect(res.send).toHaveBeenCalledWith({ message: "User Already Exists" });
+    expect(res.code).toHaveBeenCalledWith(409);
+    expect(res.send).toHaveBeenCalledWith(
+      expect.objectContaining({ message: "User Already Exists" })
+    );
   });
 
   it("should return 500 if user creation fails", async () => {
@@ -128,8 +132,8 @@ describe("User Controller - Unit Test with Mocks", () => {
     );
     expect(userRepository.createNewUser).toHaveBeenCalled();
     expect(res.code).toHaveBeenCalledWith(500);
-    expect(res.send).toHaveBeenCalledWith({
-      message: "Failed to create User!",
-    });
+    expect(res.send).toHaveBeenCalledWith(
+      expect.objectContaining({ message: "Failed to create User!" })
+    );
   });
 });

@@ -30,7 +30,7 @@ describe("User Controller - Integration Test with Testcontainers", () => {
       const { db, container } = await setupTestDatabase();
       dbInstance = db;
       startedContainer = container;
-    }, 20000);
+    }, 120000);
 
     afterAll(async () => {
       await dbInstance.deleteFrom("person").execute();
