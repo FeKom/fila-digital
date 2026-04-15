@@ -36,6 +36,11 @@ async function buildCache() {
       ttl: cacheConfig.ttl * 1000,
     });
 
+    // Prevent unhandled 'error' events from crashing the process
+    store.client.on("error", (err: Error) => {
+      logger.warn(`[Cache] Redis error: ${err.message}`);
+    });
+
     const adapter = new KeyvAdapter(store);
     const keyv = new Keyv({ store: adapter });
 
