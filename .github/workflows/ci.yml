@@ -1,0 +1,136 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: "22"
+  PNPM_VERSION: "9"
+
+jobs:
+  # ─── Backend ───────────────────────────────────────────────────────────────
+
+  backend-validate:
+    name: Backend — Lint & Type-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type-check
+        run: pnpm --filter=@fila-digital/backend exec tsc --noEmit --skipLibCheck
+
+      - name: Lint
+        run: pnpm --filter=@fila-digital/backend run lint
+
+  backend-test:
+    name: Backend — Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run unit tests
+        run: pnpm --filter=@fila-digital/backend exec vitest run --reporter=verbose --testPathPattern="controller.spec"
+
+  # ─── Frontend ──────────────────────────────────────────────────────────────
+
+  frontend-validate:
+    name: Frontend — Lint & Type-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type-check
+        run: pnpm --filter=@fila-digital/frontend exec tsc --noEmit --skipLibCheck
+
+      - name: Lint
+        run: pnpm --filter=@fila-digital/frontend run lint
+
+  frontend-test:
+    name: Frontend — Component tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run component tests
+        run: pnpm --filter=@fila-digital/frontend run test
+
+  # ─── Build (main only) ─────────────────────────────────────────────────────
+
+  build:
+    name: Build all packages
+    runs-on: ubuntu-latest
+    needs: [backend-validate, backend-test, frontend-validate, frontend-test]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build backend
+        run: pnpm --filter=@fila-digital/backend run build
+
+      - name: Build frontend
+        run: pnpm --filter=@fila-digital/frontend run build
+        env:
+          NEXT_PUBLIC_FILA_DIGITAL_BASE_URL: ${{ secrets.NEXT_PUBLIC_FILA_DIGITAL_BASE_URL }}
