@@ -32,7 +32,8 @@ export const submitRegisterForm = async (
     return { error: "Preencha todos os campos." };
   }
 
-  let token: string;
+  let access_token: string;
+  let refresh_token: string;
 
   try {
     const response = await userService().register({
@@ -41,23 +42,31 @@ export const submitRegisterForm = async (
       name,
       phone,
     });
-    if (!response.token) {
+    if (!response.access_token) {
       return { error: translateError(response.message) };
     }
-    token = response.token;
+    access_token = response.access_token;
+    refresh_token = response.refresh_token;
   } catch {
     return { error: "Erro ao tentar criar conta. Tente novamente." };
   }
 
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  const in15min = new Date(Date.now() + 15 * 60 * 1000);
+  const in30days = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
   const cookieStore = await cookies();
   cookieStore.set({
     name: "digital_queue_jwt",
-    value: token,
+    value: access_token,
     httpOnly: true,
     path: "/",
-    expires: tomorrow,
+    expires: in15min,
+  });
+  cookieStore.set({
+    name: "digital_queue_refresh",
+    value: refresh_token,
+    httpOnly: true,
+    path: "/",
+    expires: in30days,
   });
 
   redirect("/");

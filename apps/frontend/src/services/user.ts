@@ -21,10 +21,12 @@ const userService = () => {
         method: "POST",
       });
       const data = (await response.json()) as {
-        token: string;
+        access_token: string;
+        refresh_token: string;
         message?: string;
       };
-      if (!response.ok) return { token: "", message: data.message };
+      if (!response.ok)
+        return { access_token: "", refresh_token: "", message: data.message };
       return data;
     },
     login: async ({ email, password }: { email: string; password: string }) => {
@@ -37,14 +39,16 @@ const userService = () => {
           method: "POST",
         });
         const data = (await response.json()) as {
-          token: string;
+          access_token: string;
+          refresh_token: string;
           message?: string;
         };
-        if (!response.ok) return { token: "", message: data.message };
+        if (!response.ok)
+          return { access_token: "", refresh_token: "", message: data.message };
         return data;
       } catch (error) {
         console.error("[login] fetch failed:", error);
-        return { token: "", message: undefined };
+        return { access_token: "", refresh_token: "", message: undefined };
       }
     },
   };

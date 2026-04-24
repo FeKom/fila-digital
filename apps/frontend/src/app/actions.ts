@@ -33,5 +33,6 @@ export const isAuthenticated = async (): Promise<boolean> => {
 export const logout = async () => {
   const cookieStore = await cookies();
   cookieStore.delete("digital_queue_jwt");
+  cookieStore.delete("digital_queue_refresh");
   redirect("/login");
 };

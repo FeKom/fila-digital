@@ -1,6 +1,7 @@
 "use server";
 import queueService from "@/services/queue";
 import { QueueInput } from "@/types";
+import { revalidatePath } from "next/cache";
 
 export const createQueue = async (commerceId: string, formData: FormData) => {
   const data: QueueInput & { commerce_id: string } = {
@@ -12,5 +13,6 @@ export const createQueue = async (commerceId: string, formData: FormData) => {
   };
 
   const queue = await queueService().register(data);
+  revalidatePath(`/comercio/${commerceId}`);
   return queue;
 };

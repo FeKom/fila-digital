@@ -6,7 +6,10 @@ const participantService = () => {
   return {
     list: async (commerceId: string) => {
       const response = await authApi(`/participants-queue/${commerceId}`);
-      return (await response.json()) as Participant[];
+      const json = (await response.json()) as {
+        data?: { participants?: Participant[] };
+      };
+      return json.data?.participants ?? [];
     },
     enter: async (data: {
       queueId: string;

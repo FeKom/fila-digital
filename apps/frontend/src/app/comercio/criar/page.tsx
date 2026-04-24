@@ -1,6 +1,12 @@
+"use client";
+import { useActionState } from "react";
 import { createCommerce } from "./actions";
 
 const CreateCommerce = () => {
+  const [state, action, pending] = useActionState(createCommerce, {
+    error: null,
+  });
+
   return (
     <div className="page-container-sm">
       <div className="page-header">
@@ -12,7 +18,7 @@ const CreateCommerce = () => {
         </div>
       </div>
 
-      <form action={createCommerce}>
+      <form action={action}>
         <div className="form-section">
           <div className="form-section-title">Informações básicas</div>
           <div className="fd-field" style={{ marginBottom: "1rem" }}>
@@ -99,9 +105,19 @@ const CreateCommerce = () => {
           </div>
         </div>
 
+        {state.error && (
+          <div className="auth-error" role="alert">
+            {state.error}
+          </div>
+        )}
+
         <div className="form-actions">
-          <button type="submit" className="fd-btn fd-btn-primary">
-            Cadastrar
+          <button
+            type="submit"
+            className="fd-btn fd-btn-primary"
+            disabled={pending}
+          >
+            {pending ? "Cadastrando..." : "Cadastrar"}
           </button>
         </div>
       </form>

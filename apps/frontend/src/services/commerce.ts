@@ -4,11 +4,22 @@ import { Commerce, CommerceInput } from "@/types";
 const commerceService = () => {
   return {
     register: async (data: CommerceInput) => {
+      const payload = Object.fromEntries(
+        Object.entries(data).filter(([, v]) => v !== "" && v != null)
+      );
       const response = await authApi("/commerce/register", {
         method: "POST",
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
-      return (await response.json()) as Commerce;
+      const json = (await response.json()) as {
+        commerce_id?: string;
+        id?: string;
+        name?: string;
+        message?: string;
+      };
+      if (!response.ok)
+        throw new Error(json.message ?? "Failed to register commerce");
+      return { id: json.id ?? json.commerce_id, name: json.name } as Commerce;
     },
     list: async () => {
       const response = await authApi("/commerce");

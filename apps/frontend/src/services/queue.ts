@@ -8,7 +8,12 @@ const queueService = () => {
         method: "POST",
         body: JSON.stringify(data),
       });
-      return (await response.json()) as Queue;
+      const json = (await response.json()) as {
+        queue?: Queue;
+        qrcode?: string;
+      } & Partial<Queue>;
+      const queue = json.queue ?? (json as Queue);
+      return { ...queue, qrcode: json.qrcode } as Queue;
     },
     update: async (
       commerceId: string,

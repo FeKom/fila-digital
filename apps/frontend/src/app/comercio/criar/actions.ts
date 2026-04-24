@@ -2,7 +2,10 @@
 import commerceService from "@/services/commerce";
 import { redirect } from "next/navigation";
 
-export const createCommerce = async (formData: FormData) => {
+export const createCommerce = async (
+  _prevState: { error: string | null },
+  formData: FormData
+): Promise<{ error: string | null }> => {
   const data = {
     name: formData.get("name") as string,
     description: formData.get("description") as string,
@@ -12,6 +15,19 @@ export const createCommerce = async (formData: FormData) => {
     closed_at: formData.get("closed_at") as string,
   };
 
-  const commerce = await commerceService().register(data);
-  redirect(`/comercio/${commerce.id}`);
+  let commerceId: string;
+  try {
+    const commerce = await commerceService().register(data);
+    if (!commerce.id) {
+      return {
+        error:
+          "Erro ao cadastrar comércio. Verifique os dados e tente novamente.",
+      };
+    }
+    commerceId = commerce.id;
+  } catch {
+    return { error: "Erro ao cadastrar comércio. Tente novamente." };
+  }
+
+  redirect(`/comercio/${commerceId}`);
 };
