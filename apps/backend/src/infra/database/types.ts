@@ -6,11 +6,26 @@ import {
   Updateable,
 } from "kysely";
 
+export type PersonRole = "OWNER" | "ADMIN" | "CUSTOMER";
+
+export interface CommerceAdminsTable {
+  id: Generated<string>;
+  commerce_id: string;
+  person_id: string;
+  granted_by: string;
+  created_at: ColumnType<Date, string | undefined, never>;
+}
+
+export type CommerceAdmin = Selectable<CommerceAdminsTable>;
+export type NewCommerceAdmin = Insertable<CommerceAdminsTable>;
+
 export interface Database {
   commerce: CommerceTable;
   queue: QueueTable;
   person: PersonTable;
   participants_queue: ParticipantsQueue;
+  refresh_tokens: RefreshTokenTable;
+  commerce_admins: CommerceAdminsTable;
 }
 
 export interface CommerceTable {
@@ -26,13 +41,13 @@ export interface CommerceTable {
   // wrapper. Here we define a column `created_at` that is selected as
   // a `Date`, can optionally be provided as a `string` in inserts and
   // can never be updated:
-  phone: string;
+  phone: string | null;
   document_id: string;
   owner_id: string;
   created_at: ColumnType<Date, string | undefined, never>;
   updated_at: ColumnType<Date, string | undefined, string>;
-  open_at: ColumnType<Date, string | undefined, string>;
-  closed_at: ColumnType<Date, string | undefined, string>;
+  open_at: ColumnType<Date | null, string | undefined, string>;
+  closed_at: ColumnType<Date | null, string | undefined, string>;
   active: ColumnType<boolean, boolean | undefined, boolean>;
 }
 
@@ -71,6 +86,7 @@ export interface PersonTable {
   password: string;
   commerce_id: string | null;
   queue_id: string | null;
+  role: ColumnType<PersonRole, PersonRole | undefined, PersonRole>;
   active: ColumnType<boolean, boolean | undefined, boolean>;
   created_at: ColumnType<Date, string | undefined, never>;
   updated_at: ColumnType<Date, string | undefined, string>;
@@ -94,3 +110,14 @@ export interface ParticipantsQueueTable {
 export type ParticipantsQueue = Selectable<ParticipantsQueueTable>;
 export type NewParticipantQueue = Insertable<ParticipantsQueue>;
 export type QueuePartcipantUpdate = Updateable<Partial<ParticipantsQueue>>;
+
+export interface RefreshTokenTable {
+  id: Generated<string>;
+  person_id: string;
+  token_hash: string;
+  expires_at: ColumnType<Date, string, never>;
+  created_at: ColumnType<Date, string | undefined, never>;
+}
+
+export type RefreshToken = Selectable<RefreshTokenTable>;
+export type NewRefreshToken = Insertable<RefreshTokenTable>;

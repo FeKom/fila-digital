@@ -50,9 +50,23 @@ export const registerQueueSchema: FastifySchema = {
       description: "Queue created successfully",
       type: "object",
       properties: {
-        id: { type: "string" },
-        name: { type: "string" },
-        commerce_id: { type: "string" },
+        queue: {
+          type: "object",
+          properties: {
+            id: { type: "string" },
+            commerce_id: { type: "string" },
+          },
+        },
+        qrcode: { type: "string" },
+        qrcodeData: {
+          type: "object",
+          properties: {
+            queueId: { type: "string" },
+            token: { type: "string" },
+            createdAt: {},
+          },
+        },
+        message: { type: "string" },
       },
     },
     400: { description: "Validation error", ...errorResponse },

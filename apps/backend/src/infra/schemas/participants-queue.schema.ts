@@ -45,18 +45,25 @@ export const listByCommerceSchema: FastifySchema = {
       type: "object",
       properties: {
         data: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              id: { type: "string" },
-              user_id: { type: "string" },
-              queue_id: { type: "string" },
-              position: { type: "number" },
+          type: "object",
+          properties: {
+            participants: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  id: { type: "string" },
+                  person_id: { type: "string" },
+                  queue_id: { type: "string" },
+                  position: { type: "number" },
+                  is_active: { type: "boolean" },
+                },
+              },
             },
+            nextCursor: { type: "string", nullable: true },
+            hasMore: { type: "boolean" },
           },
         },
-        nextCursor: { type: "string", nullable: true },
       },
     },
     401: { description: "Unauthorized", ...errorResponse },
@@ -77,8 +84,7 @@ export const enterQueueSchema: FastifySchema = {
       description: "Entered queue successfully",
       type: "object",
       properties: {
-        id: { type: "string" },
-        position: { type: "number" },
+        message: { type: "string" },
       },
     },
     400: { description: "Validation error", ...errorResponse },
@@ -154,8 +160,7 @@ export const enterByQrCodeSchema: FastifySchema = {
       description: "Entered queue via QR code successfully",
       type: "object",
       properties: {
-        id: { type: "string" },
-        position: { type: "number" },
+        message: { type: "string" },
       },
     },
     400: {

@@ -22,6 +22,11 @@ const registerCommerceRoutes = (server: Server) => {
     { schema: listCommercesSchema, config: { rateLimit: rateLimits.read } },
     controller.getAllCommerces
   );
+  server.get(
+    ROUTES.commerce.getById,
+    { config: { rateLimit: rateLimits.read } },
+    controller.getById
+  );
   server.put(
     ROUTES.commerce.update,
     { schema: updateCommerceSchema, config: { rateLimit: rateLimits.write } },
@@ -31,6 +36,21 @@ const registerCommerceRoutes = (server: Server) => {
     ROUTES.commerce.delete,
     { schema: deleteCommerceSchema, config: { rateLimit: rateLimits.write } },
     controller.softDeleteCommerce
+  );
+  server.post(
+    ROUTES.commerce.grantAdmin,
+    { config: { rateLimit: rateLimits.write } },
+    controller.grantAdmin
+  );
+  server.delete(
+    ROUTES.commerce.revokeAdmin,
+    { config: { rateLimit: rateLimits.write } },
+    controller.revokeAdmin
+  );
+  server.get(
+    ROUTES.commerce.listAdmins,
+    { config: { rateLimit: rateLimits.read } },
+    controller.listAdmins
   );
 };
 

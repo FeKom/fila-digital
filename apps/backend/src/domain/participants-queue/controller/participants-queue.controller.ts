@@ -82,15 +82,6 @@ const participantsQueueController = () => {
 
         const page = await findParticipantsByQueueId(queue.id, params);
 
-        if (!page.data.length) {
-          return res.code(404).send({
-            statusCode: 404,
-            error: "Not Found",
-            message: "No participants found for this queue",
-            data: { participants: [], nextCursor: null, hasMore: false },
-          });
-        }
-
         return res.code(200).send({
           data: {
             participants: page.data,
