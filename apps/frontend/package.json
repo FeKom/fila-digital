@@ -8,7 +8,10 @@
     "start": "next start",
     "lint": "next lint",
     "code:format:verify": "prettier ./src -l",
-    "validate": "pnpm run lint && pnpm run code:format:verify"
+    "validate": "pnpm run lint && pnpm run code:format:verify",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@fila-digital/types": "workspace:*",
@@ -21,14 +24,21 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4.1.11",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^4.7.0",
     "eslint": "^9",
     "eslint-config-next": "15.4.2",
+    "jsdom": "^29.0.2",
     "prettier": "3.6.2",
     "tailwindcss": "^4.1.11",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite": "^6",
+    "vitest": "^3.2.4"
   },
   "packageManager": "pnpm@8.6.2+sha512.0e68307be4f7e17afa5186932d74a984f4bba24e21d843e46874041fa8fb512a00936d42cee780743d6740b9162700e766426e721a342db2a7b49fbd079c6551"
 }
