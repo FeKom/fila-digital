@@ -5,6 +5,8 @@ import { rateLimits } from "../../utils/rateLimits";
 import {
   registerSchema,
   loginSchema,
+  refreshTokenSchema,
+  logoutSchema,
   updateUserSchema,
   deleteUserSchema,
 } from "../schemas/user.schema";
@@ -23,6 +25,16 @@ const registerUserRoutes = (server: Server) => {
     ROUTES.user.login,
     { schema: loginSchema, config: { rateLimit: rateLimits.auth } },
     controller.login
+  );
+  server.post(
+    ROUTES.user.refresh,
+    { schema: refreshTokenSchema, config: { rateLimit: rateLimits.auth } },
+    controller.refresh
+  );
+  server.post(
+    ROUTES.user.logout,
+    { schema: logoutSchema, config: { rateLimit: rateLimits.auth } },
+    controller.logout
   );
   server.get(
     ROUTES.user.details,

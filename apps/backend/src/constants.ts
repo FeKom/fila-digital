@@ -2,8 +2,12 @@ const ROUTES = {
   commerce: {
     register: "/commerce/register",
     list: "/commerce",
+    getById: "/commerce/:commerce_id",
     update: "/commerce/:commerce_id/update",
     delete: "/commerce/:commerce_id/delete",
+    grantAdmin: "/commerce/:commerce_id/admins",
+    revokeAdmin: "/commerce/:commerce_id/admins/:person_id",
+    listAdmins: "/commerce/:commerce_id/admins",
   },
   queue: {
     register: "/queue/register",
@@ -24,6 +28,8 @@ const ROUTES = {
   user: {
     register: "/user/register",
     login: "/user/login",
+    refresh: "/user/refresh",
+    logout: "/user/logout",
     details: "/user",
     commerces: "/user/commerces",
     queues: "/user/queues",

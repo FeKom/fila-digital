@@ -185,6 +185,8 @@ export const initServer = async () => {
     const PUBLIC_PATHS = [
       "/v1/user/login",
       "/v1/user/register",
+      "/v1/user/refresh",
+      "/v1/user/logout",
       "/v1/enter-queue",
       "/docs",
       "/healthcheck",
