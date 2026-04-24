@@ -4,6 +4,7 @@ import userController from "./user.controller";
 import { ServerRequest, ServerResponse } from "../../../infra/types";
 
 vi.mock("../repository/user.repository");
+vi.mock("../repository/refresh-token.repository");
 vi.mock("../utils/validators");
 vi.mock("../utils/password");
 vi.mock("uuidv7");
@@ -47,6 +48,7 @@ describe("User Controller - Unit Test with Mocks", () => {
       phone: "1234567890",
       queue_id: null,
       commerce_id: null,
+      role: "CUSTOMER",
       active: true,
       created_at: new Date(),
       updated_at: new Date(),
@@ -87,6 +89,7 @@ describe("User Controller - Unit Test with Mocks", () => {
       phone: "1234567890",
       commerce_id: null,
       queue_id: null,
+      role: "CUSTOMER",
       active: true,
       created_at: new Date(),
       updated_at: new Date(),

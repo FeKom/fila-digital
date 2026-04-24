@@ -62,7 +62,8 @@ export const registerSchema: FastifySchema = {
       type: "object",
       properties: {
         message: { type: "string" },
-        token: { type: "string" },
+        access_token: { type: "string" },
+        refresh_token: { type: "string" },
       },
     },
     400: { description: "Validation error", ...errorResponse },
@@ -130,11 +131,58 @@ export const loginSchema: FastifySchema = {
       description: "Login successful",
       type: "object",
       properties: {
-        token: { type: "string" },
+        access_token: { type: "string" },
+        refresh_token: { type: "string" },
         message: { type: "string" },
       },
     },
     400: { description: "Invalid credentials", ...errorResponse },
     401: { description: "Unauthorized", ...errorResponse },
+  },
+};
+
+export const refreshTokenSchema: FastifySchema = {
+  tags: ["User"],
+  description: "Exchange a refresh token for a new access token",
+  security: [],
+  body: {
+    type: "object",
+    required: ["refresh_token"],
+    additionalProperties: false,
+    properties: {
+      refresh_token: { type: "string", minLength: 1 },
+    },
+  },
+  response: {
+    200: {
+      description: "Token refreshed successfully",
+      type: "object",
+      properties: {
+        access_token: { type: "string" },
+        refresh_token: { type: "string" },
+        message: { type: "string" },
+      },
+    },
+    401: { description: "Invalid or expired token", ...errorResponse },
+  },
+};
+
+export const logoutSchema: FastifySchema = {
+  tags: ["User"],
+  description: "Revoke the refresh token and log out",
+  security: [],
+  body: {
+    type: "object",
+    properties: {
+      refresh_token: { type: "string" },
+    },
+    additionalProperties: false,
+  },
+  response: {
+    200: {
+      description: "Logged out successfully",
+      type: "object",
+      properties: { message: { type: "string" } },
+    },
   },
 };

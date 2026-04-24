@@ -1,8 +1,10 @@
 import { Person } from "../../../infra/database/types";
 import { ServerRequest, ServerResponse } from "../../../infra/types";
 import jwt from "jsonwebtoken";
+import { randomBytes } from "crypto";
 import { hashPassword, verifyPassword } from "../../../utils/hash";
 import * as userRepo from "../repository/user.repository";
+import * as refreshTokenRepo from "../repository/refresh-token.repository";
 import config from "../../../infra/config";
 import { User } from "../type";
 import {
@@ -14,6 +16,20 @@ import {
 import { logger } from "../../../utils/logger";
 import { uuidv7 } from "uuidv7";
 import { sendError } from "../../../utils/errors";
+
+const ACCESS_TOKEN_TTL = 60 * 15; // 15 minutes
+
+const signAccessToken = (user: {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}): string =>
+  jwt.sign(
+    { id: user.id, name: user.name, email: user.email, role: user.role },
+    config.get<string>("token.secret"),
+    { expiresIn: ACCESS_TOKEN_TTL }
+  );
 
 const userController = () => {
   return {
@@ -64,13 +80,14 @@ const userController = () => {
           password: hasedPassword,
         });
         if (response) {
-          const dayInSeconds = 60 * 60 * 24;
-          const token = jwt.sign(
-            { name: response.name, email: response.email, id: response.id },
-            config.get<string>("token.secret"),
-            { expiresIn: dayInSeconds }
-          );
-          res.code(201).send({ message: "User Created!", token });
+          const access_token = signAccessToken(response);
+          const rawRefreshToken = randomBytes(40).toString("hex");
+          await refreshTokenRepo.saveRefreshToken(response.id, rawRefreshToken);
+          res.code(201).send({
+            message: "User Created!",
+            access_token,
+            refresh_token: rawRefreshToken,
+          });
         }
       } catch (error) {
         logger.error(
@@ -92,17 +109,17 @@ const userController = () => {
         const valid = await verifyPassword(user.password, userFromDb.password);
 
         if (valid) {
-          const dayInSeconds = 60 * 60 * 24;
-          const token = jwt.sign(
-            {
-              name: userFromDb.name,
-              email: userFromDb.email,
-              id: userFromDb.id,
-            },
-            config.get<string>("token.secret"),
-            { expiresIn: dayInSeconds }
+          const access_token = signAccessToken(userFromDb);
+          const rawRefreshToken = randomBytes(40).toString("hex");
+          await refreshTokenRepo.saveRefreshToken(
+            userFromDb.id,
+            rawRefreshToken
           );
-          res.code(200).send({ token, message: "success" });
+          res.code(200).send({
+            access_token,
+            refresh_token: rawRefreshToken,
+            message: "success",
+          });
         } else {
           sendError(res, 403, "Invalid credentials");
         }
@@ -160,6 +177,52 @@ const userController = () => {
       } catch (error) {
         logger.error(`[User Controller] - delete failed: ${error}`);
         sendError(res, 500, "Failed to delete user");
+      }
+    },
+
+    refresh: async (req: ServerRequest, res: ServerResponse) => {
+      try {
+        const { refresh_token } = req.body as { refresh_token?: string };
+        if (!refresh_token) {
+          sendError(res, 400, "refresh_token is required");
+          return;
+        }
+        const stored = await refreshTokenRepo.findRefreshToken(refresh_token);
+        if (!stored) {
+          sendError(res, 401, "Invalid or expired refresh token");
+          return;
+        }
+        const person = await userRepo.findUserById(stored.person_id);
+        if (!person || !person.active) {
+          sendError(res, 401, "User not found or inactive");
+          return;
+        }
+        // Rotate: delete old, issue new
+        await refreshTokenRepo.deleteRefreshToken(refresh_token);
+        const newRawToken = randomBytes(40).toString("hex");
+        await refreshTokenRepo.saveRefreshToken(person.id, newRawToken);
+        const access_token = signAccessToken(person);
+        return res.code(200).send({
+          access_token,
+          refresh_token: newRawToken,
+          message: "success",
+        });
+      } catch (error) {
+        logger.error(`[User Controller] - refresh failed: ${error}`);
+        sendError(res, 500, "Token refresh failed");
+      }
+    },
+
+    logout: async (req: ServerRequest, res: ServerResponse) => {
+      try {
+        const { refresh_token } = req.body as { refresh_token?: string };
+        if (refresh_token) {
+          await refreshTokenRepo.deleteRefreshToken(refresh_token);
+        }
+        return res.code(200).send({ message: "Logged out successfully" });
+      } catch (error) {
+        logger.error(`[User Controller] - logout failed: ${error}`);
+        sendError(res, 500, "Logout failed");
       }
     },
   };
