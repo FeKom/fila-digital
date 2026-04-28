@@ -19,6 +19,7 @@ import {
 } from "../repository/commerce-admin.repository";
 import { Commerce } from "../type";
 import { validateCNPJ } from "../../../utils/validate";
+import { hashDocument } from "../../../utils/documentHash";
 import { logger } from "../../../utils/logger";
 import cache from "../../../infra/database/cache";
 import { cacheKeys, cacheTTL } from "../../../utils/cacheKeys";
@@ -36,11 +37,13 @@ const commerceController = () => {
           return;
         }
 
+        const documentHash = hashDocument(valid);
+
         const c = await cache;
 
         const commerceFromDb = await c.wrap(
-          cacheKeys.commerceDocument(valid),
-          () => getCommerceByDocumentId(valid),
+          cacheKeys.commerceDocument(documentHash),
+          () => getCommerceByDocumentId(documentHash),
           cacheTTL.COMMERCE_DOCUMENT
         );
 
@@ -58,11 +61,11 @@ const commerceController = () => {
           ...commerce,
           id: uuidv7(),
           owner_id: req.user.id,
-          document_id: valid,
+          document_id: documentHash,
         });
 
         await Promise.all([
-          c.del(cacheKeys.commerceDocument(valid)),
+          c.del(cacheKeys.commerceDocument(documentHash)),
           c.del(cacheKeys.commerceOwner(req.user.id)),
           c.del(cacheKeys.commerceList()),
         ]);
@@ -106,7 +109,10 @@ const commerceController = () => {
 
         if (!commerce) return sendError(res, 404, "Commerce not found");
 
-        return res.code(200).send({ ...commerce, queue: queue ?? null });
+        // Exclude the hashed document_id — it is not useful to clients and
+        // should not be exposed in public responses.
+        const { document_id: _doc, ...safeCommerce } = commerce;
+        return res.code(200).send({ ...safeCommerce, queue: queue ?? null });
       } catch (error) {
         logger.error(`[Commerce Controller] - getById failed, error: ${error}`);
         return sendError(res, 500, "Failed to retrieve commerce");

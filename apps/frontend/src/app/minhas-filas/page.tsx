@@ -17,9 +17,7 @@ const MyQueues = async () => {
           ctaHref="/entrar-fila"
         />
       ) : (
-        <div
-          style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}
-        >
+        <div className="queue-list">
           {queues.map((queue) => {
             const exitAction = async () => {
               "use server";
@@ -27,46 +25,17 @@ const MyQueues = async () => {
             };
 
             return (
-              <div
-                key={queue.queue_id}
-                style={{
-                  background: "var(--bg-surface)",
-                  border: "1px solid var(--border)",
-                  borderRadius: "10px",
-                  padding: "1.25rem 1.5rem",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: "1rem",
-                }}
-              >
-                <div>
-                  <div
-                    style={{
-                      fontWeight: 600,
-                      marginBottom: "0.2rem",
-                      color: "var(--text-1)",
-                    }}
-                  >
-                    {queue.queue_name}
-                  </div>
-                  <div style={{ fontSize: "0.78rem", color: "var(--text-2)" }}>
+              <div key={queue.queue_id} className="queue-list-item">
+                <div className="queue-list-item-info">
+                  <div className="queue-list-item-name">{queue.queue_name}</div>
+                  <div className="queue-list-item-commerce">
                     {queue.commerce_name}
                   </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "baseline",
-                      gap: "0.4rem",
-                      marginTop: "0.75rem",
-                    }}
-                  >
-                    <span className="queue-number" style={{ fontSize: "2rem" }}>
+                  <div className="queue-list-item-position">
+                    <span className="queue-number queue-number-lg">
                       #{queue.position}
                     </span>
-                    <span
-                      style={{ fontSize: "0.78rem", color: "var(--text-3)" }}
-                    >
+                    <span className="queue-list-item-position-label">
                       na fila
                     </span>
                   </div>

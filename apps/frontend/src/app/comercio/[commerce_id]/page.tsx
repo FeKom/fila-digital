@@ -40,7 +40,7 @@ const CommerceDetail = async ({ params }: Props) => {
             <p className="page-subtitle">{commerce.description}</p>
           )}
         </div>
-        <div style={{ display: "flex", gap: "0.5rem", flexShrink: 0 }}>
+        <div className="page-header-actions">
           <Link
             href={`/comercio/${commerce_id}/editar`}
             className="fd-btn fd-btn-ghost fd-btn-sm"
@@ -56,7 +56,7 @@ const CommerceDetail = async ({ params }: Props) => {
       </div>
 
       {/* Stats row */}
-      <div className="dash-grid-3" style={{ marginBottom: "2rem" }}>
+      <div className="dash-grid-3 section-gap">
         <div className="stat-card">
           <div className="stat-label">Telefone</div>
           <div className="stat-value">{commerce.phone}</div>
@@ -74,18 +74,9 @@ const CommerceDetail = async ({ params }: Props) => {
       </div>
 
       {/* Queue section */}
-      <div
-        style={{
-          background: "var(--bg-surface)",
-          border: "1px solid var(--border)",
-          borderRadius: "12px",
-          padding: "1.5rem",
-        }}
-      >
+      <div className="queue-section">
         <div className="section-header">
-          <div
-            style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}
-          >
+          <div className="queue-section-label-group">
             <span className="section-label" style={{ margin: 0 }}>
               Fila
             </span>
@@ -97,7 +88,7 @@ const CommerceDetail = async ({ params }: Props) => {
               </Badge>
             )}
           </div>
-          <div style={{ display: "flex", gap: "0.5rem" }}>
+          <div className="page-header-actions">
             {commerce.queue ? (
               <Link
                 href={`/comercio/${commerce_id}/fila/${commerce.queue.id}/editar`}
@@ -118,34 +109,20 @@ const CommerceDetail = async ({ params }: Props) => {
 
         {commerce.queue ? (
           <>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "1rem",
-                margin: "1rem 0",
-              }}
-            >
+            <div className="queue-actions-row">
               <form action={callNextAction}>
                 <Button type="submit" intent="secondary" size="sm">
                   Chamar Próximo
                 </Button>
               </form>
-              <span style={{ fontSize: "0.82rem", color: "var(--text-2)" }}>
+              <span className="queue-participants-count">
                 {participants.length} participante(s) na fila
               </span>
             </div>
             <ParticipantList participants={participants} />
           </>
         ) : (
-          <p
-            style={{
-              fontSize: "0.875rem",
-              color: "var(--text-2)",
-              textAlign: "center",
-              padding: "2rem 0",
-            }}
-          >
+          <p className="queue-empty-msg">
             Este comércio ainda não tem uma fila.
           </p>
         )}

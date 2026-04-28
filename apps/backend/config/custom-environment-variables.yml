@@ -18,3 +18,5 @@ cache:
   ttl: REDIS_TTL
 token:
   secret: AUTH_TOKEN
+cors:
+  allowedOrigin: ALLOWED_ORIGIN

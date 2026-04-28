@@ -37,10 +37,13 @@ export const submitLoginForm = async (
   const in15min = new Date(Date.now() + 15 * 60 * 1000);
   const in30days = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
   const cookieStore = await cookies();
+  const isProduction = process.env.NODE_ENV === "production";
   cookieStore.set({
     name: "digital_queue_jwt",
     value: access_token,
     httpOnly: true,
+    secure: isProduction,
+    sameSite: "strict",
     path: "/",
     expires: in15min,
   });
@@ -48,6 +51,8 @@ export const submitLoginForm = async (
     name: "digital_queue_refresh",
     value: refresh_token,
     httpOnly: true,
+    secure: isProduction,
+    sameSite: "strict",
     path: "/",
     expires: in30days,
   });

@@ -60,6 +60,21 @@ export const validatePassword = (password: string): boolean => {
     logger.error(`[Validate Password] - Password too short`);
     return false;
   }
-  // Add more checks if needed (e.g., uppercase, lowercase, number, special char)
+  if (!/[A-Z]/.test(password)) {
+    logger.error(`[Validate Password] - Password missing uppercase letter`);
+    return false;
+  }
+  if (!/[a-z]/.test(password)) {
+    logger.error(`[Validate Password] - Password missing lowercase letter`);
+    return false;
+  }
+  if (!/[0-9]/.test(password)) {
+    logger.error(`[Validate Password] - Password missing number`);
+    return false;
+  }
+  if (!/[^A-Za-z0-9]/.test(password)) {
+    logger.error(`[Validate Password] - Password missing special character`);
+    return false;
+  }
   return true;
 };

@@ -72,13 +72,13 @@ export default async function Home() {
       </div>
 
       {commerces.length > 0 ? (
-        <div className="dash-grid-2" style={{ marginBottom: "2.5rem" }}>
+        <div className="dash-grid-2 section-gap">
           {commerces.map((commerce) => (
             <CommerceCard key={commerce.id} commerce={commerce} />
           ))}
         </div>
       ) : (
-        <div style={{ marginBottom: "2.5rem" }}>
+        <div className="section-gap">
           <EmptyState
             message="Você ainda não tem comércios cadastrados."
             ctaLabel="Cadastrar comércio"
@@ -88,7 +88,7 @@ export default async function Home() {
       )}
 
       {/* Queues section */}
-      <div className="section-header" style={{ marginTop: "2rem" }}>
+      <div className="section-header section-top">
         <h2 className="section-label" style={{ margin: 0 }}>
           Minhas Posições
         </h2>

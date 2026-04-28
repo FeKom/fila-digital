@@ -1,18 +1,8 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Unbounded, DM_Sans } from "next/font/google";
+import { Unbounded, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
 import { isAuthenticated } from "./actions";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 const unbounded = Unbounded({
   variable: "--font-unbounded",
@@ -28,8 +18,9 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "fila digital",
-  description: "em construção...",
+  title: "Fila Digital",
+  description:
+    "Gerencie filas do seu comércio ou entre em uma fila de qualquer lugar.",
 };
 
 export default async function RootLayout({
@@ -39,10 +30,8 @@ export default async function RootLayout({
 }>) {
   const authenticated = await isAuthenticated();
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} ${unbounded.variable} ${dmSans.variable} antialiased`}
-      >
+    <html lang="pt-BR">
+      <body className={`${unbounded.variable} ${dmSans.variable} antialiased`}>
         <Header authenticated={authenticated} />
         {children}
       </body>

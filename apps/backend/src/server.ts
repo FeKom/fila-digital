@@ -1,5 +1,6 @@
 import fastify from "fastify";
 import * as Sentry from "@sentry/node";
+import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import swagger from "@fastify/swagger";
 import scalar from "@scalar/fastify-api-reference";
@@ -57,6 +58,17 @@ export const initServer = async () => {
     ignoreDuplicateSlashes: true,
     // Required for req.ip to resolve correctly behind Traefik + Cloudflare.
     trustProxy: true,
+  });
+
+  // ── CORS ──────────────────────────────────────────────────────────────────
+  // Restrict cross-origin requests to the known frontend origin.
+  // NEXT_PUBLIC_FILA_DIGITAL_BASE_URL is set in frontend env; the backend
+  // reads ALLOWED_ORIGIN (or falls back to localhost for local dev).
+  await server.register(cors, {
+    origin: process.env.ALLOWED_ORIGIN ?? "http://localhost:3000",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
   });
 
   // ── Rate limiting ──────────────────────────────────────────────────────────
