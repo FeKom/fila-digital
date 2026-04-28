@@ -1,7 +1,7 @@
 // ── OpenTelemetry — must be first ─────────────────────────────────────────────
 // This patches Node.js modules at load-time. Any import above this line
 // will NOT be instrumented. Keep it as the very first line.
-import "./infra/telemetry/tracer.js";
+import "./infra/telemetry/tracer";
 
 import { startAllSchedulers } from "./schedulers";
 import { initServer } from "./server";
