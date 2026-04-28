@@ -3,11 +3,11 @@ server:
 logging:
   level: error
 database:
-  name: "filadigital"
-  host: "dpg-d24dkf15pdvs738886g0-a.virginia-postgres.render.com"
-  user: "userfiladigitalproduction"
-  password: "" # need to use as env-var... get on render dashboard :)
-  port: 5432
+  name: "postgres" # Supabase default database name
+  host: "" # set via DATABASE_HOST env var (db.<ref>.supabase.co or pooler host)
+  user: "postgres" # Supabase default user
+  password: "" # set via DATABASE_PASSWORD env var
+  port: 6543 # Supabase connection pooler port (Transaction mode)
   ssl: true
   connection:
     max: 10

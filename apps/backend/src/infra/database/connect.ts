@@ -26,7 +26,7 @@ export const dialect = new PostgresDialect({
     port: databaseConfig.port,
     max: databaseConfig.connection.max,
     connectionTimeoutMillis: databaseConfig.connection.timeoutInMilli,
-    ssl: databaseConfig.ssl,
+    ssl: databaseConfig.ssl ? { rejectUnauthorized: false } : false,
   }),
 });
 
