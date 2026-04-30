@@ -125,7 +125,14 @@ const commerceController = () => {
           req.query as Record<string, unknown>
         );
 
-        const page = await listAllCommerces(params);
+        const c = await cache;
+        const cacheKey = `${cacheKeys.commerceList()}:${JSON.stringify(params)}`;
+
+        const page = await c.wrap(
+          cacheKey,
+          () => listAllCommerces(params),
+          cacheTTL.COMMERCE_LIST
+        );
 
         return res.code(200).send({
           message: "Commerces retrieved successfully",

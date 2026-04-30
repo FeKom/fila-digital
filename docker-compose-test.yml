@@ -1,0 +1,129 @@
+# Resource limits mirror free tier constraints:
+#   Supabase free → 500 MB RAM, 2 shared vCPU, 60 direct DB connections
+#   Render free   → 512 MB RAM, 0.1 shared vCPU per web service
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: '123321'
+      POSTGRES_DB: fila-digital-test
+      POSTGRES_USER: 'fila-digital-user'
+      # Cap connections to match Supabase free (60 direct)
+      POSTGRES_MAX_CONNECTIONS: '60'
+    ports:
+      - 5437:5432
+    restart: on-failure:3
+    tmpfs:
+      - /var/lib/postgresql/data # in-memory for fast tests, no persistence needed
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+
+  redis:
+    image: redis:alpine
+    command: redis-server --maxmemory 64mb --maxmemory-policy allkeys-lru
+    ports:
+      - 6380:6379
+    tmpfs:
+      - /data
+    networks:
+      - test-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.10'
+          memory: 64M
+
+  prometheus:
+    image: prom/prometheus:latest
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=1h' # short retention for tests
+      - '--storage.tsdb.wal-compression'
+    ports:
+      - 9091:9090
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    tmpfs:
+      - /prometheus
+    networks:
+      - test-network
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    deploy:
+      resources:
+        limits:
+          cpus: '0.10'
+          memory: 128M
+
+  loki:
+    image: grafana/loki:latest
+    command: ['-config.file=/etc/loki/loki-config.yml']
+    ports:
+      - 3102:3100
+    volumes:
+      - ./observability/loki-config.yml:/etc/loki/loki-config.yml:ro
+    tmpfs:
+      - /loki
+    networks:
+      - test-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.10'
+          memory: 128M
+
+  tempo:
+    image: grafana/tempo:latest
+    command: ['-config.file=/etc/tempo.yml']
+    ports:
+      - 4317:4317  # OTLP gRPC
+      - 4318:4318  # OTLP HTTP
+      - 3200:3200  # Tempo HTTP API
+    volumes:
+      - ./observability/tempo.yml:/etc/tempo.yml:ro
+    tmpfs:
+      - /tmp/tempo
+    networks:
+      - test-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.10'
+          memory: 128M
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: 'true'
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: 'true'
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+    ports:
+      - 3001:3000
+    volumes:
+      - ./observability/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./observability/grafana/dashboards-provisioning:/etc/grafana/provisioning/dashboards:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    tmpfs:
+      - /var/lib/grafana
+    networks:
+      - test-network
+    depends_on:
+      - prometheus
+      - tempo
+      - loki
+    deploy:
+      resources:
+        limits:
+          cpus: '0.10'
+          memory: 128M
+
+networks:
+  test-network:
+    driver: bridge

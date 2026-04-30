@@ -3,7 +3,7 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "dev": "tsx --watch ./src/index.ts | pino-pretty",
+    "dev": "OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 OTEL_SERVICE_NAME=fila-digital-api LOKI_URL=http://localhost:3102 tsx --watch ./src/index.ts",
     "build": "tsup",
     "start": "node dist/index.js",
     "tsc-init": "tsc --init",
@@ -22,7 +22,8 @@
     "stress:smoke": "k6 run stress-tests/smoke.js",
     "stress:smokeUser": "k6 run stress-tests/smoke-user.js",
     "stress:load": "k6 run stress-tests/load.js",
-    "stress:stress": "k6 run stress-tests/stress.js"
+    "stress:stress": "k6 run stress-tests/stress.js",
+    "stress:queue": "k6 run stress-tests/queue.js"
   },
   "engines": {
     "node": ">=22.17.0"
@@ -55,6 +56,7 @@
     "node-cron": "^4.2.1",
     "pg": "^8.16.3",
     "pino": "^9.9.0",
+    "pino-loki": "^3.0.0",
     "qrcode": "^1.5.4",
     "uuidv7": "^1.0.2"
   },

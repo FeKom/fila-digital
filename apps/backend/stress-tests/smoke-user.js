@@ -6,7 +6,7 @@ const BASE_URL = __ENV.BASE_URL || "http://localhost:7070";
 const TEST_USER = {
   name: "Stress Test User",
   email: "stress@filadigital.com",
-  password: "stress12345",
+  password: "Stress@test1!",
   phone: "+5511999999999",
 };
 
@@ -26,12 +26,16 @@ export const options = {
 export function setup() {
   const jsonHeaders = { headers: { "Content-Type": "application/json" } };
 
-  // Register (ignore if user already exists)
-  http.post(`${BASE_URL}/user/register`, JSON.stringify(TEST_USER), jsonHeaders);
+  // Register — 409 is expected if user already exists from a previous run
+  http.post(
+    `${BASE_URL}/v1/user/register`,
+    JSON.stringify(TEST_USER),
+    { ...jsonHeaders, responseCallback: http.expectedStatuses(200, 201, 409) },
+  );
 
   // Login
   const loginRes = http.post(
-    `${BASE_URL}/user/login`,
+    `${BASE_URL}/v1/user/login`,
     JSON.stringify({ email: TEST_USER.email, password: TEST_USER.password }),
     jsonHeaders,
   );
@@ -40,7 +44,7 @@ export function setup() {
     "setup: login successful": (r) => r.status === 200,
   });
 
-  const token = loginRes.json("token");
+  const token = loginRes.json("access_token");
   if (!token) {
     console.error("Setup failed: could not login. Tests will skip auth endpoints.");
   }
@@ -73,19 +77,19 @@ export default function (data) {
   };
 
   // 2. List commerces
-  const commerces = http.get(`${BASE_URL}/commerce`, authHeaders);
+  const commerces = http.get(`${BASE_URL}/v1/commerce`, authHeaders);
   check(commerces, {
     "list commerces returns 200": (r) => r.status === 200,
   });
 
   // 3. User info
-  const user = http.get(`${BASE_URL}/user`, authHeaders);
+  const user = http.get(`${BASE_URL}/v1/user`, authHeaders);
   check(user, {
     "user info returns 200": (r) => r.status === 200,
   });
 
   // 4. User commerces
-  const userCommerces = http.get(`${BASE_URL}/user/commerces`, authHeaders);
+  const userCommerces = http.get(`${BASE_URL}/v1/user/commerces`, authHeaders);
   check(userCommerces, {
     "user commerces returns 200": (r) => r.status === 200,
   });
