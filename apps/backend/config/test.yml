@@ -7,7 +7,7 @@ database:
   host: "localhost"
   user: "fila-digital-user"
   password: "123321"
-  port: 5435
+  port: 5437
   ssl: false
   connection:
     max: 10

@@ -1,0 +1,97 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: fila-digital
+      POSTGRES_PASSWORD: '123321'
+      POSTGRES_USER: 'fila-digital-user'
+    ports:
+      - 5435:5432
+    restart: on-failure:3
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:alpine
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+    ports:
+      - 6379:6379
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
+
+  prometheus:
+    image: prom/prometheus:latest
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=7d'
+      - '--web.enable-lifecycle'
+    ports:
+      - 9090:9090
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - app-network
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+
+  loki:
+    image: grafana/loki:latest
+    command: ['-config.file=/etc/loki/loki-config.yml']
+    ports:
+      - 3102:3100
+    volumes:
+      - ./observability/loki-config.yml:/etc/loki/loki-config.yml:ro
+      - loki-data:/loki
+    networks:
+      - app-network
+
+  tempo:
+    image: grafana/tempo:latest
+    user: root
+    command: ['-config.file=/etc/tempo.yml']
+    ports:
+      - 4317:4317  # OTLP gRPC
+      - 4318:4318  # OTLP HTTP
+      - 3200:3200  # Tempo HTTP API
+    volumes:
+      - ./observability/tempo.yml:/etc/tempo.yml:ro
+      - tempo-data:/tmp/tempo
+    networks:
+      - app-network
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      GF_AUTH_DISABLE_LOGIN_FORM: 'false'
+      GF_AUTH_ANONYMOUS_ENABLED: 'true'
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    ports:
+      - 3100:3000
+    volumes:
+      - ./observability/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./observability/grafana/dashboards-provisioning:/etc/grafana/provisioning/dashboards:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    networks:
+      - app-network
+    depends_on:
+      - prometheus
+      - tempo
+      - loki
+
+volumes:
+  postgres-data:
+  redis-data:
+  prometheus-data:
+  grafana-data:
+  tempo-data:
+  loki-data:
+
+networks:
+  app-network:
+    driver: bridge

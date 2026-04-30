@@ -51,9 +51,41 @@ const setupV1Routes = (server: Server) => {
 
 export const initServer = async () => {
   const logLevel = config.get<string>("logging.level");
+  const lokiUrl = process.env.LOKI_URL;
+
   const server = fastify({
     genReqId: () => uuidv7(),
-    logger: { level: logLevel },
+    logger: {
+      level: logLevel,
+      transport: {
+        targets: [
+          {
+            target: "pino-pretty",
+            options: {
+              colorize: true,
+              translateTime: "dd/mm/yyyy HH:MM:ss",
+              ignore: "pid,hostname",
+            },
+          },
+          ...(lokiUrl
+            ? [
+                {
+                  target: "pino-loki",
+                  options: {
+                    host: lokiUrl,
+                    labels: {
+                      app: "fila-digital-api",
+                      env: process.env.NODE_ENV ?? "development",
+                    },
+                    interval: 1,
+                    silenceErrors: true,
+                  },
+                },
+              ]
+            : []),
+        ],
+      },
+    },
     ignoreTrailingSlash: true,
     ignoreDuplicateSlashes: true,
     // Required for req.ip to resolve correctly behind Traefik + Cloudflare.
