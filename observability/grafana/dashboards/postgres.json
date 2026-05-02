@@ -1,0 +1,336 @@
+{
+  "title": "PostgreSQL — Fila Digital",
+  "uid": "postgres-fila-digital",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "tags": ["postgres", "database"],
+  "time": { "from": "now-1h", "to": "now" },
+  "timezone": "browser",
+  "graphTooltip": 1,
+  "templating": {
+    "list": [
+      { "name": "prometheus", "label": "Prometheus", "type": "datasource", "query": "prometheus", "current": {}, "hide": 0 }
+    ]
+  },
+  "panels": [
+
+    { "id": 100, "type": "row", "title": "Connections & Activity", "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 } },
+
+    {
+      "id": 1, "title": "Active Connections",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 1, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": 0 },
+            { "color": "yellow", "value": 7 },
+            { "color": "red", "value": 9 }
+          ]}
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "targets": [{
+        "refId": "A",
+        "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+        "expr": "pg_stat_activity_count{datname=\"fila-digital\", state=\"active\"}",
+        "legendFormat": "active"
+      }]
+    },
+
+    {
+      "id": 2, "title": "Idle Connections",
+      "type": "stat",
+      "gridPos": { "x": 4, "y": 1, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": 0 },
+            { "color": "yellow", "value": 5 },
+            { "color": "red", "value": 8 }
+          ]}
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "targets": [{
+        "refId": "A",
+        "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+        "expr": "pg_stat_activity_count{datname=\"fila-digital\", state=\"idle\"}",
+        "legendFormat": "idle"
+      }]
+    },
+
+    {
+      "id": 3, "title": "Max Connections Used %",
+      "type": "gauge",
+      "gridPos": { "x": 8, "y": 1, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0, "max": 100,
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": 0 },
+            { "color": "yellow", "value": 70 },
+            { "color": "red", "value": 90 }
+          ]}
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{
+        "refId": "A",
+        "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+        "expr": "100 * sum(pg_stat_activity_count{datname=\"fila-digital\"}) / pg_settings_max_connections",
+        "legendFormat": "% used"
+      }]
+    },
+
+    {
+      "id": 4, "title": "Transactions / s",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 1, "w": 12, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+      "fieldConfig": { "defaults": { "unit": "ops", "custom": { "lineWidth": 2 } } },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(pg_stat_database_xact_commit{datname=\"fila-digital\"}[1m])",
+          "legendFormat": "commits/s"
+        },
+        {
+          "refId": "B",
+          "expr": "rate(pg_stat_database_xact_rollback{datname=\"fila-digital\"}[1m])",
+          "legendFormat": "rollbacks/s"
+        }
+      ]
+    },
+
+    { "id": 200, "type": "row", "title": "Cache & I/O", "gridPos": { "x": 0, "y": 5, "w": 24, "h": 1 } },
+
+    {
+      "id": 5, "title": "Buffer Cache Hit Ratio",
+      "type": "gauge",
+      "gridPos": { "x": 0, "y": 6, "w": 6, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0, "max": 1,
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "red", "value": 0 },
+            { "color": "yellow", "value": 0.90 },
+            { "color": "green", "value": 0.98 }
+          ]}
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{
+        "refId": "A",
+        "expr": "pg_stat_database_blks_hit{datname=\"fila-digital\"} / (pg_stat_database_blks_hit{datname=\"fila-digital\"} + pg_stat_database_blks_read{datname=\"fila-digital\"})",
+        "legendFormat": "cache hit ratio"
+      }]
+    },
+
+    {
+      "id": 6, "title": "Blocks Read from Disk / s",
+      "type": "timeseries",
+      "gridPos": { "x": 6, "y": 6, "w": 9, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+      "fieldConfig": { "defaults": { "unit": "ops", "custom": { "lineWidth": 2, "fillOpacity": 8 } } },
+      "options": { "tooltip": { "mode": "multi" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(pg_stat_database_blks_read{datname=\"fila-digital\"}[1m])",
+          "legendFormat": "disk reads/s"
+        },
+        {
+          "refId": "B",
+          "expr": "rate(pg_stat_database_blks_hit{datname=\"fila-digital\"}[1m])",
+          "legendFormat": "cache hits/s"
+        }
+      ]
+    },
+
+    {
+      "id": 7, "title": "Temp Files Created / s",
+      "type": "timeseries",
+      "gridPos": { "x": 15, "y": 6, "w": 9, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "color": { "mode": "fixed", "fixedColor": "orange" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 }
+        }
+      },
+      "description": "Temp files mean a sort/hash exceeded work_mem. Should be near zero.",
+      "targets": [{
+        "refId": "A",
+        "expr": "rate(pg_stat_database_temp_files{datname=\"fila-digital\"}[5m])",
+        "legendFormat": "temp files/s"
+      }]
+    },
+
+    { "id": 300, "type": "row", "title": "Table Health (Dead Tuples & Autovacuum)", "gridPos": { "x": 0, "y": 11, "w": 24, "h": 1 } },
+
+    {
+      "id": 8, "title": "Dead Tuples by Table",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 12, "w": 12, "h": 7 },
+      "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "lineWidth": 2 } } },
+      "description": "High dead tuples = autovacuum is not keeping up. Causes table bloat and slow sequential scans.",
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "right" } },
+      "targets": [{
+        "refId": "A",
+        "expr": "pg_stat_user_tables_n_dead_tup{relname=~\"participants_queue|queue|commerce|person\"}",
+        "legendFormat": "{{relname}}"
+      }]
+    },
+
+    {
+      "id": 9, "title": "Rows Inserted / Updated / Deleted / s",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 12, "w": 12, "h": 7 },
+      "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+      "fieldConfig": { "defaults": { "unit": "ops", "custom": { "lineWidth": 2 } } },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(pg_stat_user_tables_n_tup_ins[1m]))",
+          "legendFormat": "inserts/s"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(pg_stat_user_tables_n_tup_upd[1m]))",
+          "legendFormat": "updates/s"
+        },
+        {
+          "refId": "C",
+          "expr": "sum(rate(pg_stat_user_tables_n_tup_del[1m]))",
+          "legendFormat": "deletes/s"
+        }
+      ]
+    },
+
+    { "id": 400, "type": "row", "title": "Top Queries (pg_stat_statements)", "gridPos": { "x": 0, "y": 19, "w": 24, "h": 1 } },
+
+    {
+      "id": 10, "title": "Top Queries — Mean Execution Time (ms)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 20, "w": 24, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+      "fieldConfig": {
+        "defaults": { "unit": "ms", "custom": { "lineWidth": 2, "fillOpacity": 5 } }
+      },
+      "description": "Mean execution time per normalized query. A rising line on one query = regression or missing index.",
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "max"] } },
+      "targets": [{
+        "refId": "A",
+        "expr": "topk(10, pg_stat_statements_mean_exec_ms)",
+        "legendFormat": "{{query}}"
+      }]
+    },
+
+    {
+      "id": 11, "title": "Top Queries — Call Rate / s",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 28, "w": 12, "h": 7 },
+      "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+      "fieldConfig": { "defaults": { "unit": "ops", "custom": { "lineWidth": 2 } } },
+      "description": "Highest-frequency queries. High call rate + high mean time = the biggest source of DB load.",
+      "targets": [{
+        "refId": "A",
+        "expr": "topk(8, rate(pg_stat_statements_calls_total[1m]))",
+        "legendFormat": "{{query}}"
+      }]
+    },
+
+    {
+      "id": 12, "title": "Top Queries — Stddev (Unstable Latency)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 28, "w": 12, "h": 7 },
+      "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": { "lineWidth": 2 },
+          "color": { "mode": "fixed", "fixedColor": "orange" }
+        }
+      },
+      "description": "High stddev = query performance is inconsistent. Possible causes: plan instability, lock waits, or data skew.",
+      "targets": [{
+        "refId": "A",
+        "expr": "topk(5, pg_stat_statements_stddev_exec_ms)",
+        "legendFormat": "{{query}}"
+      }]
+    },
+
+    { "id": 500, "type": "row", "title": "Replication & Locks", "gridPos": { "x": 0, "y": 35, "w": 24, "h": 1 } },
+
+    {
+      "id": 13, "title": "Lock Conflicts",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 36, "w": 12, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "fixed", "fixedColor": "red" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 }
+        }
+      },
+      "description": "Deadlocks and lock waits. Any value > 0 warrants investigation.",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(pg_stat_database_deadlocks{datname=\"fila-digital\"}[5m])",
+          "legendFormat": "deadlocks/s"
+        },
+        {
+          "refId": "B",
+          "expr": "rate(pg_stat_database_conflicts{datname=\"fila-digital\"}[5m])",
+          "legendFormat": "conflicts/s"
+        }
+      ]
+    },
+
+    {
+      "id": 14, "title": "Sequential Scans / s (missing index signal)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 36, "w": 12, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": { "lineWidth": 2, "fillOpacity": 8 }
+        }
+      },
+      "description": "Sequential scans on large tables = missing index. Index scans on the same tables = healthy.",
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(pg_stat_user_tables_seq_scan{relname=~\"participants_queue|queue|commerce|person\"}[1m])",
+          "legendFormat": "seq scan — {{relname}}"
+        },
+        {
+          "refId": "B",
+          "expr": "rate(pg_stat_user_tables_idx_scan{relname=~\"participants_queue|queue|commerce|person\"}[1m])",
+          "legendFormat": "idx scan — {{relname}}"
+        }
+      ]
+    }
+
+  ]
+}

@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgres:16-alpine
+    command: ['-c', 'config_file=/etc/postgresql/postgresql.conf']
     environment:
       POSTGRES_DB: fila-digital
       POSTGRES_PASSWORD: '123321'
@@ -10,6 +11,28 @@ services:
     restart: on-failure:3
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - app-network
+
+  postgres_exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    environment:
+      DATA_SOURCE_NAME: 'postgresql://exporter_user:exporter_password@postgres:5432/fila-digital?sslmode=disable'
+    command:
+      - '--extend.query-path=/etc/postgres_exporter/queries'
+      - '--collector.stat_bgwriter'
+      - '--collector.stat_database'
+      - '--collector.stat_user_tables'
+    volumes:
+      - ./postgres/queries:/etc/postgres_exporter/queries:ro
+    ports:
+      - 9187:9187
+    networks:
+      - app-network
+    depends_on:
+      - postgres
 
   redis:
     image: redis:alpine
@@ -28,6 +51,7 @@ services:
       - '--storage.tsdb.path=/prometheus'
       - '--storage.tsdb.retention.time=7d'
       - '--web.enable-lifecycle'
+      - '--web.enable-remote-write-receiver'
     ports:
       - 9090:9090
     volumes:

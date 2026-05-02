@@ -1,0 +1,79 @@
+# Custom queries for postgres_exporter
+# These expose pg_stat_statements data as Prometheus metrics.
+# Mount this file and reference it via --extend.query-path in the exporter.
+#
+# Metrics produced:
+#   pg_stat_statements_calls_total       — total call count per query
+#   pg_stat_statements_total_exec_ms     — cumulative execution time (ms)
+#   pg_stat_statements_mean_exec_ms      — mean execution time (ms)
+#   pg_stat_statements_stddev_exec_ms    — stddev of execution time (ms)
+#   pg_stat_statements_rows_total        — cumulative rows returned/affected
+#   pg_stat_statements_shared_blks_hit   — buffer cache hits
+#   pg_stat_statements_shared_blks_read  — disk reads (cache misses)
+#
+# Usage in Prometheus:
+#   rate(pg_stat_statements_calls_total[5m])          → throughput per query
+#   pg_stat_statements_mean_exec_ms                   → latency per query
+#   rate(pg_stat_statements_shared_blks_read[5m])     → I/O pressure per query
+
+pg_stat_statements:
+  query: |
+    SELECT
+      queryid::text                                          AS queryid,
+      LEFT(query, 200)                                       AS query,
+      calls                                                  AS calls_total,
+      total_exec_time                                        AS total_exec_ms,
+      mean_exec_time                                         AS mean_exec_ms,
+      stddev_exec_time                                       AS stddev_exec_ms,
+      rows                                                   AS rows_total,
+      shared_blks_hit                                        AS shared_blks_hit,
+      shared_blks_read                                       AS shared_blks_read,
+      shared_blks_dirtied                                    AS shared_blks_dirtied,
+      shared_blks_written                                    AS shared_blks_written,
+      blk_read_time                                          AS blk_read_ms,
+      blk_write_time                                         AS blk_write_ms
+    FROM pg_stat_statements
+    WHERE query NOT LIKE '%pg_stat_statements%'   -- exclude self-referential queries
+      AND calls > 5                               -- skip one-off queries to reduce cardinality
+    ORDER BY total_exec_time DESC
+    LIMIT 50                                      -- top 50 by total time — cardinality control
+  metrics:
+    - queryid:
+        usage: LABEL
+        description: "Normalized query fingerprint (stable across parameter changes)"
+    - query:
+        usage: LABEL
+        description: "First 200 characters of the normalized query text"
+    - calls_total:
+        usage: COUNTER
+        description: "Total number of times this query was executed"
+    - total_exec_ms:
+        usage: COUNTER
+        description: "Total execution time in milliseconds (cumulative)"
+    - mean_exec_ms:
+        usage: GAUGE
+        description: "Mean execution time in milliseconds"
+    - stddev_exec_ms:
+        usage: GAUGE
+        description: "Standard deviation of execution time — high value = unstable query"
+    - rows_total:
+        usage: COUNTER
+        description: "Total rows returned or affected (cumulative)"
+    - shared_blks_hit:
+        usage: COUNTER
+        description: "Total buffer pool hits (data served from shared_buffers)"
+    - shared_blks_read:
+        usage: COUNTER
+        description: "Total disk reads (cache misses — data not in shared_buffers)"
+    - shared_blks_dirtied:
+        usage: COUNTER
+        description: "Total blocks dirtied (modified in shared_buffers)"
+    - shared_blks_written:
+        usage: COUNTER
+        description: "Total blocks written to disk"
+    - blk_read_ms:
+        usage: COUNTER
+        description: "Total time spent reading blocks from disk (ms) — requires track_io_timing"
+    - blk_write_ms:
+        usage: COUNTER
+        description: "Total time spent writing blocks to disk (ms) — requires track_io_timing"

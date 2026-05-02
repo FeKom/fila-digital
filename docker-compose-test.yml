@@ -42,8 +42,9 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention.time=1h' # short retention for tests
+      - '--storage.tsdb.retention.time=1h'
       - '--storage.tsdb.wal-compression'
+      - '--web.enable-remote-write-receiver'
     ports:
       - 9091:9090
     volumes:

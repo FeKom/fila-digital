@@ -1,50 +1,189 @@
 {
-  "title": "Fila Digital",
+  "title": "Fila Digital — Production",
   "uid": "fila-digital-main",
   "schemaVersion": 38,
-  "version": 1,
-  "refresh": "5s",
-  "tags": ["fila-digital"],
-  "time": { "from": "now-15m", "to": "now" },
+  "version": 2,
+  "refresh": "10s",
+  "tags": ["fila-digital", "production"],
+  "time": { "from": "now-30m", "to": "now" },
   "timezone": "browser",
   "graphTooltip": 1,
   "templating": {
     "list": [
-      {
-        "name": "loki",
-        "label": "Loki",
-        "type": "datasource",
-        "query": "loki",
-        "current": {},
-        "hide": 0
-      },
-      {
-        "name": "prometheus",
-        "label": "Prometheus",
-        "type": "datasource",
-        "query": "prometheus",
-        "current": {},
-        "hide": 0
-      }
+      { "name": "loki",       "label": "Loki",       "type": "datasource", "query": "loki",       "current": {}, "hide": 0 },
+      { "name": "prometheus", "label": "Prometheus", "type": "datasource", "query": "prometheus", "current": {}, "hide": 0 },
+      { "name": "tempo",      "label": "Tempo",      "type": "datasource", "query": "tempo",      "current": {}, "hide": 0 }
     ]
   },
   "panels": [
+
     {
-      "id": 1,
-      "title": "Log Rate by Level",
-      "type": "timeseries",
-      "gridPos": { "x": 0, "y": 0, "w": 16, "h": 8 },
+      "id": 100, "type": "row", "title": "Overview",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+
+    {
+      "id": 5, "title": "Req / s",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 1, "w": 4, "h": 4 },
       "datasource": { "type": "loki", "uid": "${loki}" },
       "fieldConfig": {
         "defaults": {
-          "unit": "logs/s",
-          "custom": { "lineWidth": 2, "fillOpacity": 10 }
-        },
+          "unit": "reqps",
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": 0 },
+            { "color": "yellow", "value": 50 },
+            { "color": "red", "value": 200 }
+          ]}
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "textMode": "auto", "orientation": "auto" },
+      "targets": [{
+        "refId": "A",
+        "datasource": { "type": "loki", "uid": "${loki}" },
+        "expr": "sum(rate({app=\"fila-digital-api\"} |= \"request completed\" [1m]))",
+        "legendFormat": "req/s"
+      }]
+    },
+
+    {
+      "id": 11, "title": "P95 Response Time",
+      "type": "stat",
+      "gridPos": { "x": 4, "y": 1, "w": 4, "h": 4 },
+      "datasource": { "type": "loki", "uid": "${loki}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": 0 },
+            { "color": "yellow", "value": 500 },
+            { "color": "red", "value": 1000 }
+          ]}
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "textMode": "auto", "orientation": "auto" },
+      "targets": [{
+        "refId": "A",
+        "datasource": { "type": "loki", "uid": "${loki}" },
+        "expr": "quantile_over_time(0.95, {app=\"fila-digital-api\"} | json | responseTime != \"\" | unwrap responseTime [5m]) by ()",
+        "legendFormat": "p95"
+      }]
+    },
+
+    {
+      "id": 12, "title": "5xx Errors (5m)",
+      "type": "stat",
+      "gridPos": { "x": 8, "y": 1, "w": 4, "h": 4 },
+      "datasource": { "type": "loki", "uid": "${loki}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": 0 },
+            { "color": "red", "value": 1 }
+          ]}
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "textMode": "auto", "orientation": "auto" },
+      "targets": [{
+        "refId": "A",
+        "datasource": { "type": "loki", "uid": "${loki}" },
+        "expr": "sum(count_over_time({app=\"fila-digital-api\"} |= \"request completed\" | json | res_statusCode =~ \"5..\" [5m]))",
+        "legendFormat": "5xx"
+      }]
+    },
+
+    {
+      "id": 13, "title": "Rate Limited (5m)",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 1, "w": 4, "h": 4 },
+      "datasource": { "type": "loki", "uid": "${loki}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": 0 },
+            { "color": "orange", "value": 10 },
+            { "color": "red", "value": 100 }
+          ]}
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "textMode": "auto", "orientation": "auto" },
+      "targets": [{
+        "refId": "A",
+        "datasource": { "type": "loki", "uid": "${loki}" },
+        "expr": "sum(count_over_time({app=\"fila-digital-api\"} |= \"request completed\" | json | res_statusCode = \"429\" [5m]))",
+        "legendFormat": "429"
+      }]
+    },
+
+    {
+      "id": 2, "title": "Log Errors (5m)",
+      "type": "stat",
+      "gridPos": { "x": 16, "y": 1, "w": 4, "h": 4 },
+      "datasource": { "type": "loki", "uid": "${loki}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": 0 },
+            { "color": "red", "value": 1 }
+          ]}
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "textMode": "auto", "orientation": "auto" },
+      "targets": [{
+        "refId": "A",
+        "datasource": { "type": "loki", "uid": "${loki}" },
+        "expr": "sum(count_over_time({app=\"fila-digital-api\", level=\"error\"} [5m]))",
+        "legendFormat": "errors"
+      }]
+    },
+
+    {
+      "id": 3, "title": "Warnings (5m)",
+      "type": "stat",
+      "gridPos": { "x": 20, "y": 1, "w": 4, "h": 4 },
+      "datasource": { "type": "loki", "uid": "${loki}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": 0 },
+            { "color": "orange", "value": 1 }
+          ]}
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "textMode": "auto", "orientation": "auto" },
+      "targets": [{
+        "refId": "A",
+        "datasource": { "type": "loki", "uid": "${loki}" },
+        "expr": "sum(count_over_time({app=\"fila-digital-api\", level=\"warn\"} [5m]))",
+        "legendFormat": "warnings"
+      }]
+    },
+
+    {
+      "id": 200, "type": "row", "title": "Traffic",
+      "gridPos": { "x": 0, "y": 5, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+
+    {
+      "id": 20, "title": "Request Rate by Status Class",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 6, "w": 16, "h": 8 },
+      "datasource": { "type": "loki", "uid": "${loki}" },
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "custom": { "lineWidth": 2, "fillOpacity": 8 } },
         "overrides": [
-          { "matcher": { "id": "byName", "options": "error" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] },
-          { "matcher": { "id": "byName", "options": "warn" },  "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] },
-          { "matcher": { "id": "byName", "options": "info" },  "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }] },
-          { "matcher": { "id": "byName", "options": "debug" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "blue" } }] }
+          { "matcher": { "id": "byName", "options": "2xx" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }] },
+          { "matcher": { "id": "byName", "options": "4xx" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] },
+          { "matcher": { "id": "byName", "options": "429" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "yellow" } }] },
+          { "matcher": { "id": "byName", "options": "5xx" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] }
         ]
       },
       "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
@@ -52,111 +191,86 @@
         {
           "refId": "A",
           "datasource": { "type": "loki", "uid": "${loki}" },
-          "expr": "sum by (level) (rate({app=\"fila-digital-api\"}[1m]))",
-          "legendFormat": "{{level}}"
-        }
-      ]
-    },
-    {
-      "id": 2,
-      "title": "Errors (last 5m)",
-      "type": "stat",
-      "gridPos": { "x": 16, "y": 0, "w": 4, "h": 4 },
-      "datasource": { "type": "loki", "uid": "${loki}" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": 0 }, { "color": "red", "value": 1 }] }
-        }
-      },
-      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": { "type": "loki", "uid": "${loki}" },
-          "expr": "sum(count_over_time({app=\"fila-digital-api\", level=\"error\"}[5m]))",
-          "legendFormat": "errors"
-        }
-      ]
-    },
-    {
-      "id": 3,
-      "title": "Warnings (last 5m)",
-      "type": "stat",
-      "gridPos": { "x": 20, "y": 0, "w": 4, "h": 4 },
-      "datasource": { "type": "loki", "uid": "${loki}" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": 0 }, { "color": "orange", "value": 1 }] }
-        }
-      },
-      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": { "type": "loki", "uid": "${loki}" },
-          "expr": "sum(count_over_time({app=\"fila-digital-api\", level=\"warn\"}[5m]))",
-          "legendFormat": "warnings"
-        }
-      ]
-    },
-    {
-      "id": 4,
-      "title": "Requests Completed (last 5m)",
-      "type": "stat",
-      "gridPos": { "x": 16, "y": 4, "w": 4, "h": 4 },
-      "datasource": { "type": "loki", "uid": "${loki}" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": 0 }] }
-        }
-      },
-      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": { "type": "loki", "uid": "${loki}" },
-          "expr": "sum(count_over_time({app=\"fila-digital-api\"} |= \"request completed\" [5m]))",
-          "legendFormat": "requests"
-        }
-      ]
-    },
-    {
-      "id": 5,
-      "title": "Request Rate",
-      "type": "stat",
-      "gridPos": { "x": 20, "y": 4, "w": 4, "h": 4 },
-      "datasource": { "type": "loki", "uid": "${loki}" },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "reqps",
-          "color": { "mode": "thresholds" },
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": 0 }] }
-        }
-      },
-      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": { "type": "loki", "uid": "${loki}" },
-          "expr": "sum(rate({app=\"fila-digital-api\"} |= \"request completed\" [1m]))",
-          "legendFormat": "req/s"
-        }
-      ]
-    },
-    {
-      "id": 10,
-      "title": "Response Time Percentiles (ms)",
-      "type": "timeseries",
-      "gridPos": { "x": 0, "y": 8, "w": 24, "h": 8 },
-      "datasource": { "type": "loki", "uid": "${loki}" },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "ms",
-          "custom": { "lineWidth": 2, "fillOpacity": 5 }
+          "expr": "sum(rate({app=\"fila-digital-api\"} |= \"request completed\" | json | res_statusCode =~ \"2..\" [1m]))",
+          "legendFormat": "2xx"
         },
+        {
+          "refId": "B",
+          "datasource": { "type": "loki", "uid": "${loki}" },
+          "expr": "sum(rate({app=\"fila-digital-api\"} |= \"request completed\" | json | res_statusCode =~ \"4..\" | res_statusCode != \"429\" [1m]))",
+          "legendFormat": "4xx"
+        },
+        {
+          "refId": "C",
+          "datasource": { "type": "loki", "uid": "${loki}" },
+          "expr": "sum(rate({app=\"fila-digital-api\"} |= \"request completed\" | json | res_statusCode = \"429\" [1m]))",
+          "legendFormat": "429"
+        },
+        {
+          "refId": "D",
+          "datasource": { "type": "loki", "uid": "${loki}" },
+          "expr": "sum(rate({app=\"fila-digital-api\"} |= \"request completed\" | json | res_statusCode =~ \"5..\" [1m]))",
+          "legendFormat": "5xx"
+        }
+      ]
+    },
+
+    {
+      "id": 21, "title": "4xx Breakdown",
+      "type": "timeseries",
+      "gridPos": { "x": 16, "y": 6, "w": 8, "h": 8 },
+      "datasource": { "type": "loki", "uid": "${loki}" },
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "custom": { "lineWidth": 2, "fillOpacity": 5 } }
+      },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "loki", "uid": "${loki}" },
+          "expr": "sum(rate({app=\"fila-digital-api\"} |= \"request completed\" | json | res_statusCode = \"400\" [1m]))",
+          "legendFormat": "400 Bad Request"
+        },
+        {
+          "refId": "B",
+          "datasource": { "type": "loki", "uid": "${loki}" },
+          "expr": "sum(rate({app=\"fila-digital-api\"} |= \"request completed\" | json | res_statusCode = \"401\" [1m]))",
+          "legendFormat": "401 Unauthorized"
+        },
+        {
+          "refId": "C",
+          "datasource": { "type": "loki", "uid": "${loki}" },
+          "expr": "sum(rate({app=\"fila-digital-api\"} |= \"request completed\" | json | res_statusCode = \"403\" [1m]))",
+          "legendFormat": "403 Forbidden"
+        },
+        {
+          "refId": "D",
+          "datasource": { "type": "loki", "uid": "${loki}" },
+          "expr": "sum(rate({app=\"fila-digital-api\"} |= \"request completed\" | json | res_statusCode = \"404\" [1m]))",
+          "legendFormat": "404 Not Found"
+        },
+        {
+          "refId": "E",
+          "datasource": { "type": "loki", "uid": "${loki}" },
+          "expr": "sum(rate({app=\"fila-digital-api\"} |= \"request completed\" | json | res_statusCode = \"409\" [1m]))",
+          "legendFormat": "409 Conflict"
+        }
+      ]
+    },
+
+    {
+      "id": 300, "type": "row", "title": "Latency",
+      "gridPos": { "x": 0, "y": 14, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+
+    {
+      "id": 10, "title": "Response Time Percentiles (ms)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 15, "w": 24, "h": 8 },
+      "datasource": { "type": "loki", "uid": "${loki}" },
+      "fieldConfig": {
+        "defaults": { "unit": "ms", "custom": { "lineWidth": 2, "fillOpacity": 5 } },
         "overrides": [
           { "matcher": { "id": "byName", "options": "p99" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] },
           { "matcher": { "id": "byName", "options": "p95" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] },
@@ -185,37 +299,277 @@
         }
       ]
     },
+
     {
-      "id": 6,
-      "title": "Error Logs",
-      "type": "logs",
-      "gridPos": { "x": 0, "y": 16, "w": 24, "h": 8 },
+      "id": 22, "title": "P95 Latency by HTTP Method",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 23, "w": 24, "h": 8 },
       "datasource": { "type": "loki", "uid": "${loki}" },
-      "options": { "dedupStrategy": "none", "showTime": true, "sortOrder": "Descending", "enableLogDetails": true, "wrapLogMessage": false },
+      "fieldConfig": {
+        "defaults": { "unit": "ms", "custom": { "lineWidth": 2, "fillOpacity": 5 } }
+      },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
       "targets": [
         {
           "refId": "A",
           "datasource": { "type": "loki", "uid": "${loki}" },
-          "expr": "{app=\"fila-digital-api\", level=\"error\"}",
-          "legendFormat": ""
+          "expr": "quantile_over_time(0.95, {app=\"fila-digital-api\"} |= \"request completed\" | json | responseTime != \"\" | unwrap responseTime [1m]) by (req_method)",
+          "legendFormat": "{{req_method}}"
         }
       ]
     },
+
     {
-      "id": 7,
-      "title": "All Logs",
-      "type": "logs",
-      "gridPos": { "x": 0, "y": 24, "w": 24, "h": 10 },
+      "id": 400, "type": "row", "title": "Queue Business Metrics",
+      "gridPos": { "x": 0, "y": 31, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+
+    {
+      "id": 30, "title": "Queue Operations Rate",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 32, "w": 16, "h": 8 },
       "datasource": { "type": "loki", "uid": "${loki}" },
-      "options": { "dedupStrategy": "none", "showTime": true, "sortOrder": "Descending", "enableLogDetails": true, "wrapLogMessage": false },
+      "fieldConfig": {
+        "defaults": { "unit": "ops", "custom": { "lineWidth": 2, "fillOpacity": 8 } },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "enter" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }] },
+          { "matcher": { "id": "byName", "options": "exit"  }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "blue"  } }] },
+          { "matcher": { "id": "byName", "options": "next"  }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "purple"} }] }
+        ]
+      },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
       "targets": [
         {
           "refId": "A",
           "datasource": { "type": "loki", "uid": "${loki}" },
-          "expr": "{app=\"fila-digital-api\"}",
-          "legendFormat": ""
+          "expr": "sum(rate({app=\"fila-digital-api\"} |= \"request completed\" | json | req_url =~ \".*/enter.*\" | res_statusCode = \"201\" [1m]))",
+          "legendFormat": "enter"
+        },
+        {
+          "refId": "B",
+          "datasource": { "type": "loki", "uid": "${loki}" },
+          "expr": "sum(rate({app=\"fila-digital-api\"} |= \"request completed\" | json | req_url =~ \".*/exit\" | res_statusCode = \"200\" [1m]))",
+          "legendFormat": "exit"
+        },
+        {
+          "refId": "C",
+          "datasource": { "type": "loki", "uid": "${loki}" },
+          "expr": "sum(rate({app=\"fila-digital-api\"} |= \"request completed\" | json | req_url =~ \".*/next.*\" | res_statusCode = \"200\" [1m]))",
+          "legendFormat": "next"
+        }
+      ]
+    },
+
+    {
+      "id": 31, "title": "Double-Enter Blocked (409/min)",
+      "type": "timeseries",
+      "gridPos": { "x": 16, "y": 32, "w": 8, "h": 4 },
+      "datasource": { "type": "loki", "uid": "${loki}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": { "mode": "fixed", "fixedColor": "orange" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 }
+        }
+      },
+      "options": { "tooltip": { "mode": "single" }, "legend": { "displayMode": "hidden" } },
+      "targets": [{
+        "refId": "A",
+        "datasource": { "type": "loki", "uid": "${loki}" },
+        "expr": "sum(rate({app=\"fila-digital-api\"} |= \"request completed\" | json | res_statusCode = \"409\" [1m]))",
+        "legendFormat": "409/s"
+      }]
+    },
+
+    {
+      "id": 32, "title": "Idempotency Cache Hits / min",
+      "type": "timeseries",
+      "gridPos": { "x": 16, "y": 36, "w": 8, "h": 4 },
+      "datasource": { "type": "loki", "uid": "${loki}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": { "mode": "fixed", "fixedColor": "teal" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 }
+        }
+      },
+      "options": { "tooltip": { "mode": "single" }, "legend": { "displayMode": "hidden" } },
+      "targets": [{
+        "refId": "A",
+        "datasource": { "type": "loki", "uid": "${loki}" },
+        "expr": "sum(rate({app=\"fila-digital-api\"} |= \"request completed\" | json | req_url =~ \".*/enter.*\" | res_statusCode = \"201\" [1m])) - sum(rate({app=\"fila-digital-api\"} |= \"User entered\" [1m]))",
+        "legendFormat": "cache hits/s"
+      }]
+    },
+
+    {
+      "id": 800, "type": "row", "title": "Traces (Tempo)",
+      "gridPos": { "x": 0, "y": 40, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+
+    {
+      "id": 80, "title": "Span Rate by Operation",
+      "description": "Requests per second per HTTP route, derived from OTLP traces. Powered by Tempo span-metrics.",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 41, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "custom": { "lineWidth": 2, "fillOpacity": 5 } }
+      },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [{
+        "refId": "A",
+        "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+        "expr": "sum by (span_name) (rate(traces_spanmetrics_calls_total{service=\"fila-digital-api\"}[1m]))",
+        "legendFormat": "{{span_name}}"
+      }]
+    },
+
+    {
+      "id": 81, "title": "Span Error Rate by Operation",
+      "description": "5xx / error spans per second. A spike here means a specific route is failing.",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 41, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": { "mode": "fixed", "fixedColor": "red" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 }
+        }
+      },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [{
+        "refId": "A",
+        "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+        "expr": "sum by (span_name) (rate(traces_spanmetrics_calls_total{service=\"fila-digital-api\", status_code=\"STATUS_CODE_ERROR\"}[1m]))",
+        "legendFormat": "{{span_name}}"
+      }]
+    },
+
+    {
+      "id": 82, "title": "P95 Latency by Operation (from traces)",
+      "description": "Latency histogram from OTLP spans — more accurate than log parsing because it counts every span, not just logged requests.",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 49, "w": 16, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+      "fieldConfig": {
+        "defaults": { "unit": "s", "custom": { "lineWidth": 2, "fillOpacity": 5 } }
+      },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+          "expr": "histogram_quantile(0.95, sum by (span_name, le) (rate(traces_spanmetrics_duration_seconds_bucket{service=\"fila-digital-api\"}[5m])))",
+          "legendFormat": "p95 — {{span_name}}"
+        },
+        {
+          "refId": "B",
+          "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(traces_spanmetrics_duration_seconds_bucket{service=\"fila-digital-api\"}[5m])))",
+          "legendFormat": "p50 — all"
+        }
+      ]
+    },
+
+    {
+      "id": 83, "title": "Recent Slow Traces (> 500ms)",
+      "description": "Traces taking longer than 500ms. Click any row to open in Tempo.",
+      "type": "table",
+      "gridPos": { "x": 16, "y": 49, "w": 8, "h": 8 },
+      "datasource": { "type": "tempo", "uid": "${tempo}" },
+      "fieldConfig": {
+        "defaults": { "custom": { "filterable": false } },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Duration" }, "properties": [{ "id": "unit", "value": "ns" }] },
+          { "matcher": { "id": "byName", "options": "Start time" }, "properties": [{ "id": "custom.width", "value": 150 }] },
+          { "matcher": { "id": "byName", "options": "traceID" }, "properties": [
+            { "id": "links", "value": [{ "title": "Open in Tempo", "url": "/explore?orgId=1&left={\"datasource\":\"tempo\",\"queries\":[{\"refId\":\"A\",\"queryType\":\"traceql\",\"query\":\"${__value.raw}\"}]}" }] }
+          ]}
+        ]
+      },
+      "options": { "frameIndex": 0, "showHeader": true },
+      "targets": [{
+        "refId": "A",
+        "datasource": { "type": "tempo", "uid": "${tempo}" },
+        "queryType": "traceql",
+        "query": "{ duration > 500ms }",
+        "limit": 20
+      }]
+    },
+
+    {
+      "id": 500, "type": "row", "title": "Log Rate",
+      "gridPos": { "x": 0, "y": 57, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+
+    {
+      "id": 1, "title": "Log Rate by Level",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 58, "w": 24, "h": 8 },
+      "datasource": { "type": "loki", "uid": "${loki}" },
+      "fieldConfig": {
+        "defaults": { "unit": "logs/s", "custom": { "lineWidth": 2, "fillOpacity": 10 } },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "error" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red"    } }] },
+          { "matcher": { "id": "byName", "options": "warn"  }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] },
+          { "matcher": { "id": "byName", "options": "info"  }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green"  } }] },
+          { "matcher": { "id": "byName", "options": "debug" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "blue"   } }] }
+        ]
+      },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [{
+        "refId": "A",
+        "datasource": { "type": "loki", "uid": "${loki}" },
+        "expr": "sum by (level) (rate({app=\"fila-digital-api\"}[1m]))",
+        "legendFormat": "{{level}}"
+      }]
+    },
+
+    {
+      "id": 600, "type": "row", "title": "Errors",
+      "gridPos": { "x": 0, "y": 66, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+
+    {
+      "id": 6, "title": "Error Logs",
+      "type": "logs",
+      "gridPos": { "x": 0, "y": 67, "w": 24, "h": 8 },
+      "datasource": { "type": "loki", "uid": "${loki}" },
+      "options": { "dedupStrategy": "none", "showTime": true, "sortOrder": "Descending", "enableLogDetails": true, "wrapLogMessage": false },
+      "targets": [{
+        "refId": "A",
+        "datasource": { "type": "loki", "uid": "${loki}" },
+        "expr": "{app=\"fila-digital-api\", level=\"error\"}",
+        "legendFormat": ""
+      }]
+    },
+
+    {
+      "id": 700, "type": "row", "title": "All Logs",
+      "gridPos": { "x": 0, "y": 75, "w": 24, "h": 1 },
+      "collapsed": true,
+      "panels": [
+        {
+          "id": 7, "title": "All Logs",
+          "type": "logs",
+          "gridPos": { "x": 0, "y": 59, "w": 24, "h": 10 },
+          "datasource": { "type": "loki", "uid": "${loki}" },
+          "options": { "dedupStrategy": "none", "showTime": true, "sortOrder": "Descending", "enableLogDetails": true, "wrapLogMessage": false },
+          "targets": [{
+            "refId": "A",
+            "datasource": { "type": "loki", "uid": "${loki}" },
+            "expr": "{app=\"fila-digital-api\"}",
+            "legendFormat": ""
+          }]
         }
       ]
     }
+
   ]
 }
