@@ -171,6 +171,32 @@ export const enterByQrCodeSchema: FastifySchema = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// GET /participants-queue/:commerce_id/my-position
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const getMyPositionSchema: FastifySchema = {
+  tags: ["Participants Queue"],
+  description:
+    "Returns the authenticated user's current 1-indexed position in the queue. Cheaper than listing all participants.",
+  params: commerceIdParam,
+  response: {
+    200: {
+      type: "object",
+      properties: {
+        data: {
+          type: "object",
+          properties: {
+            position: { type: "number" },
+          },
+        },
+      },
+    },
+    401: { description: "Unauthorized", ...errorResponse },
+    404: { description: "Not in queue", ...errorResponse },
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // DELETE /participants-queue/:commerce_id/next/:count
 // ─────────────────────────────────────────────────────────────────────────────
 

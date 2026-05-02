@@ -134,6 +134,36 @@ export const enterQueueByQrCode = async (data: {
 };
 
 /**
+ * Returns the 1-indexed position of a participant in the queue.
+ * Counts how many active entries were created before them, then adds 1.
+ * Returns null if the participant is not currently in the queue.
+ */
+export const findParticipantPosition = async (
+  person_id: string,
+  queue_id: string
+): Promise<number | null> => {
+  const entry = await db
+    .selectFrom("participants_queue")
+    .select("created_at")
+    .where("person_id", "=", person_id)
+    .where("queue_id", "=", queue_id)
+    .where("is_active", "=", true)
+    .executeTakeFirst();
+
+  if (!entry) return null;
+
+  const result = await db
+    .selectFrom("participants_queue")
+    .select(db.fn.countAll<number>().as("position"))
+    .where("queue_id", "=", queue_id)
+    .where("is_active", "=", true)
+    .where("created_at", "<=", entry.created_at)
+    .executeTakeFirstOrThrow();
+
+  return Number(result.position);
+};
+
+/**
  * Atomically dequeues the next `count` active participants from a queue.
  *
  * Uses a single database transaction so that concurrent calls never serve

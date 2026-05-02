@@ -5,6 +5,7 @@ import {
   listByCommerceSchema,
   enterQueueSchema,
   enterByQrCodeSchema,
+  getMyPositionSchema,
   removeFirstSchema,
   removeNextNSchema,
   exitQueueSchema,
@@ -38,6 +39,11 @@ const registerUserRoutes = (server: Server) => {
     ROUTES.participantsQueue.exit,
     { schema: exitQueueSchema, config: { rateLimit: rateLimits.write } },
     controller.exiteQueue
+  );
+  server.get(
+    ROUTES.participantsQueue.myPosition,
+    { schema: getMyPositionSchema, config: { rateLimit: rateLimits.read } },
+    controller.getMyPosition
   );
   server.post(
     ROUTES.participantsQueue.enterByQrCode,

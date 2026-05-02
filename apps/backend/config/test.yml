@@ -9,8 +9,13 @@ database:
   password: "123321"
   port: 5437
   ssl: false
+  applicationName: "fila-digital-api-test"
+  statementTimeoutMs: 10000  # long timeout — tests may run slow migrations
+  slowQueryThresholdMs: 500  # less noise in test output
   connection:
     max: 10
+    timeoutInMilli: 5000
+    idleTimeoutInMilli: 10000
 cache:
   host: "localhost"
   port: 6379

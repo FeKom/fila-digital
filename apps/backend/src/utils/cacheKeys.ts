@@ -9,6 +9,9 @@ export const cacheKeys = {
   commerceOwner: (owner_id: string) => `commerce:owner:${owner_id}`,
   commerceList: () => "commerce:list:all",
   queueByCommerce: (commerce_id: string) => `queue:commerce:${commerce_id}`,
+  participantsByQueue: (queue_id: string, cursor?: string, limit?: number) =>
+    `participants:queue:${queue_id}:${cursor ?? ""}:${limit ?? ""}`,
+  idempotency: (hmac: string) => `idempotency:${hmac}`,
 } as const;
 
 /**
@@ -27,4 +30,8 @@ export const cacheTTL = {
   COMMERCE_LIST: 30 * 1000, // 30s
   /** Queue per commerce — can change when queue is opened/closed */
   QUEUE_BY_COMMERCE: 60 * 1000, // 60s
+  /** Participants list — short TTL, invalidated on every mutation */
+  PARTICIPANTS_LIST: 5 * 1000, // 5s
+  /** Idempotency keys — 5 min window to deduplicate retried requests */
+  IDEMPOTENCY: 5 * 60 * 1000, // 300s
 } as const;

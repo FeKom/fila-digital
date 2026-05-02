@@ -16,6 +16,7 @@ const participantService = () => {
       qrcodeToken: string;
       userId?: string;
       anonymousId?: string;
+      idempotencyKey: string;
     }) => {
       const body = {
         queue_id: data.queueId,
@@ -23,7 +24,10 @@ const participantService = () => {
         user_id: data.userId,
         anonymous_id: data.anonymousId,
       };
-      const headers = new Headers({ "Content-Type": "application/json" });
+      const headers = new Headers({
+        "Content-Type": "application/json",
+        "Idempotency-Key": data.idempotencyKey,
+      });
       const response = await api("/enter-queue", {
         method: "POST",
         body: JSON.stringify(body),

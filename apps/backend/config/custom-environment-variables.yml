@@ -8,10 +8,14 @@ database:
   user: DATABASE_USER
   password: DATABASE_PASSWORD
   port: DATABASE_PORT
-  ssl: DATABASE_SLL
-  connectionTimeoutInMilli: DATABASE_CONNECTION_TIMEOUT_IN_MILLI
+  ssl: DATABASE_SSL
+  applicationName: DATABASE_APPLICATION_NAME
+  statementTimeoutMs: DATABASE_STATEMENT_TIMEOUT_MS
+  slowQueryThresholdMs: DATABASE_SLOW_QUERY_THRESHOLD_MS
   connection:
     max: DATABASE_CONNECTION_MAX
+    timeoutInMilli: DATABASE_CONNECTION_TIMEOUT_IN_MILLI  # fixed: was at wrong nesting level
+    idleTimeoutInMilli: DATABASE_IDLE_TIMEOUT_IN_MILLI
 cache:
   host: REDIS_HOST
   port: REDIS_PORT

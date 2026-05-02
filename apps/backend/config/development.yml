@@ -9,8 +9,13 @@ database:
   password: "123321"
   port: 5435
   ssl: false
+  applicationName: "fila-digital-api-dev"
+  statementTimeoutMs: 10000   # 10s — generous in dev to avoid killing slow migrations
+  slowQueryThresholdMs: 100   # warn in dev logs for any query > 100ms
   connection:
     max: 10
+    timeoutInMilli: 5000
+    idleTimeoutInMilli: 30000
 cache:
   host: "localhost"
   port: 6379

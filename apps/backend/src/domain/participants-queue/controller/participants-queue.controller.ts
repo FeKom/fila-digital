@@ -1,3 +1,4 @@
+import { createHmac } from "crypto";
 import { ServerRequest, ServerResponse } from "../../../infra/types";
 import { parsePaginationParams } from "../../../utils/pagination";
 import {
@@ -9,6 +10,7 @@ import {
   enterQueue,
   enterQueueByQrCode,
   findFirstParticipantsByQueueId,
+  findParticipantPosition,
   findParticipantsByQueueId,
   isAnonymousInQueue,
   isUserInQueue,
@@ -30,8 +32,12 @@ const participantsQueueController = () => {
 
         if (!user) return sendError(res, 401, "Authentication required");
 
-        const c = await cache;
+        const token = req.headers.authorization?.split(" ")[1];
+        const idempotencyHeader = req.headers["idempotency-key"] as
+          | string
+          | undefined;
 
+        const c = await cache;
         const queue = await c.wrap(
           cacheKeys.queueByCommerce(commerce_id),
           () => findQueueByCommerceId(commerce_id),
@@ -40,6 +46,26 @@ const participantsQueueController = () => {
 
         if (!queue)
           return sendError(res, 400, "No queue found for this commerce");
+
+        if (idempotencyHeader) {
+          if (!token) return sendError(res, 401, "Missing authorization token");
+
+          const timeBucket = Math.floor(Date.now() / cacheTTL.IDEMPOTENCY);
+          const expectedKey = createHmac("sha256", token)
+            .update(`${queue.id}:${user.id}:${timeBucket}`)
+            .digest("hex");
+
+          if (idempotencyHeader !== expectedKey) {
+            return sendError(res, 400, "Invalid idempotency key");
+          }
+
+          const cached = await c.get<{ message: string }>(
+            cacheKeys.idempotency(expectedKey)
+          );
+          if (cached) {
+            return res.code(201).send(cached);
+          }
+        }
 
         if (await isUserInQueue(user.id, queue.id)) {
           return sendError(res, 409, "User is already in this queue");
@@ -52,7 +78,19 @@ const participantsQueueController = () => {
         });
 
         if (result) {
-          return res.code(201).send({ message: "User entered the queue" });
+          const response = { message: "User entered the queue" };
+
+          await c.del(cacheKeys.participantsByQueue(queue.id));
+
+          if (idempotencyHeader) {
+            await c.set(
+              cacheKeys.idempotency(idempotencyHeader),
+              response,
+              cacheTTL.IDEMPOTENCY
+            );
+          }
+
+          return res.code(201).send(response);
         }
       } catch (error) {
         req.log.error(
@@ -80,7 +118,11 @@ const participantsQueueController = () => {
         if (!queue)
           return sendError(res, 400, "No queue found for this commerce");
 
-        const page = await findParticipantsByQueueId(queue.id, params);
+        const page = await c.wrap(
+          cacheKeys.participantsByQueue(queue.id, params.cursor, params.limit),
+          () => findParticipantsByQueueId(queue.id, params),
+          cacheTTL.PARTICIPANTS_LIST
+        );
 
         return res.code(200).send({
           data: {
@@ -139,6 +181,8 @@ const participantsQueueController = () => {
           { is_active: false }
         );
 
+        await c.del(cacheKeys.participantsByQueue(queue.id));
+
         return res.code(200).send({
           message: "Successfully removed the first participant from the queue",
           data: { removedParticipant: firstParticipant.person_id },
@@ -191,6 +235,8 @@ const participantsQueueController = () => {
 
         if (removed.length === 0) return sendError(res, 400, "Queue is empty");
 
+        await c.del(cacheKeys.participantsByQueue(queue.id));
+
         return res.code(200).send({
           message: `Successfully removed ${removed.length} participant(s) from the queue`,
           data: {
@@ -215,6 +261,10 @@ const participantsQueueController = () => {
           anonymousId?: string;
         };
 
+        const idempotencyHeader = req.headers["idempotency-key"] as
+          | string
+          | undefined;
+
         const queue = await findQueueByIdOnly(queueId);
 
         if (!queue) return sendError(res, 404, "Queue not found");
@@ -225,6 +275,27 @@ const participantsQueueController = () => {
         if (queue.qrcode_token !== qrcodeToken)
           return sendError(res, 403, "Invalid QR code token");
 
+        const c = await cache;
+
+        if (idempotencyHeader) {
+          const participantId = userId ?? anonymousId;
+          const timeBucket = Math.floor(Date.now() / cacheTTL.IDEMPOTENCY);
+          const expectedKey = createHmac("sha256", qrcodeToken)
+            .update(`${queueId}:${participantId}:${timeBucket}`)
+            .digest("hex");
+
+          if (idempotencyHeader !== expectedKey) {
+            return sendError(res, 400, "Invalid idempotency key");
+          }
+
+          const cached = await c.get<{ message: string }>(
+            cacheKeys.idempotency(expectedKey)
+          );
+          if (cached) {
+            return res.code(201).send(cached);
+          }
+        }
+
         if (userId) {
           const person = await findUserById(userId);
           if (!person) return sendError(res, 404, "User not found");
@@ -234,9 +305,19 @@ const participantsQueueController = () => {
           }
 
           await enterQueueByQrCode({ queue_id: queue.id, person_id: userId });
-          return res
-            .code(201)
-            .send({ message: "User entered the queue via QR code" });
+          const response = { message: "User entered the queue via QR code" };
+
+          await c.del(cacheKeys.participantsByQueue(queue.id));
+
+          if (idempotencyHeader) {
+            await c.set(
+              cacheKeys.idempotency(idempotencyHeader),
+              response,
+              cacheTTL.IDEMPOTENCY
+            );
+          }
+
+          return res.code(201).send(response);
         }
 
         if (anonymousId) {
@@ -262,9 +343,21 @@ const participantsQueueController = () => {
             queue_id: queue.id,
             anonymous_id: anonymousId,
           });
-          return res
-            .code(201)
-            .send({ message: "Anonymous user entered the queue via QR code" });
+          const response = {
+            message: "Anonymous user entered the queue via QR code",
+          };
+
+          await c.del(cacheKeys.participantsByQueue(queue.id));
+
+          if (idempotencyHeader) {
+            await c.set(
+              cacheKeys.idempotency(idempotencyHeader),
+              response,
+              cacheTTL.IDEMPOTENCY
+            );
+          }
+
+          return res.code(201).send(response);
         }
 
         return sendError(
@@ -306,12 +399,46 @@ const participantsQueueController = () => {
         if (!participantRecord)
           return sendError(res, 400, "You are not in this queue");
 
+        await c.del(cacheKeys.participantsByQueue(queue.id));
+
         return res.code(200).send({ message: "Successfully exited the queue" });
       } catch (error) {
         req.log.error(
           `[Participants-Queue Controller] - exitQueue failed, error: ${error}`
         );
         return sendError(res, 500, "Failed to exit queue");
+      }
+    },
+
+    getMyPosition: async (req: ServerRequest, res: ServerResponse) => {
+      try {
+        const user = req.user;
+        const commerce_id = (req.params as { commerce_id: string }).commerce_id;
+
+        if (!user) return sendError(res, 401, "Authentication required");
+
+        const c = await cache;
+
+        const queue = await c.wrap(
+          cacheKeys.queueByCommerce(commerce_id),
+          () => findQueueByCommerceId(commerce_id),
+          cacheTTL.QUEUE_BY_COMMERCE
+        );
+
+        if (!queue)
+          return sendError(res, 400, "No queue found for this commerce");
+
+        const position = await findParticipantPosition(user.id, queue.id);
+
+        if (position === null)
+          return sendError(res, 404, "You are not in this queue");
+
+        return res.code(200).send({ data: { position } });
+      } catch (error) {
+        req.log.error(
+          `[Participants-Queue Controller] - getMyPosition failed, error: ${error}`
+        );
+        return sendError(res, 500, "Failed to get queue position");
       }
     },
   };

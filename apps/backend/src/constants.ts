@@ -21,6 +21,7 @@ const ROUTES = {
     enter: "/participants-queue/enter/:commerce_id",
     enterByQrCode: "/enter-queue",
     list: "/participants-queue/:commerce_id",
+    myPosition: "/participants-queue/:commerce_id/my-position",
     next: "/participants-queue/:commerce_id/next",
     nextN: "/participants-queue/:commerce_id/next/:count",
     exit: "/participants-queue/:commerce_id/exit",

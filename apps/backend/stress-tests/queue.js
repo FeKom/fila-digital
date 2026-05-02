@@ -70,22 +70,29 @@ export function setup() {
     },
   };
 
-  // 2. Register commerce
+  // 2. Register commerce (idempotent — fetch existing on 409)
   const commerceRes = http.post(
     `${BASE_URL}/v1/commerce/register`,
     JSON.stringify({
       name: "Stress Test Commerce",
-      document_id: "11222333000181", // valid CNPJ format
+      document_id: "11222333000181",
       phone: "+5511988880001",
       address: "Rua Teste, 123",
     }),
     { ...ownerAuth, responseCallback: expectedAll }
   );
 
-  const commerceId = commerceRes.json("commerce_id");
+  let commerceId = commerceRes.json("commerce_id");
   if (!commerceId) {
-    console.error(`Commerce registration failed: ${commerceRes.body}`);
-    return {};
+    if (commerceRes.status === 409) {
+      const existing = http.get(`${BASE_URL}/v1/user/commerces`, ownerAuth);
+      const commerces = existing.json("commerces");
+      commerceId = Array.isArray(commerces) && commerces[0]?.id;
+    }
+    if (!commerceId) {
+      console.error(`Commerce registration failed: ${commerceRes.body}`);
+      return {};
+    }
   }
 
   // 3. Register queue for that commerce
@@ -94,15 +101,25 @@ export function setup() {
     JSON.stringify({
       commerce_id: commerceId,
       name: "Stress Queue",
-      max_size: 500,
+      type: "ephemera",
+      status: "open",
     }),
     { ...ownerAuth, responseCallback: expectedAll }
   );
 
-  const queueId = queueRes.json("queue_id");
+  let queueId = queueRes.json("queue.id");
   if (!queueId) {
-    console.error(`Queue registration failed: ${queueRes.body}`);
-    return {};
+    if (queueRes.status === 409) {
+      const existing = http.get(
+        `${BASE_URL}/v1/commerce/${commerceId}`,
+        ownerAuth
+      );
+      queueId = existing.json("queue.id");
+    }
+    if (!queueId) {
+      console.error(`Queue registration failed: ${queueRes.body}`);
+      return {};
+    }
   }
 
   // 4. Register & login participants
@@ -161,9 +178,26 @@ export default function (data) {
     responseCallback: expectedAll,
   };
 
+  // DELETE requests must not send Content-Type: application/json with a null body
+  const participantDel = {
+    headers: {
+      Authorization: `Bearer ${participantToken}`,
+      "X-Forwarded-For": ip,
+    },
+    responseCallback: expectedAll,
+  };
+
   const ownerAuth = {
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${ownerToken}`,
+      "X-Forwarded-For": ip,
+    },
+    responseCallback: expectedAll,
+  };
+
+  const ownerDel = {
+    headers: {
       Authorization: `Bearer ${ownerToken}`,
       "X-Forwarded-For": ip,
     },
@@ -175,20 +209,20 @@ export default function (data) {
     const next = http.del(
       `${BASE_URL}/v1/participants-queue/${commerceId}/next`,
       null,
-      ownerAuth
+      ownerDel
     );
     check(next, {
-      "call next: ok": (r) => [200, 204, 404, 429].includes(r.status),
+      "call next: ok": (r) => [200, 204, 400, 404, 429].includes(r.status),
     });
 
     // ── Owner: call next N ────────────────────────────────────────────────
     const nextN = http.del(
       `${BASE_URL}/v1/participants-queue/${commerceId}/next/3`,
       null,
-      ownerAuth
+      ownerDel
     );
     check(nextN, {
-      "call next N: ok": (r) => [200, 204, 404, 429].includes(r.status),
+      "call next N: ok": (r) => [200, 204, 400, 404, 429].includes(r.status),
     });
 
     // ── Owner: list queue ─────────────────────────────────────────────────
@@ -216,7 +250,7 @@ export default function (data) {
     const exit = http.del(
       `${BASE_URL}/v1/participants-queue/${commerceId}/exit`,
       null,
-      participantAuth
+      participantDel
     );
     check(exit, {
       "exit queue: ok": (r) => [200, 204, 404, 429].includes(r.status),

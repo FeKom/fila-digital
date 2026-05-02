@@ -3,15 +3,19 @@ server:
 logging:
   level: error
 database:
-  name: "postgres" # Supabase default database name
-  host: "" # set via DATABASE_HOST env var (db.<ref>.supabase.co or pooler host)
-  user: "postgres" # Supabase default user
-  password: "" # set via DATABASE_PASSWORD env var
-  port: 6543 # Supabase connection pooler port (Transaction mode)
+  name: "postgres"           # Supabase default database name
+  host: ""                   # set via DATABASE_HOST env var
+  user: "postgres"           # Supabase default user
+  password: ""               # set via DATABASE_PASSWORD env var
+  port: 6543                 # Supabase connection pooler port (Transaction mode)
   ssl: true
+  applicationName: "fila-digital-api"
+  statementTimeoutMs: 5000   # 5s — abort runaway queries in production
+  slowQueryThresholdMs: 500  # higher threshold in prod to reduce log noise
   connection:
     max: 10
     timeoutInMilli: 10000
+    idleTimeoutInMilli: 60000
 cache:
   host: ""
   port: 6379
