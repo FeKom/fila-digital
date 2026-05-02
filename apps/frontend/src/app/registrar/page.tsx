@@ -1,6 +1,6 @@
 "use client";
 import { submitRegisterForm } from "./actions";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 const QueueDots = () => (
   <div className="auth-queue-grid" aria-hidden="true">
@@ -22,6 +22,10 @@ const Register = () => {
   const [state, action, pending] = useActionState(submitRegisterForm, {
     error: null,
   });
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
 
   return (
     <div className="auth-layout">
@@ -51,7 +55,10 @@ const Register = () => {
           </h2>
           <p className="auth-form-subtitle">Preencha os dados para começar</p>
 
-          <form action={action}>
+          <form
+            action={action}
+            className={state.error ? "auth-form-shake" : ""}
+          >
             <div className="auth-field">
               <label htmlFor="name">Nome completo</label>
               <input
@@ -61,6 +68,8 @@ const Register = () => {
                 placeholder="João Silva"
                 className="auth-input"
                 autoComplete="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
               />
             </div>
 
@@ -73,6 +82,8 @@ const Register = () => {
                 placeholder="voce@dominio.com"
                 className="auth-input"
                 autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
 
@@ -85,6 +96,8 @@ const Register = () => {
                 placeholder="(11) 99999-9999"
                 className="auth-input"
                 autoComplete="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
               />
               <span className="auth-hint">Formato: (DDD) 99999-9999</span>
             </div>
@@ -98,6 +111,8 @@ const Register = () => {
                 placeholder="••••••••"
                 className="auth-input"
                 autoComplete="new-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
               <span className="auth-hint">Mínimo 8 caracteres</span>
             </div>
@@ -125,12 +140,19 @@ const Register = () => {
             )}
 
             <button type="submit" className="auth-submit" disabled={pending}>
-              {pending ? "Criando conta..." : "Criar conta"}
+              {pending ? (
+                <span className="auth-submit-pending">
+                  <span className="auth-spinner" />
+                  Criando conta…
+                </span>
+              ) : (
+                "Criar conta"
+              )}
             </button>
           </form>
 
           <p className="auth-footer-link">
-            Já tem uma conta? <a href="/login">Entrar</a>
+            Já possui uma conta? <a href="/login">Entrar</a>
           </p>
         </div>
       </div>

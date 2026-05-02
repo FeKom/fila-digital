@@ -1,6 +1,6 @@
 "use client";
 import { submitLoginForm } from "./actions";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 const QueueDots = () => (
   <div className="auth-queue-grid" aria-hidden="true">
@@ -22,6 +22,8 @@ const Login = () => {
   const [state, action, pending] = useActionState(submitLoginForm, {
     error: null,
   });
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   return (
     <div className="auth-layout">
@@ -45,15 +47,16 @@ const Login = () => {
       <div className="auth-panel-form">
         <div className="auth-form-inner">
           <h2 className="auth-form-title">
-            Boas-vindas
+            Bem-vindo
             <br />
             de volta.
           </h2>
-          <p className="auth-form-subtitle">
-            Entre com sua conta para continuar
-          </p>
+          <p className="auth-form-subtitle">Acesse sua conta para continuar</p>
 
-          <form action={action}>
+          <form
+            action={action}
+            className={state.error ? "auth-form-shake" : ""}
+          >
             <div className="auth-field">
               <label htmlFor="email">E-mail</label>
               <input
@@ -63,6 +66,8 @@ const Login = () => {
                 placeholder="voce@dominio.com"
                 className="auth-input"
                 autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
 
@@ -75,6 +80,8 @@ const Login = () => {
                 placeholder="••••••••"
                 className="auth-input"
                 autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
             </div>
 
@@ -101,12 +108,19 @@ const Login = () => {
             )}
 
             <button type="submit" className="auth-submit" disabled={pending}>
-              {pending ? "Entrando..." : "Entrar"}
+              {pending ? (
+                <span className="auth-submit-pending">
+                  <span className="auth-spinner" />
+                  Entrando…
+                </span>
+              ) : (
+                "Entrar"
+              )}
             </button>
           </form>
 
           <p className="auth-footer-link">
-            Não tem uma conta? <a href="/registrar">Criar conta</a>
+            Ainda não tem uma conta? <a href="/registrar">Criar conta</a>
           </p>
         </div>
       </div>

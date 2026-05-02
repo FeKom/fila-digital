@@ -195,6 +195,18 @@ body {
   align-items: center;
   padding: 3rem 2.5rem;
   background: #fafafa;
+  overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .auth-panel-form {
+    padding: 2rem 1.5rem;
+    justify-content: flex-start;
+    /* Give the panel its own scroll context so the form
+       never gets clipped by the grid when an error appears */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 .auth-form-inner {
@@ -284,6 +296,30 @@ body {
   }
 }
 
+/* Shake the form on error to draw attention */
+@keyframes authShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-5px);
+  }
+  40% {
+    transform: translateX(5px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+.auth-form-shake {
+  animation: authShake 0.35s ease;
+}
+
 .auth-submit {
   width: 100%;
   background: var(--auth-dark);
@@ -301,6 +337,9 @@ body {
     transform 0.1s ease;
   margin-top: 0.5rem;
   border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .auth-submit:hover:not(:disabled) {
@@ -312,8 +351,31 @@ body {
 }
 
 .auth-submit:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Pending state inside submit button */
+.auth-submit-pending {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.auth-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
 }
 
 .auth-footer-link {
@@ -409,6 +471,12 @@ body {
   gap: 0.25rem;
 }
 
+@media (max-width: 640px) {
+  .app-nav {
+    display: none;
+  }
+}
+
 .app-nav-link {
   font-size: 0.83rem;
   color: var(--text-2);
@@ -475,10 +543,22 @@ body {
   padding: 2.5rem 1.5rem;
 }
 
+@media (max-width: 640px) {
+  .page-container {
+    padding: 1.5rem 1rem;
+  }
+}
+
 .page-container-sm {
   max-width: 680px;
   margin: 0 auto;
   padding: 2.5rem 1.5rem;
+}
+
+@media (max-width: 640px) {
+  .page-container-sm {
+    padding: 1.5rem 1rem;
+  }
 }
 
 .page-header {
@@ -1198,6 +1278,13 @@ body {
   gap: 0.5rem;
 }
 
+@media (max-width: 380px) {
+  /* On very small screens, hide the ghost "Entrar" link (keep only "Criar conta") */
+  .app-header-actions .app-nav-btn-ghost {
+    display: none;
+  }
+}
+
 /* ============================================================
    PAGE HELPERS
    ============================================================ */
@@ -1271,6 +1358,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .queue-list-item-info {
