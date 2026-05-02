@@ -116,7 +116,9 @@ const CommerceDetail = async ({ params }: Props) => {
                 </Button>
               </form>
               <span className="queue-participants-count">
-                {participants.length} participante(s) na fila
+                {participants.length}{" "}
+                {participants.length === 1 ? "participante" : "participantes"}{" "}
+                na fila
               </span>
             </div>
             <ParticipantList participants={participants} />
