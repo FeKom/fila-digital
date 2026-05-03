@@ -10,8 +10,8 @@ database:
   port: 5435
   ssl: false
   applicationName: "fila-digital-api-dev"
-  statementTimeoutMs: 10000   # 10s — generous in dev to avoid killing slow migrations
-  slowQueryThresholdMs: 100   # warn in dev logs for any query > 100ms
+  statementTimeoutMs: 10000 # 10s — generous in dev to avoid killing slow migrations
+  slowQueryThresholdMs: 100 # warn in dev logs for any query > 100ms
   connection:
     max: 10
     timeoutInMilli: 5000
@@ -22,3 +22,10 @@ cache:
   ttl: 3600
 token:
   secret: "F996A2C8-80AC-4BDD-A5DA-1BF75811CFA7"
+notifications:
+  resend:
+    apiKey: "re_ACn5vLsh_AboUqCy3MmWWDeWHQFCnPWHZ"
+    fromEmail: "onboarding@resend.dev"
+google:
+  clientId: "405473766542-ovntgiflmf7ri619ka9klq7cl2i288md.apps.googleusercontent.com"
+  clientSecret: ""

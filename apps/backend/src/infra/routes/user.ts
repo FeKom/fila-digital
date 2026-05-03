@@ -1,6 +1,7 @@
 import ROUTES from "../../constants";
 import userController from "../../domain/user/controller/user.controller";
 import userInfo from "../../domain/user/use-cases/user.info";
+import googleLogin from "../../domain/user/use-cases/google-login";
 import { rateLimits } from "../../utils/rateLimits";
 import {
   registerSchema,
@@ -15,7 +16,13 @@ import { Server } from "../types";
 const registerUserRoutes = (server: Server) => {
   const controller = userController();
   const useCase = userInfo();
+  const googleLoginUseCase = googleLogin();
 
+  server.post(
+    ROUTES.user.google,
+    { config: { rateLimit: rateLimits.auth } },
+    googleLoginUseCase.handle
+  );
   server.post(
     ROUTES.user.register,
     { schema: registerSchema, config: { rateLimit: rateLimits.auth } },

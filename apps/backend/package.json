@@ -42,12 +42,14 @@
     "@sentry/node": "^10.43.0",
     "@testcontainers/postgresql": "^11.5.1",
     "bcryptjs": "^3.0.2",
+    "bullmq": "^5.76.5",
     "cache-manager": "^7.2.8",
     "cache-manager-redis-yet": "^5.1.5",
     "config": "^4.0.1",
     "date-fns": "^4.1.0",
     "fastify": "^5.4.0",
     "fastify-graceful-shutdown": "^5.0.0",
+    "google-auth-library": "^10.6.2",
     "jsonwebtoken": "^9.0.2",
     "jsvat": "^2.5.4",
     "keyv": "^5.3.3",
@@ -58,6 +60,7 @@
     "pino": "^9.9.0",
     "pino-loki": "^3.0.0",
     "qrcode": "^1.5.4",
+    "resend": "^6.12.2",
     "uuidv7": "^1.0.2"
   },
   "devDependencies": {

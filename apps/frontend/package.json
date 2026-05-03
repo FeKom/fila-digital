@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@fila-digital/types": "workspace:*",
+    "@react-oauth/google": "^0.13.5",
     "clsx": "^2.1.1",
     "daisyui": "^5.0.46",
     "next": "16.2.4",
@@ -40,5 +41,5 @@
     "vite": "^6",
     "vitest": "^3.2.4"
   },
-  "packageManager": "pnpm@8.6.2+sha512.0e68307be4f7e17afa5186932d74a984f4bba24e21d843e46874041fa8fb512a00936d42cee780743d6740b9162700e766426e721a342db2a7b49fbd079c6551"
+  "packageManager": "pnpm@9.15.9"
 }

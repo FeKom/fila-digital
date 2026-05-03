@@ -14,7 +14,7 @@ database:
   slowQueryThresholdMs: DATABASE_SLOW_QUERY_THRESHOLD_MS
   connection:
     max: DATABASE_CONNECTION_MAX
-    timeoutInMilli: DATABASE_CONNECTION_TIMEOUT_IN_MILLI  # fixed: was at wrong nesting level
+    timeoutInMilli: DATABASE_CONNECTION_TIMEOUT_IN_MILLI # fixed: was at wrong nesting level
     idleTimeoutInMilli: DATABASE_IDLE_TIMEOUT_IN_MILLI
 cache:
   host: REDIS_HOST
@@ -24,3 +24,7 @@ token:
   secret: AUTH_TOKEN
 cors:
   allowedOrigin: ALLOWED_ORIGIN
+notifications:
+  resend:
+    apiKey: RESEND_API_KEY
+    fromEmail: NOTIFICATION_FROM_EMAIL

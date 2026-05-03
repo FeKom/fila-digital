@@ -1,6 +1,9 @@
 "use client";
 import { submitLoginForm } from "./actions";
+import { submitGoogleLogin } from "./google-action";
 import { useActionState, useState } from "react";
+import { useRouter } from "next/navigation";
+import { GoogleLogin } from "@react-oauth/google";
 
 const QueueDots = () => (
   <div className="auth-queue-grid" aria-hidden="true">
@@ -24,6 +27,8 @@ const Login = () => {
   });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [googleError, setGoogleError] = useState<string | null>(null);
+  const router = useRouter();
 
   return (
     <div className="auth-layout">
@@ -118,6 +123,34 @@ const Login = () => {
               )}
             </button>
           </form>
+
+          <div className="auth-divider">
+            <span>ou</span>
+          </div>
+
+          {googleError && (
+            <div className="auth-error" role="alert">
+              {googleError}
+            </div>
+          )}
+
+          <GoogleLogin
+            onSuccess={async (res) => {
+              setGoogleError(null);
+              if (!res.credential) return;
+              const result = await submitGoogleLogin(res.credential);
+              if ("success" in result) {
+                router.push("/");
+              } else {
+                setGoogleError(result.error);
+              }
+            }}
+            onError={() =>
+              setGoogleError("Erro ao autenticar com Google. Tente novamente.")
+            }
+            width="100%"
+            text="signin_with"
+          />
 
           <p className="auth-footer-link">
             Ainda não tem uma conta? <a href="/registrar">Criar conta</a>

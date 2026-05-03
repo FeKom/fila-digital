@@ -29,6 +29,7 @@ const ROUTES = {
   user: {
     register: "/user/register",
     login: "/user/login",
+    google: "/user/google",
     refresh: "/user/refresh",
     logout: "/user/logout",
     details: "/user",

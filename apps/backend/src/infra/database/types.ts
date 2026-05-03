@@ -86,6 +86,7 @@ export interface PersonTable {
   password: string;
   commerce_id: string | null;
   queue_id: string | null;
+  google_id: string | null;
   role: ColumnType<PersonRole, PersonRole | undefined, PersonRole>;
   active: ColumnType<boolean, boolean | undefined, boolean>;
   created_at: ColumnType<Date, string | undefined, never>;

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Unbounded, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
+import { GoogleProvider } from "@/components/GoogleProvider";
 import { isAuthenticated } from "./actions";
 
 const unbounded = Unbounded({
@@ -32,8 +33,10 @@ export default async function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={`${unbounded.variable} ${dmSans.variable} antialiased`}>
-        <Header authenticated={authenticated} />
-        {children}
+        <GoogleProvider>
+          <Header authenticated={authenticated} />
+          {children}
+        </GoogleProvider>
       </body>
     </html>
   );
