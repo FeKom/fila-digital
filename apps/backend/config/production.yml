@@ -26,3 +26,5 @@ notifications:
   resend:
     apiKey: ""
     fromEmail: "noreply@filadigital.app.br"
+google:
+  clientId: ""
