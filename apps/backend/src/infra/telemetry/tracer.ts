@@ -19,63 +19,67 @@
 
 import { NodeSDK } from "@opentelemetry/sdk-node";
 import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
-import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
+import { FastifyOtelInstrumentation } from "@fastify/otel";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import {
   ATTR_SERVICE_NAME,
   ATTR_SERVICE_VERSION,
 } from "@opentelemetry/semantic-conventions";
+import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-grpc";
+import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-grpc";
+import { CompressionAlgorithm } from "@opentelemetry/otlp-exporter-base";
+import { PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
+import config from "config";
 
-const endpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
+const options = {
+  url: config.get<string>("otel.endpoint"),
+  compression: CompressionAlgorithm.GZIP,
+};
 
-if (!endpoint) {
+const metricExporter = new OTLPMetricExporter(options);
+const traceExporter = new OTLPTraceExporter(options);
+
+const metricReader = new PeriodicExportingMetricReader({
+  exporter: metricExporter,
+  exportIntervalMillis: 60000,
+  exportTimeoutMillis: 10000,
+});
+
+const fastifyOtelInstrumentation = new FastifyOtelInstrumentation({
+  registerOnInitialization: true,
+});
+
+if (!options.url) {
   process.stdout.write(
     "[otel] OTEL_EXPORTER_OTLP_ENDPOINT not set — tracing disabled\n"
   );
-} else {
-  const sdk = new NodeSDK({
-    resource: resourceFromAttributes({
-      [ATTR_SERVICE_NAME]: process.env.OTEL_SERVICE_NAME ?? "fila-digital-api",
-      [ATTR_SERVICE_VERSION]: process.env.GITHUB_SHA?.slice(0, 7) ?? "dev",
-      "deployment.environment": process.env.NODE_ENV ?? "development",
-    }),
-
-    traceExporter: new OTLPTraceExporter({
-      url: `${endpoint}/v1/traces`,
-    }),
-
-    instrumentations: [
-      getNodeAutoInstrumentations({
-        "@opentelemetry/instrumentation-http": {
-          enabled: true,
-          // Skip healthcheck and metrics scrapes — high volume, low value
-          ignoreIncomingRequestHook: (req) =>
-            req.url === "/healthcheck" || req.url === "/metrics",
-        },
-
-        // PostgreSQL — captures db.statement on every Kysely query
-        // enhancedDatabaseReporting: false keeps bind values out of spans
-        "@opentelemetry/instrumentation-pg": {
-          enabled: true,
-          enhancedDatabaseReporting: false,
-        },
-
-        "@opentelemetry/instrumentation-dns": { enabled: true },
-
-        // Disable unused framework instrumentations
-        "@opentelemetry/instrumentation-express": { enabled: false },
-        "@opentelemetry/instrumentation-koa": { enabled: false },
-        "@opentelemetry/instrumentation-hapi": { enabled: false },
-        "@opentelemetry/instrumentation-nestjs-core": { enabled: false },
-        "@opentelemetry/instrumentation-graphql": { enabled: false },
-        "@opentelemetry/instrumentation-grpc": { enabled: false },
-      }),
-    ],
-  });
-
-  sdk.start();
-
-  process.on("SIGTERM", () => {
-    sdk.shutdown().finally(() => process.exit(0));
-  });
 }
+
+const sdk = new NodeSDK({
+  metricReader,
+  traceExporter,
+
+  resource: resourceFromAttributes({
+    [ATTR_SERVICE_NAME]: config.get<string>("otel.serviceName"),
+    [ATTR_SERVICE_VERSION]: process.env.GITHUB_SHA?.slice(0, 7) ?? "dev",
+    "deployment.environment": process.env.NODE_ENV ?? "development",
+  }),
+
+  instrumentations: [
+    getNodeAutoInstrumentations({
+      // PostgreSQL — captures db.statement on every Kysely query
+      // enhancedDatabaseReporting: false keeps bind values out of spans
+      "@opentelemetry/instrumentation-pg": {
+        enabled: true,
+        enhancedDatabaseReporting: false,
+      },
+    }),
+    fastifyOtelInstrumentation,
+  ],
+});
+
+process.on("beforeExit", async () => {
+  await sdk.shutdown();
+});
+
+sdk.start();

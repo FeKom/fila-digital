@@ -28,3 +28,7 @@ notifications:
     fromEmail: "noreply@filadigital.app.br"
 google:
   clientId: ""
+otel:
+  endpoint: ""
+  serviceName: "fila-digital-api"
+  lokiUrl: ""

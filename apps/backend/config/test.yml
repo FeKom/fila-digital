@@ -22,3 +22,7 @@ cache:
   ttl: 60
 token:
   secret: "test-secret-key"
+otel:
+  endpoint: ""
+  serviceName: "fila-digital-api-test"
+  lokiUrl: ""
