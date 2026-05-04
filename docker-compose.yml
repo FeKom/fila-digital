@@ -73,17 +73,26 @@ services:
     networks:
       - app-network
 
-  tempo:
-    image: grafana/tempo:latest
-    user: root
-    command: ['-config.file=/etc/tempo.yml']
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    command: ['--config=/etc/otel-collector-config.yml']
     ports:
-      - 4317:4317  # OTLP gRPC
-      - 4318:4318  # OTLP HTTP
-      - 3200:3200  # Tempo HTTP API
+      - 4317:4317   # OTLP gRPC
+      - 4318:4318   # OTLP HTTP
+      - 55679:55679 # zpages debug UI
     volumes:
-      - ./observability/tempo.yml:/etc/tempo.yml:ro
-      - tempo-data:/tmp/tempo
+      - ./observability/otel-collector-config.yml:/etc/otel-collector-config.yml:ro
+    networks:
+      - app-network
+    depends_on:
+      - jaeger
+      - prometheus
+      - loki
+
+  jaeger:
+    image: jaegertracing/jaeger:latest
+    ports:
+      - 16686:16686  # Jaeger UI
     networks:
       - app-network
 
@@ -105,7 +114,7 @@ services:
       - app-network
     depends_on:
       - prometheus
-      - tempo
+      - jaeger
       - loki
 
 volumes:
@@ -113,7 +122,6 @@ volumes:
   redis-data:
   prometheus-data:
   grafana-data:
-  tempo-data:
   loki-data:
 
 networks:
