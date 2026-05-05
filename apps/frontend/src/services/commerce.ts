@@ -1,5 +1,8 @@
 import { authApi } from "@/lib/api";
-import { Commerce, CommerceInput } from "@/types";
+import { Commerce, CommerceInput, NearbyCommerce } from "@/types";
+
+const BASE_URL =
+  process.env.NEXT_PUBLIC_FILA_DIGITAL_BASE_URL ?? "http://localhost:7070";
 
 const commerceService = () => {
   return {
@@ -46,6 +49,22 @@ const commerceService = () => {
         method: "DELETE",
       });
       return response.json();
+    },
+    nearby: async (
+      lat: number,
+      lng: number,
+      radius = 5000
+    ): Promise<NearbyCommerce[]> => {
+      const params = new URLSearchParams({
+        lat: String(lat),
+        lng: String(lng),
+        radius: String(radius),
+      });
+      const response = await fetch(
+        `${BASE_URL}/v1/commerce/nearby?${params.toString()}`
+      );
+      if (!response.ok) return [];
+      return response.json() as Promise<NearbyCommerce[]>;
     },
   };
 };

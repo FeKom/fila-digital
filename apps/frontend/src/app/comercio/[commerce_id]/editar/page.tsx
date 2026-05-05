@@ -1,5 +1,6 @@
 import { getCommerce } from "../actions";
 import { updateCommerce } from "./actions";
+import LocationButton from "@/components/LocationButton/LocationButton";
 
 type Props = {
   params: Promise<{ commerce_id: string }>;
@@ -82,6 +83,14 @@ const EditCommerce = async ({ params }: Props) => {
               />
             </div>
           </div>
+        </div>
+
+        <div className="form-section">
+          <div className="form-section-title">Localização</div>
+          <LocationButton
+            defaultLat={commerce.latitude}
+            defaultLng={commerce.longitude}
+          />
         </div>
 
         <div className="form-section">

@@ -1,6 +1,7 @@
 "use client";
 import { useActionState } from "react";
 import { createCommerce } from "./actions";
+import LocationButton from "@/components/LocationButton/LocationButton";
 
 const CreateCommerce = () => {
   const [state, action, pending] = useActionState(createCommerce, {
@@ -75,6 +76,11 @@ const CreateCommerce = () => {
               />
             </div>
           </div>
+        </div>
+
+        <div className="form-section">
+          <div className="form-section-title">Localização</div>
+          <LocationButton />
         </div>
 
         <div className="form-section">

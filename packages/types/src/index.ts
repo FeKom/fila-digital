@@ -32,7 +32,19 @@ export type Commerce = {
   closed_at: string;
   owner_id: string;
   active: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
   queue?: Queue;
+};
+
+export type NearbyCommerce = {
+  id: string;
+  name: string;
+  description: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  open_queues_count: number;
+  distance_meters: number;
 };
 
 export type ParticipantStatus = "waiting" | "called" | "done" | "exited";
@@ -94,6 +106,8 @@ export type CommerceInput = {
   document_id: string;
   open_at: string;
   closed_at: string;
+  latitude?: number | null;
+  longitude?: number | null;
 };
 
 export type QueueInput = {

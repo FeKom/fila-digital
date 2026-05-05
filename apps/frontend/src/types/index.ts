@@ -1,6 +1,7 @@
 export type {
   User,
   Commerce,
+  NearbyCommerce,
   Queue,
   QueueType,
   QueueStatus,
