@@ -31,55 +31,57 @@ import { CompressionAlgorithm } from "@opentelemetry/otlp-exporter-base";
 import { PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
 import config from "config";
 
-const options = {
-  url: config.get<string>("otel.endpoint"),
-  compression: CompressionAlgorithm.GZIP,
-};
-
-const metricExporter = new OTLPMetricExporter(options);
-const traceExporter = new OTLPTraceExporter(options);
-
-const metricReader = new PeriodicExportingMetricReader({
-  exporter: metricExporter,
-  exportIntervalMillis: 60000,
-  exportTimeoutMillis: 10000,
-});
+const endpoint = config.get<string>("otel.endpoint");
 
 const fastifyOtelInstrumentation = new FastifyOtelInstrumentation({
   registerOnInitialization: true,
 });
 
-if (!options.url) {
+if (!endpoint) {
   process.stdout.write(
     "[otel] OTEL_EXPORTER_OTLP_ENDPOINT not set — tracing disabled\n"
   );
-}
+} else {
+  const options = {
+    url: endpoint,
+    compression: CompressionAlgorithm.GZIP,
+  };
 
-const sdk = new NodeSDK({
-  metricReader,
-  traceExporter,
+  const metricExporter = new OTLPMetricExporter(options);
+  const traceExporter = new OTLPTraceExporter(options);
 
-  resource: resourceFromAttributes({
-    [ATTR_SERVICE_NAME]: config.get<string>("otel.serviceName"),
-    [ATTR_SERVICE_VERSION]: process.env.GITHUB_SHA?.slice(0, 7) ?? "dev",
-    "deployment.environment": process.env.NODE_ENV ?? "development",
-  }),
+  const metricReader = new PeriodicExportingMetricReader({
+    exporter: metricExporter,
+    exportIntervalMillis: 60000,
+    exportTimeoutMillis: 10000,
+  });
 
-  instrumentations: [
-    getNodeAutoInstrumentations({
-      // PostgreSQL — captures db.statement on every Kysely query
-      // enhancedDatabaseReporting: false keeps bind values out of spans
-      "@opentelemetry/instrumentation-pg": {
-        enabled: true,
-        enhancedDatabaseReporting: false,
-      },
+  const sdk = new NodeSDK({
+    metricReader,
+    traceExporter,
+
+    resource: resourceFromAttributes({
+      [ATTR_SERVICE_NAME]: config.get<string>("otel.serviceName"),
+      [ATTR_SERVICE_VERSION]: process.env.GITHUB_SHA?.slice(0, 7) ?? "dev",
+      "deployment.environment": process.env.NODE_ENV ?? "development",
     }),
-    fastifyOtelInstrumentation,
-  ],
-});
 
-process.on("beforeExit", async () => {
-  await sdk.shutdown();
-});
+    instrumentations: [
+      getNodeAutoInstrumentations({
+        // PostgreSQL — captures db.statement on every Kysely query
+        // enhancedDatabaseReporting: false keeps bind values out of spans
+        "@opentelemetry/instrumentation-pg": {
+          enabled: true,
+          enhancedDatabaseReporting: false,
+        },
+      }),
+      fastifyOtelInstrumentation,
+    ],
+  });
 
-sdk.start();
+  process.on("beforeExit", async () => {
+    await sdk.shutdown();
+  });
+
+  sdk.start();
+}
