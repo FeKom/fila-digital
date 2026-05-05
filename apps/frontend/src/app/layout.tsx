@@ -4,6 +4,7 @@ import "./globals.css";
 import { Header } from "@/components/Header";
 import { GoogleProvider } from "@/components/GoogleProvider";
 import { isAuthenticated } from "./actions";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const unbounded = Unbounded({
   variable: "--font-unbounded",
@@ -36,6 +37,7 @@ export default async function RootLayout({
         <GoogleProvider>
           <Header authenticated={authenticated} />
           {children}
+          <SpeedInsights />
         </GoogleProvider>
       </body>
     </html>
