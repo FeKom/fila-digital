@@ -126,6 +126,46 @@ export const listCommercesSchema: FastifySchema = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// GET /commerce/nearby
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const nearbyQueuesSchema: FastifySchema = {
+  tags: ["Commerce"],
+  description:
+    "Returns commerces with open queues within a given radius, sorted by distance. Public endpoint — no auth required.",
+  querystring: {
+    type: "object",
+    required: ["lat", "lng"],
+    properties: {
+      lat: { type: "number", minimum: -90, maximum: 90 },
+      lng: { type: "number", minimum: -180, maximum: 180 },
+      radius: { type: "integer", minimum: 1, maximum: 50000, default: 5000 },
+    },
+    additionalProperties: false,
+  },
+  response: {
+    200: {
+      description: "Nearby commerces with open queues",
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          id: { type: "string" },
+          name: { type: "string" },
+          description: { type: "string", nullable: true },
+          latitude: { type: "number", nullable: true },
+          longitude: { type: "number", nullable: true },
+          open_queues_count: { type: "number" },
+          distance_meters: { type: "number" },
+        },
+      },
+    },
+    400: { description: "Missing or invalid params", ...errorResponse },
+    500: { description: "Internal error", ...errorResponse },
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // PUT /commerce/:commerce_id/update
 // ─────────────────────────────────────────────────────────────────────────────
 

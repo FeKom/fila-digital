@@ -10,4 +10,16 @@ export type Commerce = {
   open_at: string;
   closed_at: string;
   active: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
+};
+
+export type NearbyCommerce = {
+  id: string;
+  name: string;
+  description: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  open_queues_count: string | number;
+  distance_meters: number;
 };

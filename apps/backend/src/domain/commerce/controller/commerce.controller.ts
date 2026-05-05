@@ -10,6 +10,7 @@ import {
   getCommerceById,
   listAllCommerces,
   updateCommerceById,
+  findNearbyOpenQueues,
 } from "../repository/commerce.repository";
 import { findQueueByCommerceId } from "../../queue/repository/queue.repository";
 import {
@@ -295,6 +296,32 @@ const commerceController = () => {
           `[Commerce Controller] - Failed to revoke admin, error: ${error}`
         );
         return sendError(res, 500, "Failed to revoke admin access");
+      }
+    },
+
+    getNearbyQueues: async (req: ServerRequest, res: ServerResponse) => {
+      try {
+        const { lat, lng, radius } = req.query as Record<string, string>;
+
+        const latNum = parseFloat(lat);
+        const lngNum = parseFloat(lng);
+        const radiusNum = radius ? parseInt(radius, 10) : 5000;
+
+        if (isNaN(latNum) || isNaN(lngNum)) {
+          return sendError(res, 400, "lat and lng are required");
+        }
+
+        if (radiusNum > 50000) {
+          return sendError(res, 400, "radius cannot exceed 50000 meters");
+        }
+
+        const results = await findNearbyOpenQueues(latNum, lngNum, radiusNum);
+        return res.code(200).send(results);
+      } catch (error) {
+        logger.error(
+          `[Commerce Controller] - getNearbyQueues failed, error: ${error}`
+        );
+        return sendError(res, 500, "Failed to retrieve nearby queues");
       }
     },
 

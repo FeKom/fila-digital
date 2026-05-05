@@ -49,6 +49,8 @@ export interface CommerceTable {
   open_at: ColumnType<Date | null, string | undefined, string>;
   closed_at: ColumnType<Date | null, string | undefined, string>;
   active: ColumnType<boolean, boolean | undefined, boolean>;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 // You should not use the table schema interfaces directly. Instead, you should
@@ -97,12 +99,17 @@ export type Person = Selectable<PersonTable>;
 export type NewPerson = Insertable<PersonTable>;
 export type PersonUpdate = Updateable<Partial<PersonTable>>;
 
+export type ParticipantLeaveReason = "served" | "abandoned" | "removed";
+
 export interface ParticipantsQueueTable {
   id: Generated<string>;
   queue_id: string | null;
   person_id: string | null;
   anonymous_id: string | null;
   position: number | null;
+  called_at: ColumnType<Date | null, string | undefined, string | null>;
+  leave_at: ColumnType<Date | null, string | undefined, string | null>;
+  leave_reason: ParticipantLeaveReason | null;
   created_at: ColumnType<Date, string | undefined, never> | null;
   updated_at: ColumnType<Date, string | undefined, string> | null;
   is_active: boolean;

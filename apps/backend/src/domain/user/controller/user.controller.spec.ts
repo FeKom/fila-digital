@@ -2,11 +2,16 @@ import { describe, beforeEach, it, expect, vi } from "vitest";
 import * as userRepository from "../repository/user.repository";
 import userController from "./user.controller";
 import { ServerRequest, ServerResponse } from "../../../infra/types";
+import {
+  validatePassword,
+  validateName,
+  validateEmail,
+  validatePhone,
+} from "../../../utils/validate";
 
 vi.mock("../repository/user.repository");
 vi.mock("../repository/refresh-token.repository");
-vi.mock("../utils/validators");
-vi.mock("../utils/password");
+vi.mock("../../../utils/validate");
 vi.mock("uuidv7");
 
 describe("User Controller - Unit Test with Mocks", () => {
@@ -20,11 +25,10 @@ describe("User Controller - Unit Test with Mocks", () => {
       code: vi.fn().mockReturnThis(),
       send: vi.fn(),
     };
-    // Mock validators to return valid results
-    // vi.mocked(validatePassword).mockReturnValue(true);
-    // vi.mocked(validateName).mockReturnValue(true);
-    // vi.mocked(validateEmail).mockReturnValue("test@example.com");
-    // vi.mocked(validatePhone).mockReturnValue("1234567890");
+    vi.mocked(validatePassword).mockReturnValue(true);
+    vi.mocked(validateName).mockReturnValue(true);
+    vi.mocked(validateEmail).mockImplementation((email) => email);
+    vi.mocked(validatePhone).mockImplementation((phone) => phone);
     // vi.mocked(hashPassword).mockResolvedValue("hashedPassword");
     // vi.mocked(uuidv7).mockReturnValue("mocked-uuid");
   });

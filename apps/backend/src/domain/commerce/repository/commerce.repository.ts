@@ -1,5 +1,7 @@
 import { db } from "../../../infra/database/connect";
-import { NewCommerce } from "../../../infra/database/types";
+import { NewCommerce, Database } from "../../../infra/database/types";
+import { NearbyCommerce } from "../type";
+import { Kysely, sql } from "kysely";
 import {
   buildPage,
   DEFAULT_PAGE_LIMIT,
@@ -78,6 +80,43 @@ export const findCommerceOwnerByUserId = async (id: string) => {
     .where("owner_id", "=", id)
     .limit(1)
     .executeTakeFirstOrThrow();
+};
+
+export const findNearbyOpenQueues = async (
+  lat: number,
+  lng: number,
+  radiusMeters: number = 5000,
+  dbInstance: Kysely<Database> = db
+): Promise<NearbyCommerce[]> => {
+  return dbInstance
+    .selectFrom("commerce as c")
+    .innerJoin("queue as q", (join) =>
+      join
+        .onRef("q.commerce_id", "=", "c.id")
+        .on("q.status", "=", "open")
+        .on("q.active", "=", true)
+    )
+    .select([
+      "c.id",
+      "c.name",
+      "c.description",
+      "c.latitude",
+      "c.longitude",
+      sql<number>`COUNT(q.id)`.as("open_queues_count"),
+      sql<number>`earth_distance(ll_to_earth(c.latitude, c.longitude), ll_to_earth(${lat}, ${lng}))`.as(
+        "distance_meters"
+      ),
+    ])
+    .where("c.active", "=", true)
+    .where("c.latitude", "is not", null)
+    .where("c.longitude", "is not", null)
+    .where(
+      sql<boolean>`earth_distance(ll_to_earth(c.latitude, c.longitude), ll_to_earth(${lat}, ${lng})) <= ${radiusMeters}`
+    )
+    .groupBy("c.id")
+    .orderBy("distance_meters", "asc")
+    .limit(50)
+    .execute() as Promise<NearbyCommerce[]>;
 };
 
 export const listAllCommerces = async ({

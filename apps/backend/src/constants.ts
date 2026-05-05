@@ -2,6 +2,7 @@ const ROUTES = {
   commerce: {
     register: "/commerce/register",
     list: "/commerce",
+    nearby: "/commerce/nearby",
     getById: "/commerce/:commerce_id",
     update: "/commerce/:commerce_id/update",
     delete: "/commerce/:commerce_id/delete",
