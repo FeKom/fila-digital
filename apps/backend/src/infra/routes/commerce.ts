@@ -7,6 +7,7 @@ import {
   updateCommerceSchema,
   deleteCommerceSchema,
   nearbyQueuesSchema,
+  searchQueuesSchema,
 } from "../schemas/commerce.schema";
 import { Server } from "../types";
 
@@ -17,6 +18,11 @@ const registerCommerceRoutes = (server: Server) => {
     ROUTES.commerce.nearby,
     { schema: nearbyQueuesSchema, config: { rateLimit: rateLimits.read } },
     controller.getNearbyQueues
+  );
+  server.get(
+    ROUTES.commerce.searchQueues,
+    { schema: searchQueuesSchema, config: { rateLimit: rateLimits.read } },
+    controller.searchQueues
   );
   server.post(
     ROUTES.commerce.register,

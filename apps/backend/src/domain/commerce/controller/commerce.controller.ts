@@ -12,6 +12,7 @@ import {
   updateCommerceById,
   findNearbyOpenQueues,
   findNearbyOpenQueuesByCepPrefix,
+  searchOpenQueues,
 } from "../repository/commerce.repository";
 import {
   upsertAddress,
@@ -434,6 +435,33 @@ const commerceController = () => {
           `[Commerce Controller] - getNearbyQueues failed, error: ${error}`
         );
         return sendError(res, 500, "Failed to retrieve nearby queues");
+      }
+    },
+
+    searchQueues: async (req: ServerRequest, res: ServerResponse) => {
+      try {
+        const { cepPrefix, name } = req.query as Record<string, string>;
+
+        if (!cepPrefix && !name) {
+          return sendError(
+            res,
+            400,
+            "At least one of cepPrefix or name is required"
+          );
+        }
+
+        const digits = cepPrefix ? cepPrefix.replace(/\D/g, "") : undefined;
+        if (digits && (digits.length < 4 || digits.length > 8)) {
+          return sendError(res, 400, "cepPrefix must be 4–8 digits");
+        }
+
+        const results = await searchOpenQueues({ cepPrefix: digits, name });
+        return res.code(200).send(results);
+      } catch (error) {
+        logger.error(
+          `[Commerce Controller] - searchQueues failed, error: ${error}`
+        );
+        return sendError(res, 500, "Failed to search queues");
       }
     },
 

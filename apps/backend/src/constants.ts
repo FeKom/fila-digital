@@ -3,6 +3,7 @@ const ROUTES = {
     register: "/commerce/register",
     list: "/commerce",
     nearby: "/commerce/nearby",
+    searchQueues: "/procurar-fila",
     getById: "/commerce/:commerce_id",
     update: "/commerce/:commerce_id/update",
     delete: "/commerce/:commerce_id/delete",

@@ -181,6 +181,44 @@ export const nearbyQueuesSchema: FastifySchema = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// GET /procurar-fila
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const searchQueuesSchema: FastifySchema = {
+  tags: ["Commerce"],
+  description:
+    "Search open queues by CEP prefix (from GPS) and/or commerce name. At least one param is required. Public endpoint.",
+  querystring: {
+    type: "object",
+    properties: {
+      cepPrefix: { type: "string", minLength: 4, maxLength: 8 },
+      name: { type: "string", minLength: 1, maxLength: 100 },
+    },
+    additionalProperties: false,
+  },
+  response: {
+    200: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          commerce_id: { type: "string" },
+          name: { type: "string" },
+          description: { type: "string", nullable: true },
+          queue_id: { type: "string" },
+          created_at: { type: "string" },
+          latitude: { type: "number", nullable: true },
+          longitude: { type: "number", nullable: true },
+          participants_waiting: { type: "number" },
+        },
+      },
+    },
+    400: { description: "Missing or invalid params", ...errorResponse },
+    500: { description: "Internal error", ...errorResponse },
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // PUT /commerce/:commerce_id/update
 // ─────────────────────────────────────────────────────────────────────────────
 

@@ -125,6 +125,52 @@ export const findNearbyOpenQueues = async (
     .execute() as Promise<NearbyCommerce[]>;
 };
 
+export const searchOpenQueues = async ({
+  cepPrefix,
+  name,
+}: {
+  cepPrefix?: string;
+  name?: string;
+}): Promise<NearbyCommerce[]> => {
+  let query = db
+    .selectFrom("commerce as c")
+    .innerJoin("queue as q", (join) =>
+      join
+        .onRef("q.commerce_id", "=", "c.id")
+        .on("q.status", "=", "open")
+        .on("q.active", "=", true)
+    )
+    .innerJoin("address as a", "a.commerce_id", "c.id")
+    .leftJoin("participants_queue as pq", (join) =>
+      join.onRef("pq.queue_id", "=", "q.id").on("pq.is_active", "=", true)
+    )
+    .select([
+      "c.id as commerce_id",
+      "c.name",
+      "c.description",
+      "q.id as queue_id",
+      "q.created_at",
+      "a.latitude",
+      "a.longitude",
+      sql<number>`COUNT(pq.id)`.as("participants_waiting"),
+    ])
+    .where("c.active", "=", true)
+    .groupBy(["c.id", "q.id", "q.created_at", "a.latitude", "a.longitude"])
+    .limit(50);
+
+  if (cepPrefix) {
+    query = query
+      .where("a.cep", "is not", null)
+      .where(sql<boolean>`replace(a.cep, '-', '') LIKE ${cepPrefix + "%"}`);
+  }
+
+  if (name) {
+    query = query.where("c.name", "ilike", `%${name}%`);
+  }
+
+  return query.execute() as Promise<NearbyCommerce[]>;
+};
+
 export const findNearbyOpenQueuesByCepPrefix = async (
   cepPrefix: string
 ): Promise<NearbyCommerce[]> => {
