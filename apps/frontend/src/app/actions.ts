@@ -3,7 +3,6 @@ import commerceService from "@/services/commerce";
 import { authApi } from "@/lib/api";
 import { Commerce, UserQueue } from "@/types";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 
 export const getUserCommerces = async (): Promise<Commerce[]> => {
   try {
@@ -28,11 +27,4 @@ export const getUserQueues = async (): Promise<UserQueue[]> => {
 export const isAuthenticated = async (): Promise<boolean> => {
   const cookieStore = await cookies();
   return !!cookieStore.get("digital_queue_jwt")?.value;
-};
-
-export const logout = async () => {
-  const cookieStore = await cookies();
-  cookieStore.delete("digital_queue_jwt");
-  cookieStore.delete("digital_queue_refresh");
-  redirect("/login");
 };

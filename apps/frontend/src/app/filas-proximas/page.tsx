@@ -1,8 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { NearbyCommerce } from "@/types";
-import participantService from "@/services/participant";
-
 const BASE_URL =
   process.env.NEXT_PUBLIC_FILA_DIGITAL_BASE_URL ?? "http://localhost:7070";
 
@@ -83,7 +81,12 @@ function CommerceCard({ commerce }: { commerce: NearbyCommerce }) {
     setEnterState("loading");
     try {
       const anonymousId = crypto.randomUUID();
-      await participantService().enterPublic(commerce.id, anonymousId);
+      const res = await fetch(`${BASE_URL}/v1/enter-queue/${commerce.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ anonymousId }),
+      });
+      if (!res.ok) throw new Error();
       setEnterState("done");
     } catch {
       setEnterState("error");

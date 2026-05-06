@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Header from "./Header";
 
-vi.mock("@/app/actions", () => ({
+vi.mock("@/app/logout-action", () => ({
   logout: vi.fn(),
 }));
 

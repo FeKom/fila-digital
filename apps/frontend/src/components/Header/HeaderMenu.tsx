@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { logout } from "@/app/actions";
+import { logout } from "@/app/logout-action";
 
 const HeaderMenu = () => {
   const [open, setOpen] = useState(false);
