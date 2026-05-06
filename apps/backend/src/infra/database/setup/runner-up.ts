@@ -43,4 +43,15 @@ async function migrateToLatest() {
   await db.destroy();
 }
 
-migrateToLatest();
+export { migrateToLatest };
+
+// Allow running directly: tsx src/infra/database/setup/runner-up.ts
+// Detect if this file is the entry point (not imported as a module)
+const isMain =
+  process.argv[1] &&
+  (process.argv[1].endsWith("runner-up.ts") ||
+    process.argv[1].endsWith("runner-up.js"));
+
+if (isMain) {
+  migrateToLatest();
+}

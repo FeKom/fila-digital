@@ -5,9 +5,15 @@ import "./infra/telemetry/tracer";
 
 import { startAllSchedulers } from "./schedulers";
 import { initServer } from "./server";
+import { migrateToLatest } from "./infra/database/setup/runner-up";
 
-initServer().catch((err) => {
+async function main() {
+  await migrateToLatest();
+  await initServer();
+  startAllSchedulers();
+}
+
+main().catch((err) => {
   process.stderr.write(`Failed to start server: ${err}\n`);
   process.exit(1);
 });
-startAllSchedulers();
