@@ -2,16 +2,43 @@
 
 import * as path from "path";
 import { promises as fs } from "fs";
-import { Kysely, Migrator, FileMigrationProvider } from "kysely";
+import { Pool } from "pg";
+import {
+  Kysely,
+  PostgresDialect,
+  Migrator,
+  FileMigrationProvider,
+} from "kysely";
 import { Database } from "../types";
-import { dialect } from "../connect";
+import config from "../../config";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 
 async function migrateToLatest() {
+  // Create a dedicated pool for migrations — separate from the shared app pool
+  // so that calling db.destroy() here doesn't end the application's connections.
+  const databaseConfig = config.get<{
+    name: string;
+    host: string;
+    user: string;
+    password: string;
+    port: number;
+    ssl: boolean;
+  }>("database");
+
+  const pool = new Pool({
+    database: databaseConfig.name,
+    host: databaseConfig.host,
+    user: databaseConfig.user,
+    password: databaseConfig.password,
+    port: databaseConfig.port,
+    ssl: databaseConfig.ssl ? { rejectUnauthorized: false } : false,
+    max: 1,
+  });
+
   const db = new Kysely<Database>({
-    dialect,
+    dialect: new PostgresDialect({ pool }),
   });
 
   // When bundled by tsup, this file may end up in a shared chunk at dist/,
