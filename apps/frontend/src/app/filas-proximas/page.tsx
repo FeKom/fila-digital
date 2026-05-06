@@ -81,11 +81,14 @@ function CommerceCard({ commerce }: { commerce: NearbyCommerce }) {
     setEnterState("loading");
     try {
       const anonymousId = crypto.randomUUID();
-      const res = await fetch(`${BASE_URL}/v1/enter-queue/${commerce.id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ anonymousId }),
-      });
+      const res = await fetch(
+        `${BASE_URL}/v1/enter-queue/${commerce.commerce_id}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ anonymousId }),
+        }
+      );
       if (!res.ok) throw new Error();
       setEnterState("done");
     } catch {
@@ -104,8 +107,7 @@ function CommerceCard({ commerce }: { commerce: NearbyCommerce }) {
           className="queue-status-badge open"
           style={{ fontSize: "0.7rem" }}
         >
-          {commerce.open_queues_count}{" "}
-          {Number(commerce.open_queues_count) === 1 ? "fila" : "filas"}
+          fila aberta
         </span>
       </div>
 
@@ -255,7 +257,7 @@ export default function NearbyQueuesPage() {
       {status === "done" && results.length > 0 && (
         <div className="dash-grid-2 section-gap">
           {results.map((commerce) => (
-            <CommerceCard key={commerce.id} commerce={commerce} />
+            <CommerceCard key={commerce.queue_id} commerce={commerce} />
           ))}
         </div>
       )}

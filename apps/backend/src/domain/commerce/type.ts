@@ -46,11 +46,13 @@ export type CommerceInput = {
 };
 
 export type NearbyCommerce = {
-  id: string;
+  commerce_id: string;
   name: string;
   description: string | null;
+  queue_id: string;
+  created_at: Date;
   latitude: number | null;
   longitude: number | null;
-  open_queues_count: string | number;
+  participants_waiting: string | number;
   distance_meters?: number | null;
 };

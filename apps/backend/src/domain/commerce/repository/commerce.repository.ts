@@ -97,13 +97,18 @@ export const findNearbyOpenQueues = async (
         .on("q.active", "=", true)
     )
     .innerJoin("address as a", "a.commerce_id", "c.id")
+    .leftJoin("participants_queue as pq", (join) =>
+      join.onRef("pq.queue_id", "=", "q.id").on("pq.is_active", "=", true)
+    )
     .select([
-      "c.id",
+      "c.id as commerce_id",
       "c.name",
       "c.description",
+      "q.id as queue_id",
+      "q.created_at",
       "a.latitude",
       "a.longitude",
-      sql<number>`COUNT(q.id)`.as("open_queues_count"),
+      sql<number>`COUNT(pq.id)`.as("participants_waiting"),
       sql<number>`earth_distance(ll_to_earth(a.latitude, a.longitude), ll_to_earth(${lat}, ${lng}))`.as(
         "distance_meters"
       ),
@@ -114,7 +119,7 @@ export const findNearbyOpenQueues = async (
     .where(
       sql<boolean>`earth_distance(ll_to_earth(a.latitude, a.longitude), ll_to_earth(${lat}, ${lng})) <= ${radiusMeters}`
     )
-    .groupBy(["c.id", "a.latitude", "a.longitude"])
+    .groupBy(["c.id", "q.id", "q.created_at", "a.latitude", "a.longitude"])
     .orderBy("distance_meters", "asc")
     .limit(50)
     .execute() as Promise<NearbyCommerce[]>;
@@ -132,18 +137,23 @@ export const findNearbyOpenQueuesByCepPrefix = async (
         .on("q.active", "=", true)
     )
     .innerJoin("address as a", "a.commerce_id", "c.id")
+    .leftJoin("participants_queue as pq", (join) =>
+      join.onRef("pq.queue_id", "=", "q.id").on("pq.is_active", "=", true)
+    )
     .select([
-      "c.id",
+      "c.id as commerce_id",
       "c.name",
       "c.description",
+      "q.id as queue_id",
+      "q.created_at",
       "a.latitude",
       "a.longitude",
-      sql<number>`COUNT(q.id)`.as("open_queues_count"),
+      sql<number>`COUNT(pq.id)`.as("participants_waiting"),
     ])
     .where("c.active", "=", true)
     .where("a.cep", "is not", null)
     .where(sql<boolean>`replace(a.cep, '-', '') LIKE ${cepPrefix + "%"}`)
-    .groupBy(["c.id", "a.latitude", "a.longitude"])
+    .groupBy(["c.id", "q.id", "q.created_at", "a.latitude", "a.longitude"])
     .limit(50)
     .execute() as Promise<NearbyCommerce[]>;
 };

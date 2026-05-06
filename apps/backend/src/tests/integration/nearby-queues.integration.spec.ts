@@ -145,7 +145,7 @@ describe("Nearby Queues - Integration", () => {
       dbInstance
     );
 
-    const ids = results.map((r) => r.id);
+    const ids = results.map((r) => r.commerce_id);
     expect(ids).toContain(nearCommerceId);
     expect(ids).not.toContain(farCommerceId);
   });
@@ -181,8 +181,8 @@ describe("Nearby Queues - Integration", () => {
       dbInstance
     );
 
-    const nearIdx = results.findIndex((r) => r.id === nearCommerceId);
-    const secondIdx = results.findIndex((r) => r.id === secondNearId);
+    const nearIdx = results.findIndex((r) => r.commerce_id === nearCommerceId);
+    const secondIdx = results.findIndex((r) => r.commerce_id === secondNearId);
 
     expect(nearIdx).toBeGreaterThanOrEqual(0);
     expect(secondIdx).toBeGreaterThanOrEqual(0);
@@ -235,7 +235,7 @@ describe("Nearby Queues - Integration", () => {
       dbInstance
     );
 
-    expect(results.map((r) => r.id)).not.toContain(closedCommerceId);
+    expect(results.map((r) => r.commerce_id)).not.toContain(closedCommerceId);
 
     // cleanup
     await dbInstance
@@ -284,7 +284,7 @@ describe("Nearby Queues - Integration", () => {
       dbInstance
     );
 
-    expect(results.map((r) => r.id)).not.toContain(inactiveCommerceId);
+    expect(results.map((r) => r.commerce_id)).not.toContain(inactiveCommerceId);
 
     // cleanup
     await dbInstance
@@ -301,7 +301,7 @@ describe("Nearby Queues - Integration", () => {
       .execute();
   });
 
-  it("returns open_queues_count correctly", async () => {
+  it("returns one row per open queue (commerce with 2 queues yields 2 rows)", async () => {
     const multiQueueCommerceId = uuidv7();
     await seedCommerce(dbInstance, {
       id: multiQueueCommerceId,
@@ -343,9 +343,8 @@ describe("Nearby Queues - Integration", () => {
       dbInstance
     );
 
-    const found = results.find((r) => r.id === multiQueueCommerceId);
-    expect(found).toBeDefined();
-    expect(Number(found!.open_queues_count)).toBe(2);
+    const found = results.filter((r) => r.commerce_id === multiQueueCommerceId);
+    expect(found).toHaveLength(2);
 
     // cleanup
     await dbInstance
