@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import Header from "./Header";
 
 vi.mock("@/app/actions", () => ({
@@ -65,16 +66,20 @@ describe("Header", () => {
       expect(screen.getByText("Menu")).toBeInTheDocument();
     });
 
-    it("renders Sair button", () => {
+    it("renders Sair button inside dropdown", async () => {
       render(<Header authenticated={true} />);
-      expect(screen.getByRole("button", { name: "Sair" })).toBeInTheDocument();
+      await userEvent.click(screen.getByRole("button", { name: /menu/i }));
+      expect(
+        screen.getByRole("menuitem", { name: "Sair" })
+      ).toBeInTheDocument();
     });
 
-    it("renders Cadastrar Comércio dropdown item", () => {
+    it("renders Cadastrar Comércio dropdown item", async () => {
       render(<Header authenticated={true} />);
-      expect(
-        screen.getByRole("link", { name: "Cadastrar Comércio" })
-      ).toHaveAttribute("href", "/comercio/criar");
+      await userEvent.click(screen.getByRole("button", { name: /menu/i }));
+      const item = screen.getByText("Cadastrar Comércio");
+      expect(item).toBeInTheDocument();
+      expect(item.closest("a")).toHaveAttribute("href", "/comercio/criar");
     });
 
     it("does not render Entrar or Criar conta", () => {

@@ -22,6 +22,19 @@ export type Queue = {
   created_at: string;
 };
 
+export type CommerceAddress = {
+  id?: string;
+  street?: string | null;
+  number?: string | null;
+  complement?: string | null;
+  neighborhood?: string | null;
+  city?: string | null;
+  state?: string | null;
+  cep?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+};
+
 export type Commerce = {
   id: string;
   name: string;
@@ -32,8 +45,7 @@ export type Commerce = {
   closed_at: string;
   owner_id: string;
   active: boolean;
-  latitude?: number | null;
-  longitude?: number | null;
+  address?: CommerceAddress | null;
   queue?: Queue;
 };
 
@@ -44,7 +56,7 @@ export type NearbyCommerce = {
   latitude: number | null;
   longitude: number | null;
   open_queues_count: number;
-  distance_meters: number;
+  distance_meters?: number | null;
 };
 
 export type ParticipantStatus = "waiting" | "called" | "done" | "exited";
@@ -101,11 +113,18 @@ export type LoginInput = {
 
 export type CommerceInput = {
   name: string;
-  description: string;
-  phone: string;
+  description?: string;
+  phone?: string;
   document_id: string;
-  open_at: string;
-  closed_at: string;
+  open_at?: string;
+  closed_at?: string;
+  street?: string | null;
+  number?: string | null;
+  complement?: string | null;
+  neighborhood?: string | null;
+  city?: string | null;
+  state?: string | null;
+  cep?: string | null;
   latitude?: number | null;
   longitude?: number | null;
 };

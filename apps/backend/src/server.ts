@@ -232,7 +232,8 @@ export const initServer = async () => {
       "/v1/user/google",
       "/v1/user/refresh",
       "/v1/user/logout",
-      "/v1/enter-queue",
+      "/v1/enter-queue", // QR code entry
+      "/v1/commerce/nearby", // public nearby search
       "/docs",
       "/healthcheck",
     ];
@@ -242,6 +243,33 @@ export const initServer = async () => {
     if (!isPublicPath()) {
       verifyToken(request as ServerRequest, reply);
     }
+  });
+
+  // ── Schema validation error logging ───────────────────────────────────────
+  // Fastify returns 400 when a request fails JSON Schema validation. By default
+  // the AJV error details are buried inside the error object and never logged.
+  // This handler surfaces them so you can see exactly which field failed and
+  // why (e.g. missing required field, wrong type, value out of range).
+  // Note: when additionalProperties: false strips a field *silently* (no error
+  // is thrown), the debug logs inside each controller will show you the body
+  // after stripping so you can compare with what the client sent.
+  server.setErrorHandler((error, request, reply) => {
+    const err = error as { validation?: unknown[] } & Error;
+
+    if (err.validation) {
+      request.log.warn(
+        {
+          url: request.url,
+          validation: err.validation,
+          body: request.body,
+          query: request.query,
+        },
+        "[Validation] schema validation failed"
+      );
+    }
+
+    // Delegate to Fastify's default error handler for the actual response.
+    reply.send(error);
   });
 
   // ── Sentry error hook ──────────────────────────────────────────────────────

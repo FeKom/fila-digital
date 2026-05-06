@@ -373,6 +373,75 @@ const participantsQueueController = () => {
       }
     },
 
+    // Public entry — no auth, no QR token required.
+    // Customers can enter directly from the nearby-queues page.
+    enterPublic: async (req: ServerRequest, res: ServerResponse) => {
+      try {
+        const { commerce_id } = req.params as { commerce_id: string };
+        const { anonymousId, userId } = req.body as {
+          anonymousId?: string;
+          userId?: string;
+        };
+
+        const c = await cache;
+        const queue = await c.wrap(
+          cacheKeys.queueByCommerce(commerce_id),
+          () => findQueueByCommerceId(commerce_id),
+          cacheTTL.QUEUE_BY_COMMERCE
+        );
+
+        if (!queue)
+          return sendError(res, 404, "No queue found for this commerce");
+        if (!queue.active)
+          return sendError(res, 400, "This queue is no longer active");
+        if (queue.status !== "open")
+          return sendError(res, 400, "This queue is not open");
+
+        if (userId) {
+          if (await isUserInQueue(userId, queue.id)) {
+            return sendError(res, 409, "User is already in this queue");
+          }
+          await enterQueueByQrCode({ queue_id: queue.id, person_id: userId });
+          await c.del(cacheKeys.participantsByQueue(queue.id));
+          return res.code(201).send({ message: "User entered the queue" });
+        }
+
+        if (anonymousId) {
+          const uuidRegex =
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          if (!uuidRegex.test(anonymousId)) {
+            return sendError(
+              res,
+              400,
+              "Invalid anonymousId format. Must be a valid UUID"
+            );
+          }
+          if (await isAnonymousInQueue(anonymousId, queue.id)) {
+            return sendError(res, 409, "Already in this queue");
+          }
+          await enterQueueByQrCode({
+            queue_id: queue.id,
+            anonymous_id: anonymousId,
+          });
+          await c.del(cacheKeys.participantsByQueue(queue.id));
+          return res
+            .code(201)
+            .send({ message: "Anonymous user entered the queue" });
+        }
+
+        return sendError(
+          res,
+          400,
+          "Either userId or anonymousId must be provided"
+        );
+      } catch (error) {
+        req.log.error(
+          `[Participants-Queue Controller] - enterPublic failed, error: ${error}`
+        );
+        return sendError(res, 500, "Failed to enter queue");
+      }
+    },
+
     exiteQueue: async (req: ServerRequest, res: ServerResponse) => {
       try {
         const user = req.user?.id;

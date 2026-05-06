@@ -19,8 +19,29 @@ export interface CommerceAdminsTable {
 export type CommerceAdmin = Selectable<CommerceAdminsTable>;
 export type NewCommerceAdmin = Insertable<CommerceAdminsTable>;
 
+export interface AddressTable {
+  id: Generated<string>;
+  commerce_id: string;
+  street: string | null;
+  number: string | null;
+  complement: string | null;
+  neighborhood: string | null;
+  city: string | null;
+  state: string | null;
+  cep: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  created_at: ColumnType<Date, string | undefined, never>;
+  updated_at: ColumnType<Date, string | undefined, string>;
+}
+
+export type Address = Selectable<AddressTable>;
+export type NewAddress = Insertable<AddressTable>;
+export type AddressUpdate = Updateable<AddressTable>;
+
 export interface Database {
   commerce: CommerceTable;
+  address: AddressTable;
   queue: QueueTable;
   person: PersonTable;
   participants_queue: ParticipantsQueue;
@@ -49,8 +70,6 @@ export interface CommerceTable {
   open_at: ColumnType<Date | null, string | undefined, string>;
   closed_at: ColumnType<Date | null, string | undefined, string>;
   active: ColumnType<boolean, boolean | undefined, boolean>;
-  latitude: number | null;
-  longitude: number | null;
 }
 
 // You should not use the table schema interfaces directly. Instead, you should

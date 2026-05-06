@@ -1,6 +1,6 @@
 import { getCommerce } from "../actions";
 import { updateCommerce } from "./actions";
-import LocationButton from "@/components/LocationButton/LocationButton";
+import { CepInput } from "@/components/CepInput";
 
 type Props = {
   params: Promise<{ commerce_id: string }>;
@@ -56,41 +56,24 @@ const EditCommerce = async ({ params }: Props) => {
         </div>
 
         <div className="form-section">
-          <div className="form-section-title">Contato & Documentos</div>
-          <div className="form-grid-2">
-            <div className="fd-field">
-              <label className="fd-label" htmlFor="phone">
-                Telefone
-              </label>
-              <input
-                id="phone"
-                name="phone"
-                type="tel"
-                defaultValue={commerce.phone}
-                className="fd-input"
-              />
-            </div>
-            <div className="fd-field">
-              <label className="fd-label" htmlFor="document_id">
-                CNPJ
-              </label>
-              <input
-                id="document_id"
-                name="document_id"
-                type="text"
-                defaultValue={commerce.document_id}
-                className="fd-input"
-              />
-            </div>
+          <div className="form-section-title">Contato</div>
+          <div className="fd-field">
+            <label className="fd-label" htmlFor="phone">
+              Telefone
+            </label>
+            <input
+              id="phone"
+              name="phone"
+              type="tel"
+              defaultValue={commerce.phone}
+              className="fd-input"
+            />
           </div>
         </div>
 
         <div className="form-section">
           <div className="form-section-title">Localização</div>
-          <LocationButton
-            defaultLat={commerce.latitude}
-            defaultLng={commerce.longitude}
-          />
+          <CepInput defaultAddress={commerce.address} />
         </div>
 
         <div className="form-section">

@@ -8,6 +8,7 @@ import {
 import { Badge } from "@/components/Badge";
 import { ParticipantList } from "@/components/ParticipantList";
 import { Button } from "@/components";
+import { CopyLinkButton } from "@/components/CopyLinkButton";
 
 type Props = {
   params: Promise<{ commerce_id: string }>;
@@ -41,6 +42,9 @@ const CommerceDetail = async ({ params }: Props) => {
           )}
         </div>
         <div className="page-header-actions">
+          {commerce.queue?.status === "open" && (
+            <CopyLinkButton commerceId={commerce_id} />
+          )}
           <Link
             href={`/comercio/${commerce_id}/editar`}
             className="fd-btn fd-btn-ghost fd-btn-sm"
@@ -63,7 +67,7 @@ const CommerceDetail = async ({ params }: Props) => {
         </div>
         <div className="stat-card">
           <div className="stat-label">CNPJ</div>
-          <div className="stat-value">{commerce.document_id}</div>
+          <div className="stat-value">Cadastrado ✓</div>
         </div>
         <div className="stat-card">
           <div className="stat-label">Horário</div>

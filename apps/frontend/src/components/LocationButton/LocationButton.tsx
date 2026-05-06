@@ -6,32 +6,47 @@ type Props = {
   defaultLng?: number | null;
 };
 
+const GEO_ERRORS: Record<number, string> = {
+  1: "Permissão negada — ative a localização no navegador",
+  2: "Localização indisponível — verifique o GPS ou a rede",
+  3: "Tempo esgotado — tente novamente",
+};
+
 const LocationButton = ({ defaultLat, defaultLng }: Props) => {
+  // Postgres decimal columns come back as strings over JSON — coerce to number.
+  const parsedLat = defaultLat != null ? Number(defaultLat) : null;
+  const parsedLng = defaultLng != null ? Number(defaultLng) : null;
+
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">(
-    defaultLat && defaultLng ? "done" : "idle"
+    parsedLat != null && parsedLng != null ? "done" : "idle"
   );
-  const [lat, setLat] = useState<number | null>(defaultLat ?? null);
-  const [lng, setLng] = useState<number | null>(defaultLng ?? null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [lat, setLat] = useState<number | null>(parsedLat);
+  const [lng, setLng] = useState<number | null>(parsedLng);
 
   const handleClick = () => {
     if (!navigator.geolocation) {
+      setErrorMsg("Geolocalização não suportada neste navegador");
       setStatus("error");
       return;
     }
     setStatus("loading");
+    setErrorMsg(null);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setLat(pos.coords.latitude);
         setLng(pos.coords.longitude);
         setStatus("done");
       },
-      () => setStatus("error")
+      (err) => {
+        setErrorMsg(GEO_ERRORS[err.code] ?? "Erro desconhecido");
+        setStatus("error");
+      }
     );
   };
 
   return (
     <div className="fd-field">
-      <label className="fd-label">Localização</label>
       <input type="hidden" name="latitude" value={lat ?? ""} />
       <input type="hidden" name="longitude" value={lng ?? ""} />
       <button
@@ -41,11 +56,22 @@ const LocationButton = ({ defaultLat, defaultLng }: Props) => {
         disabled={status === "loading"}
       >
         {status === "loading" && "Obtendo localização..."}
-        {status === "done" && `✓ Localização salva`}
+        {status === "done" && "✓ Localização salva"}
         {status === "error" && "Erro — tentar novamente"}
         {status === "idle" && "Usar minha localização"}
       </button>
-      {status === "done" && lat && lng && (
+      {status === "error" && errorMsg && (
+        <p
+          style={{
+            fontSize: "0.75rem",
+            color: "var(--error)",
+            marginTop: "0.25rem",
+          }}
+        >
+          {errorMsg}
+        </p>
+      )}
+      {status === "done" && lat !== null && lng !== null && (
         <p
           style={{
             fontSize: "0.75rem",

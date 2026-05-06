@@ -55,7 +55,15 @@ const queueController = () => {
           createdAt: createdQueue.created_at,
         };
 
-        const qrcode = await generateQrCodeBase64(JSON.stringify(qrcodeData));
+        const frontendUrl =
+          process.env.ALLOWED_ORIGIN ?? "http://localhost:3000";
+        const params = new URLSearchParams({
+          queueId: qrcodeData.queueId,
+          token: qrcodeData.token,
+        });
+        const qrcode = await generateQrCodeBase64(
+          `${frontendUrl}/entrar-fila?${params.toString()}`
+        );
 
         return res.code(201).send({
           queue: { id: createdQueue.id, commerce_id: createdQueue.commerce_id },

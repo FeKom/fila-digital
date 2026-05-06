@@ -15,6 +15,13 @@ export const createCommerce = async (
     document_id: formData.get("document_id") as string,
     open_at: formData.get("open_at") as string,
     closed_at: formData.get("closed_at") as string,
+    street: (formData.get("street") as string) || null,
+    number: (formData.get("number") as string) || null,
+    complement: (formData.get("complement") as string) || null,
+    neighborhood: (formData.get("neighborhood") as string) || null,
+    city: (formData.get("city") as string) || null,
+    state: (formData.get("state") as string) || null,
+    cep: (formData.get("cep") as string) || null,
     latitude: latRaw ? parseFloat(latRaw) : null,
     longitude: lngRaw ? parseFloat(lngRaw) : null,
   };

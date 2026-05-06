@@ -11,14 +11,18 @@ import {
   listAllCommerces,
   updateCommerceById,
   findNearbyOpenQueues,
+  findNearbyOpenQueuesByCepPrefix,
 } from "../repository/commerce.repository";
+import {
+  upsertAddress,
+  getAddressByCommerceId,
+} from "../repository/address.repository";
 import { findQueueByCommerceId } from "../../queue/repository/queue.repository";
 import {
   grantCommerceAdmin,
   revokeCommerceAdmin,
   listCommerceAdmins,
 } from "../repository/commerce-admin.repository";
-import { Commerce } from "../type";
 import { validateCNPJ } from "../../../utils/validate";
 import { hashDocument } from "../../../utils/documentHash";
 import { logger } from "../../../utils/logger";
@@ -30,14 +34,14 @@ import { sendError } from "../../../utils/errors";
 const commerceController = () => {
   return {
     register: async (req: ServerRequest, res: ServerResponse) => {
-      const commerce = req.body as Commerce;
+      const body = req.body as Record<string, unknown>;
+      req.log.debug({ body: req.body }, "[Commerce] register — received body");
       try {
-        const valid = validateCNPJ(commerce.document_id);
+        const valid = validateCNPJ(body.document_id as string);
         if (!valid) {
           sendError(res, 400, "Invalid Document ID");
           return;
         }
-
         const documentHash = hashDocument(valid);
 
         const c = await cache;
@@ -59,11 +63,51 @@ const commerceController = () => {
         }
 
         const commerceData = await createCommerce({
-          ...commerce,
+          name: body.name as string,
+          description: (body.description as string) ?? null,
+          phone: (body.phone as string) ?? null,
+          open_at: (body.open_at as string) ?? undefined,
+          closed_at: (body.closed_at as string) ?? undefined,
           id: uuidv7(),
           owner_id: req.user.id,
           document_id: documentHash,
         });
+
+        // Upsert address if any address field was provided
+        if (commerceData?.id) {
+          const {
+            street,
+            number,
+            complement,
+            neighborhood,
+            city,
+            state,
+            cep,
+            latitude,
+            longitude,
+          } = body;
+          if (
+            street ||
+            number ||
+            neighborhood ||
+            city ||
+            cep ||
+            latitude ||
+            longitude
+          ) {
+            await upsertAddress(commerceData.id, {
+              street: (street as string) ?? null,
+              number: (number as string) ?? null,
+              complement: (complement as string) ?? null,
+              neighborhood: (neighborhood as string) ?? null,
+              city: (city as string) ?? null,
+              state: (state as string) ?? null,
+              cep: (cep as string) ?? null,
+              latitude: latitude != null ? Number(latitude) : null,
+              longitude: longitude != null ? Number(longitude) : null,
+            });
+          }
+        }
 
         await Promise.all([
           c.del(cacheKeys.commerceDocument(documentHash)),
@@ -110,10 +154,16 @@ const commerceController = () => {
 
         if (!commerce) return sendError(res, 404, "Commerce not found");
 
+        const address = await getAddressByCommerceId(commerce_id);
+
         // Exclude the hashed document_id — it is not useful to clients and
         // should not be exposed in public responses.
         const { document_id: _doc, ...safeCommerce } = commerce;
-        return res.code(200).send({ ...safeCommerce, queue: queue ?? null });
+        return res.code(200).send({
+          ...safeCommerce,
+          address: address ?? null,
+          queue: queue ?? null,
+        });
       } catch (error) {
         logger.error(`[Commerce Controller] - getById failed, error: ${error}`);
         return sendError(res, 500, "Failed to retrieve commerce");
@@ -196,8 +246,12 @@ const commerceController = () => {
     updateCommerce: async (req: ServerRequest, res: ServerResponse) => {
       try {
         const user = req.user;
-        const commerceToUpdate = req.body as Commerce;
+        const body = req.body as Record<string, unknown>;
         const { commerce_id } = req.params as { commerce_id: string };
+        req.log.debug(
+          { commerce_id, body: req.body },
+          "[Commerce] updateCommerce — received body"
+        );
 
         if (!user) return sendError(res, 401, "Authentication required");
 
@@ -219,7 +273,44 @@ const commerceController = () => {
           );
         }
 
-        await updateCommerceById(commerce_id, { ...commerceToUpdate });
+        // Separate address fields from commerce core fields
+        const {
+          street,
+          number,
+          complement,
+          neighborhood,
+          city,
+          state,
+          cep,
+          latitude,
+          longitude,
+          ...coreFields
+        } = body;
+
+        await updateCommerceById(commerce_id, coreFields);
+
+        // Upsert address when any address field is present
+        if (
+          street !== undefined ||
+          number !== undefined ||
+          neighborhood !== undefined ||
+          city !== undefined ||
+          cep !== undefined ||
+          latitude !== undefined ||
+          longitude !== undefined
+        ) {
+          await upsertAddress(commerce_id, {
+            street: (street as string) ?? null,
+            number: (number as string) ?? null,
+            complement: (complement as string) ?? null,
+            neighborhood: (neighborhood as string) ?? null,
+            city: (city as string) ?? null,
+            state: (state as string) ?? null,
+            cep: (cep as string) ?? null,
+            latitude: latitude != null ? Number(latitude) : null,
+            longitude: longitude != null ? Number(longitude) : null,
+          });
+        }
 
         await Promise.all([
           c.del(cacheKeys.commerceId(commerce_id)),
@@ -228,7 +319,7 @@ const commerceController = () => {
 
         return res.code(200).send({
           message: "Commerce updated successfully",
-          data: { commerceToUpdate },
+          data: { ...coreFields },
         });
       } catch (error) {
         logger.error(
@@ -301,14 +392,35 @@ const commerceController = () => {
 
     getNearbyQueues: async (req: ServerRequest, res: ServerResponse) => {
       try {
-        const { lat, lng, radius } = req.query as Record<string, string>;
+        const { lat, lng, radius, cepPrefix } = req.query as Record<
+          string,
+          string
+        >;
+        req.log.debug(
+          { query: req.query },
+          "[Commerce] getNearbyQueues — params"
+        );
+
+        // CEP-prefix mode: faster, cacheable, no earth_distance math
+        if (cepPrefix) {
+          const digits = cepPrefix.replace(/\D/g, "");
+          if (digits.length < 4 || digits.length > 8) {
+            return sendError(res, 400, "cepPrefix must be 4–8 digits");
+          }
+          const results = await findNearbyOpenQueuesByCepPrefix(digits);
+          return res.code(200).send(results);
+        }
 
         const latNum = parseFloat(lat);
         const lngNum = parseFloat(lng);
         const radiusNum = radius ? parseInt(radius, 10) : 5000;
 
         if (isNaN(latNum) || isNaN(lngNum)) {
-          return sendError(res, 400, "lat and lng are required");
+          return sendError(
+            res,
+            400,
+            "Either cepPrefix or lat/lng are required"
+          );
         }
 
         if (radiusNum > 50000) {

@@ -5,6 +5,7 @@ import {
   listByCommerceSchema,
   enterQueueSchema,
   enterByQrCodeSchema,
+  enterPublicSchema,
   getMyPositionSchema,
   removeFirstSchema,
   removeNextNSchema,
@@ -52,6 +53,14 @@ const registerUserRoutes = (server: Server) => {
       config: { rateLimit: rateLimits.write },
     },
     controller.enterByQrCode
+  );
+  server.post(
+    ROUTES.participantsQueue.enterPublic,
+    {
+      schema: enterPublicSchema,
+      config: { rateLimit: rateLimits.write },
+    },
+    controller.enterPublic
   );
 };
 

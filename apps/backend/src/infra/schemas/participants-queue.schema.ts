@@ -229,3 +229,43 @@ export const removeNextNSchema: FastifySchema = {
     404: { description: "Queue empty or not found", ...errorResponse },
   },
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /enter-queue/:commerce_id
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const enterPublicSchema: FastifySchema = {
+  tags: ["Participants Queue"],
+  description:
+    "Enter a queue directly — no auth, no QR code required. " +
+    "Accepts either a registered userId or an anonymous UUID. " +
+    "Use this for the 'Entrar' button on public commerce listings.",
+  security: [],
+  params: {
+    type: "object",
+    required: ["commerce_id"],
+    properties: {
+      commerce_id: { type: "string", minLength: 1 },
+    },
+  },
+  body: {
+    type: "object",
+    properties: {
+      userId: { type: "string", minLength: 1 },
+      anonymousId: { type: "string", minLength: 36, maxLength: 36 },
+    },
+    additionalProperties: false,
+  },
+  response: {
+    201: {
+      description: "Entered queue successfully",
+      type: "object",
+      properties: {
+        message: { type: "string" },
+      },
+    },
+    400: { description: "Queue closed or invalid input", ...errorResponse },
+    404: { description: "Commerce or queue not found", ...errorResponse },
+    409: { description: "Already in queue", ...errorResponse },
+  },
+};

@@ -15,6 +15,41 @@ const NEARBY = { lat: -23.5487, lng: -46.6333 };
 // ~110 km north of reference — far outside 5 km radius
 const FAR_AWAY = { lat: -22.5487, lng: -46.6333 };
 
+/** Insert commerce + address row together */
+async function seedCommerce(
+  db: Kysely<Database>,
+  opts: {
+    id: string;
+    name: string;
+    ownerId: string;
+    docHash: string;
+    lat: number;
+    lng: number;
+    active?: boolean;
+  }
+) {
+  await db
+    .insertInto("commerce")
+    .values({
+      id: opts.id,
+      name: opts.name,
+      owner_id: opts.ownerId,
+      document_id: opts.docHash,
+      active: opts.active ?? true,
+    })
+    .execute();
+
+  await db
+    .insertInto("address")
+    .values({
+      id: uuidv7(),
+      commerce_id: opts.id,
+      latitude: opts.lat,
+      longitude: opts.lng,
+    })
+    .execute();
+}
+
 describe("Nearby Queues - Integration", () => {
   let dbInstance: Kysely<Database>;
   let startedContainer: StartedPostgreSqlContainer;
@@ -44,18 +79,14 @@ describe("Nearby Queues - Integration", () => {
 
     // Seed nearby commerce (within radius)
     nearCommerceId = uuidv7();
-    await dbInstance
-      .insertInto("commerce")
-      .values({
-        id: nearCommerceId,
-        name: "Near Shop",
-        owner_id: ownerId,
-        document_id: `hash-near-${nearCommerceId}`,
-        latitude: NEARBY.lat,
-        longitude: NEARBY.lng,
-        active: true,
-      })
-      .execute();
+    await seedCommerce(dbInstance, {
+      id: nearCommerceId,
+      name: "Near Shop",
+      ownerId,
+      docHash: `hash-near-${nearCommerceId}`,
+      lat: NEARBY.lat,
+      lng: NEARBY.lng,
+    });
 
     // Open queue for nearby commerce
     await dbInstance
@@ -73,18 +104,14 @@ describe("Nearby Queues - Integration", () => {
 
     // Seed far commerce (outside radius)
     farCommerceId = uuidv7();
-    await dbInstance
-      .insertInto("commerce")
-      .values({
-        id: farCommerceId,
-        name: "Far Shop",
-        owner_id: ownerId,
-        document_id: `hash-far-${farCommerceId}`,
-        latitude: FAR_AWAY.lat,
-        longitude: FAR_AWAY.lng,
-        active: true,
-      })
-      .execute();
+    await seedCommerce(dbInstance, {
+      id: farCommerceId,
+      name: "Far Shop",
+      ownerId,
+      docHash: `hash-far-${farCommerceId}`,
+      lat: FAR_AWAY.lat,
+      lng: FAR_AWAY.lng,
+    });
 
     // Open queue for far commerce
     await dbInstance
@@ -103,6 +130,7 @@ describe("Nearby Queues - Integration", () => {
 
   afterAll(async () => {
     await dbInstance.deleteFrom("queue").execute();
+    await dbInstance.deleteFrom("address").execute();
     await dbInstance.deleteFrom("commerce").execute();
     await dbInstance.deleteFrom("person").where("id", "=", ownerId).execute();
     await dbInstance.destroy();
@@ -123,20 +151,15 @@ describe("Nearby Queues - Integration", () => {
   });
 
   it("returns results sorted by distance ascending", async () => {
-    // seed a second nearby commerce farther than NEARBY but still within 5km
     const secondNearId = uuidv7();
-    await dbInstance
-      .insertInto("commerce")
-      .values({
-        id: secondNearId,
-        name: "Second Near Shop",
-        owner_id: ownerId,
-        document_id: `hash-second-${secondNearId}`,
-        latitude: -23.545, // ~600m from reference
-        longitude: -46.6333,
-        active: true,
-      })
-      .execute();
+    await seedCommerce(dbInstance, {
+      id: secondNearId,
+      name: "Second Near Shop",
+      ownerId,
+      docHash: `hash-second-${secondNearId}`,
+      lat: -23.545, // ~600m from reference
+      lng: -46.6333,
+    });
 
     await dbInstance
       .insertInto("queue")
@@ -172,6 +195,10 @@ describe("Nearby Queues - Integration", () => {
       .where("commerce_id", "=", secondNearId)
       .execute();
     await dbInstance
+      .deleteFrom("address")
+      .where("commerce_id", "=", secondNearId)
+      .execute();
+    await dbInstance
       .deleteFrom("commerce")
       .where("id", "=", secondNearId)
       .execute();
@@ -179,18 +206,14 @@ describe("Nearby Queues - Integration", () => {
 
   it("excludes commerces with no open queues", async () => {
     const closedCommerceId = uuidv7();
-    await dbInstance
-      .insertInto("commerce")
-      .values({
-        id: closedCommerceId,
-        name: "Closed Queue Shop",
-        owner_id: ownerId,
-        document_id: `hash-closed-${closedCommerceId}`,
-        latitude: NEARBY.lat,
-        longitude: NEARBY.lng,
-        active: true,
-      })
-      .execute();
+    await seedCommerce(dbInstance, {
+      id: closedCommerceId,
+      name: "Closed Queue Shop",
+      ownerId,
+      docHash: `hash-closed-${closedCommerceId}`,
+      lat: NEARBY.lat,
+      lng: NEARBY.lng,
+    });
 
     await dbInstance
       .insertInto("queue")
@@ -220,6 +243,10 @@ describe("Nearby Queues - Integration", () => {
       .where("commerce_id", "=", closedCommerceId)
       .execute();
     await dbInstance
+      .deleteFrom("address")
+      .where("commerce_id", "=", closedCommerceId)
+      .execute();
+    await dbInstance
       .deleteFrom("commerce")
       .where("id", "=", closedCommerceId)
       .execute();
@@ -227,18 +254,15 @@ describe("Nearby Queues - Integration", () => {
 
   it("excludes inactive commerces", async () => {
     const inactiveCommerceId = uuidv7();
-    await dbInstance
-      .insertInto("commerce")
-      .values({
-        id: inactiveCommerceId,
-        name: "Inactive Shop",
-        owner_id: ownerId,
-        document_id: `hash-inactive-${inactiveCommerceId}`,
-        latitude: NEARBY.lat,
-        longitude: NEARBY.lng,
-        active: false,
-      })
-      .execute();
+    await seedCommerce(dbInstance, {
+      id: inactiveCommerceId,
+      name: "Inactive Shop",
+      ownerId,
+      docHash: `hash-inactive-${inactiveCommerceId}`,
+      lat: NEARBY.lat,
+      lng: NEARBY.lng,
+      active: false,
+    });
 
     await dbInstance
       .insertInto("queue")
@@ -268,6 +292,10 @@ describe("Nearby Queues - Integration", () => {
       .where("commerce_id", "=", inactiveCommerceId)
       .execute();
     await dbInstance
+      .deleteFrom("address")
+      .where("commerce_id", "=", inactiveCommerceId)
+      .execute();
+    await dbInstance
       .deleteFrom("commerce")
       .where("id", "=", inactiveCommerceId)
       .execute();
@@ -275,18 +303,14 @@ describe("Nearby Queues - Integration", () => {
 
   it("returns open_queues_count correctly", async () => {
     const multiQueueCommerceId = uuidv7();
-    await dbInstance
-      .insertInto("commerce")
-      .values({
-        id: multiQueueCommerceId,
-        name: "Multi Queue Shop",
-        owner_id: ownerId,
-        document_id: `hash-multi-${multiQueueCommerceId}`,
-        latitude: NEARBY.lat,
-        longitude: NEARBY.lng,
-        active: true,
-      })
-      .execute();
+    await seedCommerce(dbInstance, {
+      id: multiQueueCommerceId,
+      name: "Multi Queue Shop",
+      ownerId,
+      docHash: `hash-multi-${multiQueueCommerceId}`,
+      lat: NEARBY.lat,
+      lng: NEARBY.lng,
+    });
 
     await dbInstance
       .insertInto("queue")
@@ -326,6 +350,10 @@ describe("Nearby Queues - Integration", () => {
     // cleanup
     await dbInstance
       .deleteFrom("queue")
+      .where("commerce_id", "=", multiQueueCommerceId)
+      .execute();
+    await dbInstance
+      .deleteFrom("address")
       .where("commerce_id", "=", multiQueueCommerceId)
       .execute();
     await dbInstance

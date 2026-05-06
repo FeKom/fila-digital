@@ -1,7 +1,7 @@
 "use client";
 import { useActionState } from "react";
 import { createCommerce } from "./actions";
-import LocationButton from "@/components/LocationButton/LocationButton";
+import { CepInput } from "@/components/CepInput";
 
 const CreateCommerce = () => {
   const [state, action, pending] = useActionState(createCommerce, {
@@ -80,7 +80,7 @@ const CreateCommerce = () => {
 
         <div className="form-section">
           <div className="form-section-title">Localização</div>
-          <LocationButton />
+          <CepInput />
         </div>
 
         <div className="form-section">

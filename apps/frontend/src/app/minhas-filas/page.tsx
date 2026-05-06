@@ -1,7 +1,26 @@
 import { getUserQueues, exitQueue } from "./actions";
 import { EmptyState } from "@/components/EmptyState";
+import { cookies } from "next/headers";
 
 const MyQueues = async () => {
+  const cookieStore = await cookies();
+  const isLoggedIn = Boolean(cookieStore.get("digital_queue_jwt")?.value);
+
+  if (!isLoggedIn) {
+    return (
+      <div className="page-container">
+        <div className="page-header">
+          <h1 className="page-title">Minhas Filas</h1>
+        </div>
+        <EmptyState
+          message="Faça login para ver suas filas."
+          ctaLabel="Entrar"
+          ctaHref="/login"
+        />
+      </div>
+    );
+  }
+
   const queues = await getUserQueues();
 
   return (
@@ -24,6 +43,8 @@ const MyQueues = async () => {
               await exitQueue(queue.commerce_id);
             };
 
+            const estimatedMinutes = queue.position * 5;
+
             return (
               <div key={queue.queue_id} className="queue-list-item">
                 <div className="queue-list-item-info">
@@ -38,6 +59,15 @@ const MyQueues = async () => {
                     <span className="queue-list-item-position-label">
                       na fila
                     </span>
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "0.8rem",
+                      color: "var(--text-3)",
+                      marginTop: "0.25rem",
+                    }}
+                  >
+                    Tempo estimado: ~{estimatedMinutes} min
                   </div>
                 </div>
                 <form action={exitAction}>

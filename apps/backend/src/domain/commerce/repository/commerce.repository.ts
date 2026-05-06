@@ -96,25 +96,54 @@ export const findNearbyOpenQueues = async (
         .on("q.status", "=", "open")
         .on("q.active", "=", true)
     )
+    .innerJoin("address as a", "a.commerce_id", "c.id")
     .select([
       "c.id",
       "c.name",
       "c.description",
-      "c.latitude",
-      "c.longitude",
+      "a.latitude",
+      "a.longitude",
       sql<number>`COUNT(q.id)`.as("open_queues_count"),
-      sql<number>`earth_distance(ll_to_earth(c.latitude, c.longitude), ll_to_earth(${lat}, ${lng}))`.as(
+      sql<number>`earth_distance(ll_to_earth(a.latitude, a.longitude), ll_to_earth(${lat}, ${lng}))`.as(
         "distance_meters"
       ),
     ])
     .where("c.active", "=", true)
-    .where("c.latitude", "is not", null)
-    .where("c.longitude", "is not", null)
+    .where("a.latitude", "is not", null)
+    .where("a.longitude", "is not", null)
     .where(
-      sql<boolean>`earth_distance(ll_to_earth(c.latitude, c.longitude), ll_to_earth(${lat}, ${lng})) <= ${radiusMeters}`
+      sql<boolean>`earth_distance(ll_to_earth(a.latitude, a.longitude), ll_to_earth(${lat}, ${lng})) <= ${radiusMeters}`
     )
-    .groupBy("c.id")
+    .groupBy(["c.id", "a.latitude", "a.longitude"])
     .orderBy("distance_meters", "asc")
+    .limit(50)
+    .execute() as Promise<NearbyCommerce[]>;
+};
+
+export const findNearbyOpenQueuesByCepPrefix = async (
+  cepPrefix: string
+): Promise<NearbyCommerce[]> => {
+  return db
+    .selectFrom("commerce as c")
+    .innerJoin("queue as q", (join) =>
+      join
+        .onRef("q.commerce_id", "=", "c.id")
+        .on("q.status", "=", "open")
+        .on("q.active", "=", true)
+    )
+    .innerJoin("address as a", "a.commerce_id", "c.id")
+    .select([
+      "c.id",
+      "c.name",
+      "c.description",
+      "a.latitude",
+      "a.longitude",
+      sql<number>`COUNT(q.id)`.as("open_queues_count"),
+    ])
+    .where("c.active", "=", true)
+    .where("a.cep", "is not", null)
+    .where(sql<boolean>`replace(a.cep, '-', '') LIKE ${cepPrefix + "%"}`)
+    .groupBy(["c.id", "a.latitude", "a.longitude"])
     .limit(50)
     .execute() as Promise<NearbyCommerce[]>;
 };
