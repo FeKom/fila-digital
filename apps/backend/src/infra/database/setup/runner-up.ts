@@ -8,20 +8,30 @@ import { dialect } from "../connect";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 async function migrateToLatest() {
   const db = new Kysely<Database>({
     dialect,
   });
 
+  // When bundled by tsup, this file may end up in a shared chunk at dist/,
+  // making __dirname-relative paths unreliable. Instead, resolve from cwd
+  // (always the apps/backend/ root) and pick the right subfolder based on
+  // whether we're running compiled JS (dist/) or source via tsx (src/).
+  const isDevMode = __filename.endsWith(".ts");
+  const migrationFolder = path.join(
+    process.cwd(),
+    isDevMode
+      ? "src/infra/database/migrations"
+      : "dist/infra/database/migrations"
+  );
+
   const migrator = new Migrator({
     db,
     provider: new FileMigrationProvider({
       fs,
       path,
-      // This needs to be an absolute path.
-      migrationFolder: path.join(__dirname, "../migrations"),
+      migrationFolder,
     }),
   });
 
