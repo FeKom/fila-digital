@@ -28,6 +28,8 @@ notifications:
   resend:
     apiKey: RESEND_API_KEY
     fromEmail: NOTIFICATION_FROM_EMAIL
+google:
+  clientId: GOOGLE_CLIENT_ID
 otel:
   endpoint: OTEL_EXPORTER_OTLP_ENDPOINT
   serviceName: OTEL_SERVICE_NAME
