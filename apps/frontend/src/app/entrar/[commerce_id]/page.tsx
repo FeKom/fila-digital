@@ -1,8 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import commerceService from "@/services/commerce";
-import participantService from "@/services/participant";
+import { getCommerce, enterQueuePublic } from "./actions";
 import { Commerce } from "@/types";
 
 type EnterState = "idle" | "loading" | "done" | "error" | "closed";
@@ -14,9 +13,12 @@ export default function MagicLinkPage() {
   const [enterState, setEnterState] = useState<EnterState>("idle");
 
   useEffect(() => {
-    commerceService()
-      .getById(commerce_id)
+    getCommerce(commerce_id)
       .then((c) => {
+        if (!c) {
+          setLoadError(true);
+          return;
+        }
         setCommerce(c);
         if (!c.queue || c.queue.status !== "open") setEnterState("closed");
       })
@@ -25,14 +27,9 @@ export default function MagicLinkPage() {
 
   const handleEnter = async () => {
     setEnterState("loading");
-    try {
-      const anonymousId = crypto.randomUUID();
-      await participantService().enterPublic(commerce_id, anonymousId);
-      // Reload to get updated participant count / position
-      setEnterState("done");
-    } catch {
-      setEnterState("error");
-    }
+    const anonymousId = crypto.randomUUID();
+    const result = await enterQueuePublic(commerce_id, anonymousId);
+    setEnterState(result.ok ? "done" : "error");
   };
 
   if (loadError) {
