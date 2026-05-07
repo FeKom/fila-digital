@@ -67,6 +67,44 @@ export const deleteParticipantsByQueueId = async (
     .executeTakeFirst();
 };
 
+export const deleteAnonymousFromQueue = async (
+  queue_id: string,
+  anonymous_id: string
+) => {
+  return db
+    .updateTable("participants_queue")
+    .set({ is_active: false })
+    .where("queue_id", "=", queue_id)
+    .where("anonymous_id", "=", anonymous_id)
+    .where("is_active", "=", true)
+    .executeTakeFirst();
+};
+
+export const findAnonymousParticipantPosition = async (
+  anonymous_id: string,
+  queue_id: string
+): Promise<number | null> => {
+  const entry = await db
+    .selectFrom("participants_queue")
+    .select("created_at")
+    .where("anonymous_id", "=", anonymous_id)
+    .where("queue_id", "=", queue_id)
+    .where("is_active", "=", true)
+    .executeTakeFirst();
+
+  if (!entry) return null;
+
+  const result = await db
+    .selectFrom("participants_queue")
+    .select(db.fn.countAll<number>().as("position"))
+    .where("queue_id", "=", queue_id)
+    .where("is_active", "=", true)
+    .where("created_at", "<=", entry.created_at)
+    .executeTakeFirstOrThrow();
+
+  return Number(result.position);
+};
+
 export const softDeleteParticipantsByQueueId = async (
   queue_id: string,
   person_id: string,
@@ -174,6 +212,18 @@ export const findParticipantPosition = async (
  * Returns the participants that were removed (id + person_id only).
  * Returns an empty array when the queue has no active participants.
  */
+export const claimAnonymousParticipations = async (
+  anonymous_id: string,
+  person_id: string
+) => {
+  return db
+    .updateTable("participants_queue")
+    .set({ person_id, anonymous_id: null })
+    .where("anonymous_id", "=", anonymous_id)
+    .where("is_active", "=", true)
+    .execute();
+};
+
 export const softDeleteNextNParticipants = async (
   queue_id: string,
   count: number

@@ -1,12 +1,10 @@
 "use client";
 
-import Link from "next/link";
-import { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { enterQueue } from "./actions";
 import { Participant } from "@/types";
-
-// ── QR / magic-link entry flow ────────────────────────────────────────────────
+import { getAnonymousId } from "@/lib/anonymousId";
 
 function QrEntryPage({ queueId, token }: { queueId: string; token: string }) {
   const [result, setResult] = useState<{
@@ -14,7 +12,11 @@ function QrEntryPage({ queueId, token }: { queueId: string; token: string }) {
     error?: string;
   } | null>(null);
   const [loading, setLoading] = useState(false);
-  const [anonymousId] = useState(() => crypto.randomUUID());
+  const [anonymousId, setAnonymousId] = useState("");
+
+  useEffect(() => {
+    setAnonymousId(getAnonymousId());
+  }, []);
 
   const handleSubmit = async (formData: FormData) => {
     setLoading(true);
@@ -172,176 +174,13 @@ function QrEntryPage({ queueId, token }: { queueId: string; token: string }) {
   );
 }
 
-// ── Option card ───────────────────────────────────────────────────────────────
-
-function OptionCard({
-  icon,
-  title,
-  description,
-  href,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  href: string;
-}) {
-  return (
-    <Link
-      href={href}
-      style={{
-        display: "flex",
-        gap: "1rem",
-        alignItems: "flex-start",
-        background: "var(--bg-surface)",
-        border: "1px solid var(--border)",
-        borderRadius: "14px",
-        padding: "1.25rem",
-        textDecoration: "none",
-        color: "inherit",
-        transition: "border-color 0.15s",
-      }}
-    >
-      <div
-        style={{
-          width: "44px",
-          height: "44px",
-          background: "var(--bg-surface-2)",
-          borderRadius: "10px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-        }}
-      >
-        {icon}
-      </div>
-      <div>
-        <p
-          style={{
-            fontWeight: 600,
-            fontSize: "0.95rem",
-            color: "var(--text-1)",
-            marginBottom: "0.25rem",
-          }}
-        >
-          {title}
-        </p>
-        <p style={{ fontSize: "0.8rem", color: "var(--text-3)" }}>
-          {description}
-        </p>
-      </div>
-    </Link>
-  );
+function RedirectToProcurarFila() {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace("/procurar-fila");
+  }, [router]);
+  return null;
 }
-
-// ── Landing — 3 ways to enter ─────────────────────────────────────────────────
-
-function EntryLanding() {
-  return (
-    <div className="page-container-sm">
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Entrar na Fila</h1>
-          <p className="page-subtitle">Escolha como quer entrar</p>
-        </div>
-      </div>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-        <OptionCard
-          href="/entrar-fila/qrcode"
-          icon={
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-              <rect
-                x="3"
-                y="3"
-                width="8"
-                height="8"
-                rx="1.5"
-                stroke="var(--text-2)"
-                strokeWidth="1.5"
-              />
-              <rect
-                x="13"
-                y="3"
-                width="8"
-                height="8"
-                rx="1.5"
-                stroke="var(--text-2)"
-                strokeWidth="1.5"
-              />
-              <rect
-                x="3"
-                y="13"
-                width="8"
-                height="8"
-                rx="1.5"
-                stroke="var(--text-2)"
-                strokeWidth="1.5"
-              />
-              <path
-                d="M13 13h2v2h-2zM17 13h4M17 17h4M13 17h2v4h-2"
-                stroke="var(--text-2)"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-            </svg>
-          }
-          title="QR Code"
-          description="Escaneie o QR Code do comércio para entrar na fila."
-        />
-
-        <OptionCard
-          href="/entrar-fila/link"
-          icon={
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101"
-                stroke="var(--text-2)"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-                stroke="var(--text-2)"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          }
-          title="Link mágico"
-          description="Recebeu um link do comércio? Cole o código aqui."
-        />
-
-        <OptionCard
-          href="/procurar-fila"
-          icon={
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-              <circle
-                cx="11"
-                cy="11"
-                r="7"
-                stroke="var(--text-2)"
-                strokeWidth="1.5"
-              />
-              <path
-                d="M20 20l-3-3"
-                stroke="var(--text-2)"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-            </svg>
-          }
-          title="Procurar fila"
-          description="Busque filas abertas perto de você ou pelo nome do comércio."
-        />
-      </div>
-    </div>
-  );
-}
-
-// ── Root ──────────────────────────────────────────────────────────────────────
 
 export default function EnterQueuePage() {
   const searchParams = useSearchParams();
@@ -352,5 +191,5 @@ export default function EnterQueuePage() {
     return <QrEntryPage queueId={queueId} token={token} />;
   }
 
-  return <EntryLanding />;
+  return <RedirectToProcurarFila />;
 }

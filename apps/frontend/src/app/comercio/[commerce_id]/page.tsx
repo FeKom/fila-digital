@@ -9,6 +9,7 @@ import { Badge } from "@/components/Badge";
 import { ParticipantList } from "@/components/ParticipantList";
 import { Button } from "@/components";
 import { CopyLinkButton } from "@/components/CopyLinkButton";
+import { QRCodeDisplay } from "@/components/QRCodeDisplay";
 
 type Props = {
   params: Promise<{ commerce_id: string }>;
@@ -31,6 +32,8 @@ const CommerceDetail = async ({ params }: Props) => {
     await callNextParticipant(commerce_id);
   };
 
+  const queue = commerce.queue;
+
   return (
     <div className="page-container">
       {/* Page header */}
@@ -42,9 +45,6 @@ const CommerceDetail = async ({ params }: Props) => {
           )}
         </div>
         <div className="page-header-actions">
-          {commerce.queue?.status === "open" && (
-            <CopyLinkButton commerceId={commerce_id} />
-          )}
           <Link
             href={`/comercio/${commerce_id}/editar`}
             className="fd-btn fd-btn-ghost fd-btn-sm"
@@ -84,18 +84,16 @@ const CommerceDetail = async ({ params }: Props) => {
             <span className="section-label" style={{ margin: 0 }}>
               Fila
             </span>
-            {commerce.queue && (
-              <Badge
-                variant={commerce.queue.status === "open" ? "success" : "error"}
-              >
-                {commerce.queue.status === "open" ? "Aberta" : "Fechada"}
+            {queue && (
+              <Badge variant={queue.status === "open" ? "success" : "error"}>
+                {queue.status === "open" ? "Aberta" : "Fechada"}
               </Badge>
             )}
           </div>
           <div className="page-header-actions">
-            {commerce.queue ? (
+            {queue ? (
               <Link
-                href={`/comercio/${commerce_id}/fila/${commerce.queue.id}/editar`}
+                href={`/comercio/${commerce_id}/fila/${queue.id}/editar`}
                 className="fd-btn fd-btn-ghost fd-btn-sm"
               >
                 Editar Fila
@@ -111,7 +109,7 @@ const CommerceDetail = async ({ params }: Props) => {
           </div>
         </div>
 
-        {commerce.queue ? (
+        {queue ? (
           <>
             <div className="queue-actions-row">
               <form action={callNextAction}>
@@ -125,6 +123,45 @@ const CommerceDetail = async ({ params }: Props) => {
                 na fila
               </span>
             </div>
+
+            {/* QR code + magic link for customers to join */}
+            {queue.qrcode && queue.qrcode_token && (
+              <div
+                style={{
+                  background: "var(--bg-surface)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "14px",
+                  padding: "1.5rem",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "1.25rem",
+                  marginTop: "1rem",
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: "0.8rem",
+                    fontWeight: 600,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    color: "var(--text-3)",
+                    margin: 0,
+                  }}
+                >
+                  Entrada na fila
+                </p>
+                <QRCodeDisplay
+                  base64Image={queue.qrcode}
+                  queueName={queue.name}
+                />
+                <CopyLinkButton
+                  queueId={queue.id}
+                  qrcodeToken={queue.qrcode_token}
+                />
+              </div>
+            )}
+
             <ParticipantList participants={participants} />
           </>
         ) : (
