@@ -24,6 +24,7 @@ export type Commerce = {
   closed_at: string;
   active: boolean;
   address?: CommerceAddress | null;
+  admins?: string[];
 };
 
 export type CommerceInput = {

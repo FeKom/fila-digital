@@ -20,6 +20,12 @@ export const submitLoginForm = async (
   try {
     const response = await userService().login({ email, password });
     if (!response.access_token) {
+      if (response.message === "__timeout__") {
+        return {
+          error:
+            "O servidor está iniciando. Aguarde ~30 segundos e tente novamente.",
+        };
+      }
       if (
         response.message === "User Not Found" ||
         response.message === "Invalid User"

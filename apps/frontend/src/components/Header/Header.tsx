@@ -12,16 +12,24 @@ const Header = ({ authenticated }: { authenticated: boolean }) => {
         </Link>
 
         {/* Desktop nav */}
-        {authenticated && (
-          <nav className="app-nav">
-            <Link href="/" className="app-nav-link">
-              Meus Comércios
-            </Link>
-            <Link href="/minhas-filas" className="app-nav-link">
-              Minhas Filas
-            </Link>
-          </nav>
-        )}
+        <nav className="app-nav">
+          <Link href="/entrar-fila" className="app-nav-link">
+            Entrar na Fila
+          </Link>
+          <Link href="/procurar-fila" className="app-nav-link">
+            Procurar Fila
+          </Link>
+          {authenticated && (
+            <>
+              <Link href="/" className="app-nav-link">
+                Meus Comércios
+              </Link>
+              <Link href="/minhas-filas" className="app-nav-link">
+                Minhas Filas
+              </Link>
+            </>
+          )}
+        </nav>
 
         {/* Right side */}
         <div className="app-header-actions">

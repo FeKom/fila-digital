@@ -347,15 +347,17 @@ const commerceController = () => {
         const person = await getUserByEmail(email);
         if (!person) return sendError(res, 404, "User not found");
         if (person.id === user.id) {
-          return sendError(res, 400, "Owner cannot grant admin to themselves");
+          return sendError(
+            res,
+            400,
+            "Owner cannot grant admin to themselves , they already have admin access"
+          );
         }
 
         await grantCommerceAdmin(commerce_id, person.id, user.id);
-        await updateUserById(person.id, { role: "ADMIN" });
-
-        return res
-          .code(200)
-          .send({ message: `Admin access granted to ${person.email}` });
+        return res.code(200).send({
+          message: `Admin access granted to email: ${person.email}, name: ${person.name}`,
+        });
       } catch (error) {
         logger.error(
           `[Commerce Controller] - Failed to grant admin, error: ${error}`

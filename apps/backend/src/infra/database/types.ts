@@ -6,7 +6,7 @@ import {
   Updateable,
 } from "kysely";
 
-export type PersonRole = "OWNER" | "ADMIN" | "CUSTOMER";
+export type PersonRole = "OWNER" | "CUSTOMER";
 
 export interface CommerceAdminsTable {
   id: Generated<string>;

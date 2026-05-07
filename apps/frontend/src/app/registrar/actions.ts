@@ -43,6 +43,12 @@ export const submitRegisterForm = async (
       phone,
     });
     if (!response.access_token) {
+      if (response.message === "__timeout__") {
+        return {
+          error:
+            "O servidor está iniciando. Aguarde ~30 segundos e tente novamente.",
+        };
+      }
       return { error: translateError(response.message) };
     }
     access_token = response.access_token;

@@ -15,12 +15,14 @@ export async function middleware(request: NextRequest) {
   const isPublicAuth = publicPaths.some((path) => pathname.startsWith(path));
 
   // No access token but refresh token exists — try a silent refresh
+  let refreshedOk = false;
   if (!accessToken && refreshToken) {
     try {
       const res = await fetch(`${BASE_URL}/v1/user/refresh`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refresh_token: refreshToken }),
+        signal: AbortSignal.timeout(1000),
       });
 
       if (res.ok) {
@@ -42,11 +44,13 @@ export async function middleware(request: NextRequest) {
         return response;
       }
     } catch {
-      // refresh failed — fall through to redirect
+      // refresh failed (cold start / network) — treat as unauthenticated
     }
   }
 
-  const isAuthenticated = !!(accessToken || refreshToken);
+  // Only trust accessToken OR a successful refresh — a stale refreshToken alone
+  // does not mean the user is authenticated if the refresh call just failed.
+  const isAuthenticated = !!(accessToken || refreshedOk);
 
   if (isProtected && !isAuthenticated) {
     const loginUrl = new URL("/login", request.url);
