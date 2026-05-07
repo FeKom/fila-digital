@@ -14,14 +14,22 @@ export async function up(db: Kysely<unknown>) {
     db
   );
 
-  // 3. Swap the column to the new type
+  // 3. Drop the column default so PostgreSQL can swap the type freely
+  await sql`ALTER TABLE person ALTER COLUMN role DROP DEFAULT`.execute(db);
+
+  // 4. Swap the column to the new type
   await sql`
     ALTER TABLE person
       ALTER COLUMN role TYPE person_role_new
         USING role::text::person_role_new
   `.execute(db);
 
-  // 4. Drop the old type and rename the new one
+  // 5. Restore the default using the new type
+  await sql`ALTER TABLE person ALTER COLUMN role SET DEFAULT 'CUSTOMER'`.execute(
+    db
+  );
+
+  // 6. Drop the old type and rename the new one
   await sql`DROP TYPE person_role`.execute(db);
   await sql`ALTER TYPE person_role_new RENAME TO person_role`.execute(db);
 }
@@ -32,12 +40,18 @@ export async function down(db: Kysely<unknown>) {
     db
   );
 
+  await sql`ALTER TABLE person ALTER COLUMN role DROP DEFAULT`.execute(db);
+
   await sql`
     ALTER TABLE person
       ALTER COLUMN role TYPE person_role_new
         USING role::text::person_role_new
   `.execute(db);
 
+  await sql`ALTER TABLE person ALTER COLUMN role SET DEFAULT 'CUSTOMER'`.execute(
+    db
+  );
+
   await sql`DROP TYPE person_role`.execute(db);
-  await sql`ALTER TYPE person_role_new RENAME TO role`.execute(db);
+  await sql`ALTER TYPE person_role_new RENAME TO person_role`.execute(db);
 }
