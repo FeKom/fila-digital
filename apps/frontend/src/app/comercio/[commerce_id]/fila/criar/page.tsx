@@ -1,75 +1,18 @@
-import { QRCodeDisplay } from "@/components/QRCodeDisplay";
 import { createQueue } from "./actions";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 
 type Props = {
   params: Promise<{ commerce_id: string }>;
-  searchParams: Promise<{ qrcode?: string; queueName?: string }>;
 };
 
-const CreateQueue = async ({ params, searchParams }: Props) => {
+const CreateQueue = async ({ params }: Props) => {
   const { commerce_id } = await params;
-  const { qrcode, queueName } = await searchParams;
 
   const handleCreate = async (formData: FormData) => {
     "use server";
-    const queue = await createQueue(commerce_id, formData);
-    if (queue.qrcode) {
-      redirect(
-        `/comercio/${commerce_id}/fila/criar?qrcode=${encodeURIComponent(queue.qrcode)}&queueName=${encodeURIComponent(queue.name)}`
-      );
-    } else {
-      redirect(`/comercio/${commerce_id}`);
-    }
+    await createQueue(commerce_id, formData);
+    redirect(`/comercio/${commerce_id}`);
   };
-
-  if (qrcode) {
-    return (
-      <div className="page-container-sm">
-        <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-          <h1
-            className="page-title"
-            style={{ justifyContent: "center", display: "flex" }}
-          >
-            Fila criada com sucesso!
-          </h1>
-          <p className="page-subtitle" style={{ textAlign: "center" }}>
-            Use o QR Code abaixo para que clientes entrem na fila.
-          </p>
-        </div>
-        <div
-          style={{
-            background: "var(--bg-surface)",
-            border: "1px solid var(--border)",
-            borderRadius: "12px",
-            padding: "2rem",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: "1.5rem",
-            marginBottom: "1.5rem",
-          }}
-        >
-          <QRCodeDisplay
-            base64Image={decodeURIComponent(qrcode)}
-            queueName={queueName || "fila"}
-          />
-        </div>
-        <div
-          className="form-actions"
-          style={{ borderTop: "none", paddingTop: 0 }}
-        >
-          <Link
-            href={`/comercio/${commerce_id}`}
-            className="fd-btn fd-btn-primary"
-          >
-            Voltar ao Comércio
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="page-container-sm">
