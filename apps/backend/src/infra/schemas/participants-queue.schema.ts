@@ -53,7 +53,9 @@ export const listByCommerceSchema: FastifySchema = {
                 type: "object",
                 properties: {
                   id: { type: "string" },
-                  person_id: { type: "string" },
+                  user_id: { type: "string", nullable: true },
+                  anonymous_id: { type: "string", nullable: true },
+                  person_name: { type: "string", nullable: true },
                   queue_id: { type: "string" },
                   position: { type: "number" },
                   is_active: { type: "boolean" },
@@ -197,6 +199,39 @@ export const getMyPositionSchema: FastifySchema = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// PUT /participants-queue/:commerce_id/revert/:count?
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const revertSchema: FastifySchema = {
+  tags: ["Participants Queue"],
+  description:
+    "Revert the last N served participants back to active (undo call-next). Requires owner auth.",
+  params: {
+    type: "object",
+    required: ["commerce_id"],
+    properties: {
+      commerce_id: { type: "string", minLength: 1 },
+      count: { type: "integer", minimum: 1, maximum: 10 },
+    },
+  },
+  response: {
+    200: {
+      type: "object",
+      properties: {
+        message: { type: "string" },
+        data: {
+          type: "object",
+          properties: { revertedCount: { type: "number" } },
+        },
+      },
+    },
+    400: { description: "Nothing to revert", ...errorResponse },
+    401: { description: "Unauthorized", ...errorResponse },
+    403: { description: "Forbidden", ...errorResponse },
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // DELETE /participants-queue/:commerce_id/next/:count
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -227,45 +262,5 @@ export const removeNextNSchema: FastifySchema = {
     },
     401: { description: "Unauthorized", ...errorResponse },
     404: { description: "Queue empty or not found", ...errorResponse },
-  },
-};
-
-//
-// POST /enter-queue/:commerce_id
-// ─────────────────────────────────────────────────────────────────────────────
-
-export const enterPublicSchema: FastifySchema = {
-  tags: ["Participants Queue"],
-  description:
-    "Enter a queue directly — no auth, no QR code required. " +
-    "Accepts either a registered userId or an anonymous UUID. " +
-    "Use this for the 'Entrar' button on public commerce listings.",
-  security: [],
-  params: {
-    type: "object",
-    required: ["commerce_id"],
-    properties: {
-      commerce_id: { type: "string", minLength: 1 },
-    },
-  },
-  body: {
-    type: "object",
-    properties: {
-      userId: { type: "string", minLength: 1 },
-      anonymousId: { type: "string", minLength: 36, maxLength: 36 },
-    },
-    additionalProperties: false,
-  },
-  response: {
-    201: {
-      description: "Entered queue successfully",
-      type: "object",
-      properties: {
-        message: { type: "string" },
-      },
-    },
-    400: { description: "Queue closed or invalid input", ...errorResponse },
-    404: { description: "Commerce or queue not found", ...errorResponse },
-    409: { description: "Already in queue", ...errorResponse },
   },
 };

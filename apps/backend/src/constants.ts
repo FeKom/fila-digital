@@ -22,11 +22,12 @@ const ROUTES = {
   participantsQueue: {
     enter: "/participants-queue/enter/:commerce_id",
     enterByQrCode: "/enter-queue",
-    enterPublic: "/enter-queue/:commerce_id",
     list: "/participants-queue/:commerce_id",
     myPosition: "/participants-queue/:commerce_id/my-position",
     next: "/participants-queue/:commerce_id/next",
     nextN: "/participants-queue/:commerce_id/next/:count",
+    revert: "/participants-queue/:commerce_id/revert",
+    revertN: "/participants-queue/:commerce_id/revert/:count",
     exit: "/participants-queue/:commerce_id/exit",
   },
   user: {
@@ -40,6 +41,7 @@ const ROUTES = {
     queues: "/user/queues",
     update: "/user/update",
     delete: "/user/delete",
+    claimAnonymous: "/user/claim-anonymous",
   },
 };
 

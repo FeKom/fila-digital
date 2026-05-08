@@ -82,6 +82,15 @@ export const findCommerceOwnerByUserId = async (id: string) => {
     .executeTakeFirstOrThrow();
 };
 
+export const findCommerceByOwner = async (owner_id: string) => {
+  return db
+    .selectFrom("commerce")
+    .selectAll()
+    .where("owner_id", "=", owner_id)
+    .limit(1)
+    .executeTakeFirst();
+};
+
 export const findNearbyOpenQueues = async (
   lat: number,
   lng: number,
@@ -140,7 +149,7 @@ export const searchOpenQueues = async ({
         .on("q.status", "=", "open")
         .on("q.active", "=", true)
     )
-    .innerJoin("address as a", "a.commerce_id", "c.id")
+    .leftJoin("address as a", "a.commerce_id", "c.id")
     .leftJoin("participants_queue as pq", (join) =>
       join.onRef("pq.queue_id", "=", "q.id").on("pq.is_active", "=", true)
     )

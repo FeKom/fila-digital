@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Unbounded, DM_Sans } from "next/font/google";
 import "./globals.css";
-import { Header } from "@/components/Header";
-import { GoogleProvider } from "@/components/GoogleProvider";
-import { isAuthenticated } from "./actions";
+import { Header } from "@/domains/user/components/Header";
+import { GoogleProvider } from "@/domains/user/components/GoogleProvider";
+import { isAuthenticated } from "@/domains/user/user.actions";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const unbounded = Unbounded({

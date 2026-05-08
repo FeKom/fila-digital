@@ -1,12 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const protectedPaths = ["/comercio", "/minhas-filas", "/perfil"];
-const publicPaths = ["/login", "/registrar", "/entrar-fila"];
+const protectedPaths = [
+  "/comercio",
+  "/minhas-filas",
+  "/meus-comercios",
+  "/perfil",
+];
+const publicPaths = ["/login", "/registrar"];
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_FILA_DIGITAL_BASE_URL ?? "http://localhost:7070";
 
 export async function middleware(request: NextRequest) {
+  // Server action requests carry Next-Action header — never redirect them,
+  // or the client receives a redirect instead of the action response.
+  if (request.headers.has("Next-Action")) {
+    return NextResponse.next();
+  }
+
   const accessToken = request.cookies.get("digital_queue_jwt")?.value;
   const refreshToken = request.cookies.get("digital_queue_refresh")?.value;
   const { pathname } = request.nextUrl;
@@ -59,7 +70,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isPublicAuth && isAuthenticated) {
-    return NextResponse.redirect(new URL("/", request.url));
+    return NextResponse.redirect(new URL("/meus-comercios", request.url));
   }
 
   return NextResponse.next();
@@ -69,6 +80,7 @@ export const config = {
   matcher: [
     "/comercio/:path*",
     "/minhas-filas",
+    "/meus-comercios",
     "/perfil",
     "/login",
     "/registrar",

@@ -67,6 +67,7 @@ export type Participant = {
   id: string;
   user_id: string | null;
   anonymous_id: string | null;
+  person_name?: string | null;
   queue_id: string;
   commerce_id: string;
   position: number;

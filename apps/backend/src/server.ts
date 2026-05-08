@@ -99,7 +99,12 @@ export const initServer = async () => {
   await server.register(cors, {
     origin: process.env.ALLOWED_ORIGIN ?? "http://localhost:3000",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Anonymous-Id",
+      "Idempotency-Key",
+    ],
     credentials: true,
   });
 
@@ -234,14 +239,34 @@ export const initServer = async () => {
       "/v1/user/logout",
       "/v1/enter-queue", // QR code entry
       "/v1/commerce/nearby", // public nearby search
+      "/v1/procurar-fila", // public queue search
       "/docs",
       "/healthcheck",
     ];
+    // Routes that accept both authenticated users and anonymous (X-Anonymous-Id header).
+    // Auth is optional: if a JWT is present it is verified; if absent, req.user stays
+    // undefined and the controller falls back to the X-Anonymous-Id header.
+    const isOptionalAuthPath = () =>
+      request.url.startsWith("/v1/participants-queue/enter/") ||
+      request.url.endsWith("/my-position") ||
+      request.url.endsWith("/exit") ||
+      (request.method === "GET" &&
+        /^\/v1\/commerce\/[^/]+$/.test(request.url.split("?")[0]));
     const isPublicPath = () =>
       PUBLIC_PATHS.some((path) => request.url.startsWith(path));
 
     if (!isPublicPath()) {
-      verifyToken(request as ServerRequest, reply);
+      if (isOptionalAuthPath()) {
+        // Try to verify token but don't reject if missing — controller handles anonymous
+        const authHeader = request.headers.authorization
+          ?.replace("Bearer", "")
+          .trim();
+        if (authHeader) {
+          verifyToken(request as ServerRequest, reply);
+        }
+      } else {
+        verifyToken(request as ServerRequest, reply);
+      }
     }
   });
 

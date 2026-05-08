@@ -5,10 +5,10 @@ import {
   listByCommerceSchema,
   enterQueueSchema,
   enterByQrCodeSchema,
-  enterPublicSchema,
   getMyPositionSchema,
   removeFirstSchema,
   removeNextNSchema,
+  revertSchema,
   exitQueueSchema,
 } from "../schemas/participants-queue.schema";
 import { Server } from "../types";
@@ -46,6 +46,16 @@ const registerUserRoutes = (server: Server) => {
     { schema: getMyPositionSchema, config: { rateLimit: rateLimits.read } },
     controller.getMyPosition
   );
+  server.put(
+    ROUTES.participantsQueue.revert,
+    { schema: revertSchema, config: { rateLimit: rateLimits.write } },
+    controller.revertLast
+  );
+  server.put(
+    ROUTES.participantsQueue.revertN,
+    { schema: revertSchema, config: { rateLimit: rateLimits.write } },
+    controller.revertLast
+  );
   server.post(
     ROUTES.participantsQueue.enterByQrCode,
     {
@@ -53,14 +63,6 @@ const registerUserRoutes = (server: Server) => {
       config: { rateLimit: rateLimits.write },
     },
     controller.enterByQrCode
-  );
-  server.post(
-    ROUTES.participantsQueue.enterPublic,
-    {
-      schema: enterPublicSchema,
-      config: { rateLimit: rateLimits.write },
-    },
-    controller.enterPublic
   );
 };
 

@@ -31,6 +31,8 @@ import cache from "../../../infra/database/cache";
 import { cacheKeys, cacheTTL } from "../../../utils/cacheKeys";
 import { parsePaginationParams } from "../../../utils/pagination";
 import { sendError } from "../../../utils/errors";
+import { generateQrCodeBase64 } from "../../../utils/qrcode";
+import config from "../../../infra/config";
 
 const commerceController = () => {
   return {
@@ -157,13 +159,34 @@ const commerceController = () => {
 
         const address = await getAddressByCommerceId(commerce_id);
 
-        // Exclude the hashed document_id — it is not useful to clients and
-        // should not be exposed in public responses.
+        const isOwner = req.user?.id === commerce.owner_id;
+
+        const qrcode =
+          isOwner && queue?.qrcode_token
+            ? await c.wrap(
+                cacheKeys.qrcodeByQueue(queue.id),
+                () =>
+                  generateQrCodeBase64(
+                    `${config.get<string>("cors.allowedOrigin")}/entrar-fila?commerceId=${commerce_id}&token=${queue.qrcode_token}&mode=qrcode`
+                  ),
+                cacheTTL.QRCODE
+              )
+            : null;
+
         const { document_id: _doc, ...safeCommerce } = commerce;
+
+        const queueForResponse = queue
+          ? {
+              ...queue,
+              qrcode: isOwner ? qrcode : undefined,
+              qrcode_token: isOwner ? queue.qrcode_token : undefined,
+            }
+          : null;
+
         return res.code(200).send({
           ...safeCommerce,
           address: address ?? null,
-          queue: queue ?? null,
+          queue: queueForResponse,
         });
       } catch (error) {
         logger.error(`[Commerce Controller] - getById failed, error: ${error}`);
