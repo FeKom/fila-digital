@@ -104,22 +104,33 @@ export const findAnonymousParticipantPosition = async (
   anonymous_id: string,
   queue_id: string
 ): Promise<number | null> => {
-  const entry = await db
+  const inQueue = await db
     .selectFrom("participants_queue")
-    .select("created_at")
+    .select("id")
     .where("anonymous_id", "=", anonymous_id)
     .where("queue_id", "=", queue_id)
     .where("is_active", "=", true)
     .executeTakeFirst();
 
-  if (!entry) return null;
+  if (!inQueue) return null;
 
   const result = await db
     .selectFrom("participants_queue")
     .select(db.fn.countAll<number>().as("position"))
     .where("queue_id", "=", queue_id)
     .where("is_active", "=", true)
-    .where("created_at", "<=", entry.created_at)
+    .where((eb) =>
+      eb(
+        "created_at",
+        "<=",
+        eb
+          .selectFrom("participants_queue")
+          .select("created_at")
+          .where("anonymous_id", "=", anonymous_id)
+          .where("queue_id", "=", queue_id)
+          .where("is_active", "=", true)
+      )
+    )
     .executeTakeFirstOrThrow();
 
   return Number(result.position);
@@ -255,29 +266,42 @@ export const enterQueueByQrCode = async (data: {
 
 /**
  * Returns the 1-indexed position of a participant in the queue.
- * Counts how many active entries were created before them, then adds 1.
+ * Counts all active entries whose created_at is <= this participant's created_at.
  * Returns null if the participant is not currently in the queue.
  */
 export const findParticipantPosition = async (
   person_id: string,
   queue_id: string
 ): Promise<number | null> => {
-  const entry = await db
+  const inQueue = await db
     .selectFrom("participants_queue")
-    .select("created_at")
+    .select("id")
     .where("person_id", "=", person_id)
     .where("queue_id", "=", queue_id)
     .where("is_active", "=", true)
     .executeTakeFirst();
 
-  if (!entry) return null;
+  if (!inQueue) return null;
 
+  // Keep the timestamp comparison in SQL to avoid JS Date millisecond truncation
+  // losing microsecond precision stored in the DB.
   const result = await db
     .selectFrom("participants_queue")
     .select(db.fn.countAll<number>().as("position"))
     .where("queue_id", "=", queue_id)
     .where("is_active", "=", true)
-    .where("created_at", "<=", entry.created_at)
+    .where((eb) =>
+      eb(
+        "created_at",
+        "<=",
+        eb
+          .selectFrom("participants_queue")
+          .select("created_at")
+          .where("person_id", "=", person_id)
+          .where("queue_id", "=", queue_id)
+          .where("is_active", "=", true)
+      )
+    )
     .executeTakeFirstOrThrow();
 
   return Number(result.position);
