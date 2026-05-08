@@ -1,4 +1,5 @@
 import { Person } from "../../../infra/database/types";
+import { claimAnonymousParticipations } from "../../participants-queue/repository/participants-queue.repository";
 import { ServerRequest, ServerResponse } from "../../../infra/types";
 import jwt from "jsonwebtoken";
 import { randomBytes } from "crypto";
@@ -72,9 +73,10 @@ const userController = () => {
           }
         }
         const hasedPassword = await hashPassword(user.password);
+        const anonymousId = req.headers["x-anonymous-id"] as string | undefined;
         const response = await userRepo.createNewUser({
           ...user,
-          id: uuidv7(),
+          id: anonymousId ?? uuidv7(),
           phone: isValidPhone!,
           email: isValidEmail,
           password: hasedPassword,
@@ -210,6 +212,25 @@ const userController = () => {
       } catch (error) {
         logger.error(`[User Controller] - refresh failed: ${error}`);
         sendError(res, 500, "Token refresh failed");
+      }
+    },
+
+    claimAnonymous: async (req: ServerRequest, res: ServerResponse) => {
+      try {
+        const user = req.user;
+        if (!user) return sendError(res, 401, "Authentication required");
+
+        const anonymousId = req.headers["x-anonymous-id"] as string | undefined;
+        if (!anonymousId)
+          return sendError(res, 400, "X-Anonymous-Id header is required");
+
+        await claimAnonymousParticipations(anonymousId, user.id);
+        return res
+          .code(200)
+          .send({ message: "Anonymous participations claimed" });
+      } catch (error) {
+        logger.error(`[User Controller] - claimAnonymous failed: ${error}`);
+        return sendError(res, 500, "Failed to claim anonymous participations");
       }
     },
 

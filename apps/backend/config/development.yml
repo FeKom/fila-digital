@@ -20,6 +20,8 @@ cache:
   host: "localhost"
   port: 6379
   ttl: 3600
+cors:
+  allowedOrigin: "http://localhost:3000"
 token:
   secret: "F996A2C8-80AC-4BDD-A5DA-1BF75811CFA7"
 notifications:

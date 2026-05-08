@@ -12,6 +12,7 @@ export const cacheKeys = {
   participantsByQueue: (queue_id: string, cursor?: string, limit?: number) =>
     `participants:queue:${queue_id}:${cursor ?? ""}:${limit ?? ""}`,
   idempotency: (hmac: string) => `idempotency:${hmac}`,
+  qrcodeByQueue: (queue_id: string) => `qrcode:queue:${queue_id}`,
 } as const;
 
 /**
@@ -34,4 +35,6 @@ export const cacheTTL = {
   PARTICIPANTS_LIST: 5 * 1000, // 5s
   /** Idempotency keys — 5 min window to deduplicate retried requests */
   IDEMPOTENCY: 5 * 60 * 1000, // 300s
+  /** QR code image — token never changes so image never changes */
+  QRCODE: 24 * 60 * 60 * 1000, // 24h
 } as const;

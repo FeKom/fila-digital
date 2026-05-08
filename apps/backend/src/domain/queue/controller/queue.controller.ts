@@ -10,6 +10,7 @@ import cache from "../../../infra/database/cache";
 import { cacheKeys, cacheTTL } from "../../../utils/cacheKeys";
 import { generateQrCodeBase64 } from "../../../utils/qrcode";
 import { sendError } from "../../../utils/errors";
+import config from "../../../infra/config";
 
 const queueController = () => {
   return {
@@ -49,26 +50,13 @@ const queueController = () => {
         const createdQueue = await createQueue(queue);
         await c.del(cacheKeys.queueByCommerce(queue.commerce_id));
 
-        const qrcodeData = {
-          queueId: createdQueue.id,
-          token: createdQueue.qrcode_token,
-          createdAt: createdQueue.created_at,
-        };
-
-        const frontendUrl =
-          process.env.ALLOWED_ORIGIN ?? "http://localhost:3000";
-        const params = new URLSearchParams({
-          queueId: qrcodeData.queueId,
-          token: qrcodeData.token,
-        });
         const qrcode = await generateQrCodeBase64(
-          `${frontendUrl}/entrar-fila?${params.toString()}`
+          `${config.get<string>("cors.allowedOrigin")}/entrar-fila?commerceId=${createdQueue.commerce_id}&token=${createdQueue.qrcode_token}&mode=qrcode`
         );
 
         return res.code(201).send({
           queue: { id: createdQueue.id, commerce_id: createdQueue.commerce_id },
           qrcode,
-          qrcodeData,
           message: "Queue created successfully",
         });
       } catch (error) {

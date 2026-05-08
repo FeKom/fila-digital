@@ -68,6 +68,11 @@ const registerUserRoutes = (server: Server) => {
     { schema: deleteUserSchema, config: { rateLimit: rateLimits.write } },
     controller.delete
   );
+  server.post(
+    ROUTES.user.claimAnonymous,
+    { config: { rateLimit: rateLimits.write } },
+    controller.claimAnonymous
+  );
 };
 
 export default registerUserRoutes;

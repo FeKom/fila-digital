@@ -5,10 +5,12 @@ const STORAGE_KEY = "fd:anonymous_id";
 export const getAnonymousId = (): string => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return stored;
-    const id = uuidv7();
-    localStorage.setItem(STORAGE_KEY, id);
-    return id;
+    if (!stored) {
+      const id = uuidv7();
+      localStorage.setItemtem(STORAGE_KEY, id);
+      return id;
+    }
+    return stored;
   } catch {
     return uuidv7();
   }
