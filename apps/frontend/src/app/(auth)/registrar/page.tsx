@@ -28,12 +28,11 @@ const Register = () => {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [userId, setUserId] = useState("");
-  //const [anonymousId, setAnonymousId] = useState("");
+  const [anonymousId, setAnonymousId] = useState("");
 
-  // useEffect(() => {
-  //   setAnonymousId(getAnonymousId());
-  // }, []);
+  useEffect(() => {
+    setAnonymousId(getAnonymousId());
+  }, []);
 
   useEffect(() => {
     if (!pending && !state.error) {
