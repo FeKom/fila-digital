@@ -2,18 +2,24 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Commerce } from "@/types";
+import { Commerce, QueueSchedule } from "@/types";
 import {
   callNextParticipant,
   revertParticipants,
 } from "@/domains/commerce/commerce.actions";
+import { toggleQueueSchedule } from "@/domains/queue/queue.actions";
 
 type Props = {
   commerce: Commerce;
   participantCount: number;
+  schedule?: QueueSchedule | null;
 };
 
-export default function QueueManageCard({ commerce, participantCount }: Props) {
+export default function QueueManageCard({
+  commerce,
+  participantCount,
+  schedule,
+}: Props) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -191,6 +197,60 @@ export default function QueueManageCard({ commerce, participantCount }: Props) {
           />
         </div>
       </div>
+
+      {/* Schedule */}
+      {schedule && (
+        <div
+          style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}
+        >
+          <span
+            style={{
+              fontSize: "0.75rem",
+              fontWeight: 600,
+              color: "var(--text-2)",
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+            }}
+          >
+            Agendamento
+          </span>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: "0.5rem",
+            }}
+          >
+            <span style={{ fontSize: "0.8rem", color: "var(--text-2)" }}>
+              {schedule.type === "daily" ? "Diário" : "Uma vez"}
+              {schedule.type === "once" && schedule.scheduled_at
+                ? ` — ${new Date(schedule.scheduled_at).toLocaleString("pt-BR")}`
+                : ""}
+            </span>
+            <button
+              className={`fd-btn fd-btn-sm ${schedule.status === "active" ? "fd-btn-secondary" : "fd-btn-ghost"}`}
+              disabled={loading}
+              onClick={() =>
+                run(
+                  () =>
+                    toggleQueueSchedule(
+                      commerce.id,
+                      schedule.queue_id,
+                      schedule.id,
+                      schedule.status === "active" ? "inactive" : "active"
+                    ),
+                  schedule.status === "active"
+                    ? "Agendamento desativado"
+                    : "Agendamento ativado"
+                )
+              }
+            >
+              {schedule.status === "active" ? "Ativo" : "Inativo"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Feedback */}
       {error && (

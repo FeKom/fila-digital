@@ -15,7 +15,7 @@ const CommerceCard = ({ commerce }: CommerceCardProps) => {
 
   return (
     <Link
-      href={`/comercio/${commerce.id}`}
+      href={`/comercio/${commerce.id}/dashboard`}
       className={`commerce-card ${statusClass}`}
     >
       <div className="commerce-card-name">{commerce.name}</div>

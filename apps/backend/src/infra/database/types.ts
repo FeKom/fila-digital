@@ -39,10 +39,29 @@ export type Address = Selectable<AddressTable>;
 export type NewAddress = Insertable<AddressTable>;
 export type AddressUpdate = Updateable<AddressTable>;
 
+export interface QueueScheduleTable {
+  id: Generated<string>;
+  queue_id: string;
+  commerce_id: string;
+  type: "once" | "daily";
+  scheduled_at: ColumnType<Date | null, string | undefined, string | null>;
+  status: ColumnType<
+    "active" | "inactive",
+    "active" | "inactive" | undefined,
+    "active" | "inactive"
+  >;
+  created_at: ColumnType<Date, string | undefined, never>;
+  updated_at: ColumnType<Date, string | undefined, string>;
+}
+
+export type QueueSchedule = Selectable<QueueScheduleTable>;
+export type NewQueueSchedule = Insertable<QueueScheduleTable>;
+
 export interface Database {
   commerce: CommerceTable;
   address: AddressTable;
   queue: QueueTable;
+  queue_schedules: QueueScheduleTable;
   person: PersonTable;
   participants_queue: ParticipantsQueue;
   refresh_tokens: RefreshTokenTable;

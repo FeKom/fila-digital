@@ -46,11 +46,11 @@ describe("CommerceCard", () => {
     expect(screen.getByText("08:00 — 18:00")).toBeInTheDocument();
   });
 
-  it("links to commerce detail page", () => {
+  it("links to commerce dashboard page", () => {
     render(<CommerceCard commerce={baseCommerce} />);
     expect(screen.getByRole("link")).toHaveAttribute(
       "href",
-      "/comercio/abc-123"
+      "/comercio/abc-123/dashboard"
     );
   });
 

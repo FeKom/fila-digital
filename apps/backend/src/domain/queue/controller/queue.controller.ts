@@ -6,6 +6,11 @@ import {
   createQueue,
   updateQueueById,
 } from "../repository/queue.repository";
+import {
+  createQueueSchedule,
+  findScheduleByQueueId,
+  updateScheduleStatus,
+} from "../repository/queue-schedule.repository";
 import cache from "../../../infra/database/cache";
 import { cacheKeys, cacheTTL } from "../../../utils/cacheKeys";
 import { generateQrCodeBase64 } from "../../../utils/qrcode";
@@ -170,6 +175,104 @@ const queueController = () => {
       } catch (error) {
         req.log.error(error);
         return sendError(res, 500, "Failed to delete queue");
+      }
+    },
+
+    createSchedule: async (req: ServerRequest, res: ServerResponse) => {
+      try {
+        if (!req.user?.id)
+          return sendError(res, 401, "Authentication required");
+
+        const { commerce_id, queue_id } = req.params as {
+          commerce_id: string;
+          queue_id: string;
+        };
+        const body = req.body as {
+          type: "once" | "daily";
+          scheduled_at?: string;
+        };
+
+        const c = await cache;
+        const commerceOwner = await c.wrap(
+          cacheKeys.commerceOwner(req.user.id),
+          () => findCommerceOwnerByUserId(req.user!.id),
+          cacheTTL.COMMERCE_OWNER
+        );
+        if (commerceOwner.owner_id !== req.user.id) {
+          return sendError(
+            res,
+            403,
+            "Only commerce owner can manage schedules"
+          );
+        }
+
+        if (body.type === "once" && !body.scheduled_at) {
+          return sendError(
+            res,
+            400,
+            "scheduled_at is required for one-time schedules"
+          );
+        }
+
+        const schedule = await createQueueSchedule({
+          queue_id,
+          commerce_id,
+          type: body.type,
+          scheduled_at: body.scheduled_at ?? undefined,
+          status: "active",
+        });
+
+        return res.code(201).send({ data: schedule });
+      } catch (error) {
+        req.log.error(error);
+        return sendError(res, 500, "Failed to create schedule");
+      }
+    },
+
+    getSchedule: async (req: ServerRequest, res: ServerResponse) => {
+      try {
+        if (!req.user?.id)
+          return sendError(res, 401, "Authentication required");
+
+        const { queue_id } = req.params as { queue_id: string };
+        const schedule = await findScheduleByQueueId(queue_id);
+        return res.code(200).send({ data: schedule ?? null });
+      } catch (error) {
+        req.log.error(error);
+        return sendError(res, 500, "Failed to get schedule");
+      }
+    },
+
+    toggleSchedule: async (req: ServerRequest, res: ServerResponse) => {
+      try {
+        if (!req.user?.id)
+          return sendError(res, 401, "Authentication required");
+
+        const { schedule_id } = req.params as {
+          commerce_id: string;
+          schedule_id: string;
+        };
+        const body = req.body as { status: "active" | "inactive" };
+
+        const c = await cache;
+        const commerceOwner = await c.wrap(
+          cacheKeys.commerceOwner(req.user.id),
+          () => findCommerceOwnerByUserId(req.user!.id),
+          cacheTTL.COMMERCE_OWNER
+        );
+        if (commerceOwner.owner_id !== req.user.id) {
+          return sendError(
+            res,
+            403,
+            "Only commerce owner can manage schedules"
+          );
+        }
+
+        await updateScheduleStatus(schedule_id, body.status);
+        return res.code(200).send({ message: "Schedule updated" });
+      } catch (error) {
+        req.log.error(error);
+        return sendError(res, 500, "Failed to update schedule");
       }
     },
   };

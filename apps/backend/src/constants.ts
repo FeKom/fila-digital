@@ -15,6 +15,9 @@ const ROUTES = {
     register: "/queue/register",
     update: "/queue/:commerce_id/:queue_id/update",
     delete: "/queue/:commerce_id/:queue_id/delete",
+    schedule: "/queue/:commerce_id/:queue_id/schedule",
+    scheduleToggle:
+      "/queue/:commerce_id/:queue_id/schedule/:schedule_id/toggle",
   },
   common: {
     health: "/healthcheck",

@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const protectedPaths = [
-  "/comercio",
+  "/comercio/criar",
   "/minhas-filas",
   "/meus-comercios",
   "/perfil",
 ];
+
+// /comercio/[id] is public; management subpaths require auth
+const isComercioManagement = (pathname: string) =>
+  /^\/comercio\/[^/]+(\/dashboard|\/editar|\/fila)/.test(pathname);
 const publicPaths = ["/login", "/registrar"];
 
 const BASE_URL =
@@ -22,7 +26,9 @@ export async function middleware(request: NextRequest) {
   const refreshToken = request.cookies.get("digital_queue_refresh")?.value;
   const { pathname } = request.nextUrl;
 
-  const isProtected = protectedPaths.some((path) => pathname.startsWith(path));
+  const isProtected =
+    protectedPaths.some((path) => pathname.startsWith(path)) ||
+    isComercioManagement(pathname);
   const isPublicAuth = publicPaths.some((path) => pathname.startsWith(path));
 
   // No access token but refresh token exists — try a silent refresh

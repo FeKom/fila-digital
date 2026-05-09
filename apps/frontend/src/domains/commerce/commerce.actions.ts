@@ -1,7 +1,7 @@
 "use server";
 import commerceService from "@/domains/commerce/commerce.service";
 import { authApi } from "@/lib/api";
-import { Commerce, CommerceInput, UserQueue } from "@/types";
+import { Commerce, CommerceAdmin, CommerceInput, UserQueue } from "@/types";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -74,7 +74,7 @@ export const createCommerce = async (
     return { error: "Erro ao cadastrar comércio. Tente novamente." };
   }
 
-  redirect(`/comercio/${commerceId}`);
+  redirect(`/comercio/${commerceId}/dashboard`);
 };
 
 export const updateCommerce = async (
@@ -101,7 +101,7 @@ export const updateCommerce = async (
   };
 
   await commerceService().update(commerceId, data);
-  redirect(`/comercio/${commerceId}`);
+  redirect(`/comercio/${commerceId}/dashboard`);
 };
 
 export const deleteCommerce = async (
@@ -134,6 +134,49 @@ export const callNextParticipant = async (
   if (!response.ok) {
     const json = (await response.json()) as { message?: string };
     return { error: json.message ?? "Falha ao chamar próximo" };
+  }
+  revalidatePath(`/comercio/${commerceId}`);
+  return {};
+};
+
+export const listAdmins = async (
+  commerceId: string
+): Promise<CommerceAdmin[]> => {
+  try {
+    const response = await authApi(`/commerce/${commerceId}/admins`);
+    const json = (await response.json()) as { data?: CommerceAdmin[] };
+    return json.data ?? [];
+  } catch {
+    return [];
+  }
+};
+
+export const grantAdmin = async (
+  commerceId: string,
+  email: string
+): Promise<{ error?: string }> => {
+  const response = await authApi(`/commerce/${commerceId}/admins`, {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+  if (!response.ok) {
+    const json = (await response.json()) as { message?: string };
+    return { error: json.message ?? "Falha ao conceder acesso" };
+  }
+  revalidatePath(`/comercio/${commerceId}`);
+  return {};
+};
+
+export const revokeAdmin = async (
+  commerceId: string,
+  personId: string
+): Promise<{ error?: string }> => {
+  const response = await authApi(`/commerce/${commerceId}/admins/${personId}`, {
+    method: "DELETE",
+  });
+  if (!response.ok) {
+    const json = (await response.json()) as { message?: string };
+    return { error: json.message ?? "Falha ao remover acesso" };
   }
   revalidatePath(`/comercio/${commerceId}`);
   return {};

@@ -82,6 +82,13 @@ export type UserQueue = {
   position: number;
 };
 
+export type CommerceAdmin = {
+  person_id: string;
+  name: string;
+  email: string;
+  created_at: string;
+};
+
 // ─── API response shapes ───────────────────────────────────────────────────────
 
 export type ApiResponse<T> = {
@@ -137,6 +144,19 @@ export type QueueInput = {
   description: string;
   type: QueueType;
   status: QueueStatus;
+};
+
+export type QueueScheduleType = "once" | "daily";
+export type QueueScheduleStatus = "active" | "inactive";
+
+export type QueueSchedule = {
+  id: string;
+  queue_id: string;
+  commerce_id: string;
+  type: QueueScheduleType;
+  scheduled_at: string | null;
+  status: QueueScheduleStatus;
+  created_at: string;
 };
 
 export type EnterQueueInput = {

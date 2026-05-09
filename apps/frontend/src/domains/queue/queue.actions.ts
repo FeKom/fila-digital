@@ -4,8 +4,13 @@ import { cookies } from "next/headers";
 import queueService from "@/domains/queue/queue.service";
 import participantService from "@/domains/queue/participant.service";
 import { authApi } from "@/lib/api";
-import { Queue, QueueInput, UserQueue, Participant } from "@/types";
-import { redirect } from "next/navigation";
+import {
+  Queue,
+  QueueInput,
+  UserQueue,
+  Participant,
+  QueueSchedule,
+} from "@/types";
 import { revalidatePath } from "next/cache";
 
 const IDEMPOTENCY_WINDOW = 300_000; // 5-min window, matches backend cacheTTL.IDEMPOTENCY
@@ -29,7 +34,10 @@ const decodeJwtUserId = (token: string): string | undefined => {
 
 // ─── Queue CRUD ────────────────────────────────────────────────────────────
 
-export const createQueue = async (commerceId: string, formData: FormData) => {
+export const createQueue = async (
+  commerceId: string,
+  formData: FormData
+): Promise<Queue | null> => {
   const data: QueueInput & { commerce_id: string } = {
     name: formData.get("name") as string,
     description: formData.get("description") as string,
@@ -38,9 +46,62 @@ export const createQueue = async (commerceId: string, formData: FormData) => {
     commerce_id: commerceId,
   };
 
-  const queue = await queueService().register(data);
-  revalidatePath(`/comercio/${commerceId}`);
-  return queue;
+  try {
+    const queue = await queueService().register(data);
+    revalidatePath(`/comercio/${commerceId}/dashboard`);
+    return queue as Queue;
+  } catch {
+    return null;
+  }
+};
+
+export const createQueueSchedule = async (
+  commerceId: string,
+  queueId: string,
+  data: { type: "once" | "daily"; scheduled_at?: string }
+): Promise<{ error?: string; data?: QueueSchedule }> => {
+  const response = await authApi(`/queue/${commerceId}/${queueId}/schedule`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  const json = (await response.json()) as {
+    data?: QueueSchedule;
+    message?: string;
+  };
+  if (!response.ok)
+    return { error: json.message ?? "Erro ao criar agendamento" };
+  return { data: json.data };
+};
+
+export const getQueueSchedule = async (
+  commerceId: string,
+  queueId: string
+): Promise<QueueSchedule | null> => {
+  try {
+    const response = await authApi(`/queue/${commerceId}/${queueId}/schedule`);
+    const json = (await response.json()) as { data?: QueueSchedule | null };
+    return json.data ?? null;
+  } catch {
+    return null;
+  }
+};
+
+export const toggleQueueSchedule = async (
+  commerceId: string,
+  queueId: string,
+  scheduleId: string,
+  status: "active" | "inactive"
+): Promise<{ error?: string }> => {
+  const response = await authApi(
+    `/queue/${commerceId}/${queueId}/schedule/${scheduleId}/toggle`,
+    { method: "PATCH", body: JSON.stringify({ status }) }
+  );
+  if (!response.ok) {
+    const json = (await response.json()) as { message?: string };
+    return { error: json.message ?? "Erro ao atualizar agendamento" };
+  }
+  revalidatePath(`/comercio/${commerceId}/dashboard`);
+  return {};
 };
 
 export const getQueue = async (
@@ -56,6 +117,7 @@ export const updateQueue = async (
   queueId: string,
   formData: FormData
 ) => {
+  const { redirect } = await import("next/navigation");
   const data: Partial<QueueInput> = {
     name: formData.get("name") as string,
     description: formData.get("description") as string,
@@ -64,7 +126,7 @@ export const updateQueue = async (
   };
 
   await queueService().update(commerceId, queueId, data);
-  redirect(`/comercio/${commerceId}`);
+  redirect(`/comercio/${commerceId}/dashboard`);
 };
 
 // ─── Participants ───────────────────────────────────────────────────────────

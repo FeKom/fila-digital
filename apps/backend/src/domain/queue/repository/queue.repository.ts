@@ -1,5 +1,6 @@
 import { uuidv7 } from "uuidv7";
-import { NewQueue } from "../../../infra/database/types";
+import { Kysely, sql } from "kysely";
+import { Database, NewQueue } from "../../../infra/database/types";
 import { Queue } from "../type";
 import { db } from "../../../infra/database/connect";
 import { addHours } from "date-fns";
@@ -66,6 +67,62 @@ export const findQueueByIdOnly = async (id: string) => {
     .selectAll()
     .where("id", "=", id)
     .executeTakeFirst();
+};
+
+export const closeExpiredQueues = async (
+  dbOverride?: Kysely<Database>
+): Promise<number> => {
+  const target = dbOverride ?? db;
+  const result = await sql`
+    UPDATE queue
+    SET status = 'closed', updated_at = NOW()
+    FROM commerce
+    WHERE queue.commerce_id = commerce.id
+      AND queue.status = 'open'
+      AND queue.active = true
+      AND commerce.closed_at IS NOT NULL
+      AND (NOW() AT TIME ZONE 'America/Sao_Paulo')::time > commerce.closed_at::time
+  `.execute(target);
+  return Number(result.numAffectedRows ?? 0);
+};
+
+export const openScheduledQueues = async (
+  dbOverride?: Kysely<Database>
+): Promise<number> => {
+  const target = dbOverride ?? db;
+  const result = await sql`
+    UPDATE queue
+    SET status = 'open', updated_at = NOW()
+    FROM queue_schedules qs
+    JOIN commerce c ON c.id = qs.commerce_id
+    WHERE queue.id = qs.queue_id
+      AND queue.status = 'closed'
+      AND queue.active = true
+      AND qs.status = 'active'
+      AND (
+        (qs.type = 'once' AND qs.scheduled_at <= NOW())
+        OR (
+          qs.type = 'daily'
+          AND c.open_at IS NOT NULL
+          AND EXTRACT(HOUR FROM (NOW() AT TIME ZONE 'America/Sao_Paulo'))::int
+              = EXTRACT(HOUR FROM c.open_at::time)::int
+        )
+      )
+  `.execute(target);
+  return Number(result.numAffectedRows ?? 0);
+};
+
+export const deactivateFiredOnceSchedules = async (
+  dbOverride?: Kysely<Database>
+): Promise<void> => {
+  const target = dbOverride ?? db;
+  await sql`
+    UPDATE queue_schedules
+    SET status = 'inactive', updated_at = NOW()
+    WHERE type = 'once'
+      AND status = 'active'
+      AND scheduled_at <= NOW()
+  `.execute(target);
 };
 
 /**

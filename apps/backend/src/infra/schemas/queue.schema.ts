@@ -125,3 +125,81 @@ export const deleteQueueSchema: FastifySchema = {
     404: { description: "Queue not found", ...errorResponse },
   },
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /queue/:commerce_id/:queue_id/schedule
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const createScheduleSchema: FastifySchema = {
+  tags: ["Queue"],
+  description:
+    "Create an auto-open schedule for a queue. type='once' requires scheduled_at. type='daily' uses the commerce open_at time.",
+  params: queueIdParams,
+  body: {
+    type: "object",
+    required: ["type"],
+    properties: {
+      type: { type: "string", enum: ["once", "daily"] },
+      scheduled_at: { type: "string" },
+    },
+    additionalProperties: false,
+  },
+  response: {
+    201: {
+      type: "object",
+      properties: { data: { type: "object" } },
+    },
+    400: { description: "Validation error", ...errorResponse },
+    401: { description: "Unauthorized", ...errorResponse },
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /queue/:commerce_id/:queue_id/schedule
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const getScheduleSchema: FastifySchema = {
+  tags: ["Queue"],
+  description: "Get the current schedule for a queue.",
+  params: queueIdParams,
+  response: {
+    200: {
+      type: "object",
+      properties: { data: {} },
+    },
+    401: { description: "Unauthorized", ...errorResponse },
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PATCH /queue/:commerce_id/:queue_id/schedule/:schedule_id/toggle
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const toggleScheduleSchema: FastifySchema = {
+  tags: ["Queue"],
+  description: "Activate or deactivate a queue schedule.",
+  params: {
+    type: "object",
+    required: ["commerce_id", "queue_id", "schedule_id"],
+    properties: {
+      commerce_id: { type: "string" },
+      queue_id: { type: "string" },
+      schedule_id: { type: "string" },
+    },
+  },
+  body: {
+    type: "object",
+    required: ["status"],
+    properties: {
+      status: { type: "string", enum: ["active", "inactive"] },
+    },
+    additionalProperties: false,
+  },
+  response: {
+    200: {
+      type: "object",
+      properties: { message: { type: "string" } },
+    },
+    401: { description: "Unauthorized", ...errorResponse },
+  },
+};

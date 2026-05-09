@@ -5,6 +5,9 @@ import {
   registerQueueSchema,
   updateQueueSchema,
   deleteQueueSchema,
+  createScheduleSchema,
+  getScheduleSchema,
+  toggleScheduleSchema,
 } from "../schemas/queue.schema";
 import { Server } from "../types";
 
@@ -25,6 +28,21 @@ const registerQueueRoutes = (server: Server) => {
     ROUTES.queue.delete,
     { schema: deleteQueueSchema, config: { rateLimit: rateLimits.write } },
     controller.softDeleteQueue
+  );
+  server.post(
+    ROUTES.queue.schedule,
+    { schema: createScheduleSchema, config: { rateLimit: rateLimits.write } },
+    controller.createSchedule
+  );
+  server.get(
+    ROUTES.queue.schedule,
+    { schema: getScheduleSchema, config: { rateLimit: rateLimits.read } },
+    controller.getSchedule
+  );
+  server.patch(
+    ROUTES.queue.scheduleToggle,
+    { schema: toggleScheduleSchema, config: { rateLimit: rateLimits.write } },
+    controller.toggleSchedule
   );
 };
 

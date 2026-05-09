@@ -6,6 +6,9 @@ export type {
   Queue,
   QueueType,
   QueueStatus,
+  QueueSchedule,
+  QueueScheduleType,
+  QueueScheduleStatus,
   Participant,
   ParticipantStatus,
   UserQueue,
@@ -17,4 +20,5 @@ export type {
   CommerceInput,
   QueueInput,
   EnterQueueInput,
+  CommerceAdmin,
 } from "@fila-digital/types";
