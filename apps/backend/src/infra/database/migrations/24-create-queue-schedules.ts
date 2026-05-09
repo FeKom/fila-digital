@@ -3,9 +3,9 @@ import { Kysely, sql } from "kysely";
 export async function up(db: Kysely<unknown>) {
   await sql`
     CREATE TABLE queue_schedules (
-      id TEXT PRIMARY KEY,
-      queue_id TEXT NOT NULL REFERENCES queue(id) ON DELETE CASCADE,
-      commerce_id TEXT NOT NULL REFERENCES commerce(id) ON DELETE CASCADE,
+      id UUID PRIMARY KEY,
+      queue_id UUID NOT NULL REFERENCES queue(id) ON DELETE CASCADE,
+      commerce_id UUID NOT NULL REFERENCES commerce(id) ON DELETE CASCADE,
       type TEXT NOT NULL CHECK (type IN ('once', 'daily')),
       scheduled_at TIMESTAMPTZ,
       status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
