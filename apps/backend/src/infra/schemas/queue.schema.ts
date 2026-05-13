@@ -147,7 +147,7 @@ export const createScheduleSchema: FastifySchema = {
   response: {
     201: {
       type: "object",
-      properties: { data: { type: "object" } },
+      properties: { data: {} },
     },
     400: { description: "Validation error", ...errorResponse },
     401: { description: "Unauthorized", ...errorResponse },

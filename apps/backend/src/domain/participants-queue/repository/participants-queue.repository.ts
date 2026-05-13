@@ -114,15 +114,18 @@ export const findAnonymousParticipantPosition = async (
 
   if (!entry) return null;
 
+  // Count participants who entered strictly before this one, then add 1.
+  // Using strict < avoids the JS Date millisecond-truncation issue where
+  // `<=` with a μs-precision DB timestamp would exclude the participant's own row.
   const result = await db
     .selectFrom("participants_queue")
-    .select(db.fn.countAll<number>().as("position"))
+    .select(db.fn.countAll<number>().as("ahead"))
     .where("queue_id", "=", queue_id)
     .where("is_active", "=", true)
-    .where("created_at", "<=", entry.created_at)
+    .where("created_at", "<", entry.created_at)
     .executeTakeFirstOrThrow();
 
-  return Number(result.position);
+  return Number(result.ahead) + 1;
 };
 
 export const softDeleteParticipantsByQueueId = async (
@@ -255,7 +258,7 @@ export const enterQueueByQrCode = async (data: {
 
 /**
  * Returns the 1-indexed position of a participant in the queue.
- * Counts how many active entries were created before them, then adds 1.
+ * Counts active entries created strictly before them, then adds 1.
  * Returns null if the participant is not currently in the queue.
  */
 export const findParticipantPosition = async (
@@ -272,15 +275,18 @@ export const findParticipantPosition = async (
 
   if (!entry) return null;
 
+  // Count participants who entered strictly before this one, then add 1.
+  // Using strict < avoids the JS Date millisecond-truncation issue where
+  // `<=` with a μs-precision DB timestamp would exclude the participant's own row.
   const result = await db
     .selectFrom("participants_queue")
-    .select(db.fn.countAll<number>().as("position"))
+    .select(db.fn.countAll<number>().as("ahead"))
     .where("queue_id", "=", queue_id)
     .where("is_active", "=", true)
-    .where("created_at", "<=", entry.created_at)
+    .where("created_at", "<", entry.created_at)
     .executeTakeFirstOrThrow();
 
-  return Number(result.position);
+  return Number(result.ahead) + 1;
 };
 
 /**
