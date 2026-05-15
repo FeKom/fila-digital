@@ -5,6 +5,7 @@ import { Header } from "@/domains/user/components/Header";
 import { GoogleProvider } from "@/domains/user/components/GoogleProvider";
 import { isAuthenticated } from "@/domains/user/user.actions";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next";
 
 const unbounded = Unbounded({
   variable: "--font-unbounded",
@@ -38,6 +39,7 @@ export default async function RootLayout({
           <Header authenticated={authenticated} />
           {children}
           <SpeedInsights />
+          <Analytics />
         </GoogleProvider>
       </body>
     </html>

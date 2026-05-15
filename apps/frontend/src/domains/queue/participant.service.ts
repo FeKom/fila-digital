@@ -14,13 +14,23 @@ const participantService = () => {
       const response = await authApi(`/participants-queue/${commerceId}/exit`, {
         method: "DELETE",
       });
-      return response.json();
+      if (!response.ok) {
+        const json = (await response.json().catch(() => ({}))) as {
+          message?: string;
+        };
+        throw new Error(json.message ?? "Erro ao sair da fila");
+      }
     },
     removeNext: async (commerceId: string) => {
       const response = await authApi(`/participants-queue/${commerceId}/next`, {
         method: "DELETE",
       });
-      return response.json();
+      if (!response.ok) {
+        const json = (await response.json().catch(() => ({}))) as {
+          message?: string;
+        };
+        throw new Error(json.message ?? "Erro ao remover participante");
+      }
     },
   };
 };

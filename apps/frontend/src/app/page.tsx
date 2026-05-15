@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 export default function Home() {
   return (
     <div className="landing-hero">
@@ -31,15 +29,6 @@ export default function Home() {
       <p className="landing-desc">
         Gerencie filas do seu comércio ou entre em uma fila de qualquer lugar.
       </p>
-
-      <div className="landing-ctas">
-        <Link href="/login" className="fd-btn fd-btn-primary fd-btn-lg">
-          Entrar
-        </Link>
-        <Link href="/registrar" className="fd-btn fd-btn-ghost fd-btn-lg">
-          Criar conta
-        </Link>
-      </div>
     </div>
   );
 }

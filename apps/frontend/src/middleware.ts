@@ -10,8 +10,6 @@ const protectedPaths = [
 // /comercio/[id] is public; management subpaths require auth
 const isComercioManagement = (pathname: string) =>
   /^\/comercio\/[^/]+(\/dashboard|\/editar|\/fila)/.test(pathname);
-const publicPaths = ["/login", "/registrar"];
-
 const BASE_URL =
   process.env.NEXT_PUBLIC_FILA_DIGITAL_BASE_URL ?? "http://localhost:7070";
 
@@ -29,8 +27,6 @@ export async function middleware(request: NextRequest) {
   const isProtected =
     protectedPaths.some((path) => pathname.startsWith(path)) ||
     isComercioManagement(pathname);
-  const isPublicAuth = publicPaths.some((path) => pathname.startsWith(path));
-
   // No access token but refresh token exists — try a silent refresh
   let refreshedOk = false;
   if (!accessToken && refreshToken) {
@@ -73,10 +69,6 @@ export async function middleware(request: NextRequest) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
-  }
-
-  if (isPublicAuth && isAuthenticated) {
-    return NextResponse.redirect(new URL("/meus-comercios", request.url));
   }
 
   return NextResponse.next();

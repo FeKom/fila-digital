@@ -160,9 +160,18 @@ export const getUserQueues = async (): Promise<UserQueue[]> => {
   }
 };
 
-export const exitQueue = async (commerceId: string) => {
-  await participantService().exit(commerceId);
-  revalidatePath("/minhas-filas");
+export const exitQueue = async (
+  commerceId: string
+): Promise<{ error?: string }> => {
+  try {
+    await participantService().exit(commerceId);
+    revalidatePath("/minhas-filas");
+    return {};
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Erro ao sair da fila",
+    };
+  }
 };
 
 // ─── Queue entry (customer flow) ───────────────────────────────────────────
