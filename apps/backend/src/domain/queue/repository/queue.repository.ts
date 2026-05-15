@@ -29,6 +29,7 @@ export const findQueueByCommerceId = async (commerce_id: string) => {
     .selectFrom("queue")
     .selectAll()
     .where("commerce_id", "=", commerce_id)
+    .where("active", "=", true)
     .executeTakeFirst();
 };
 

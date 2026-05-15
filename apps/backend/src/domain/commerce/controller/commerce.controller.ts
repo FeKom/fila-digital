@@ -13,6 +13,7 @@ import {
   findNearbyOpenQueues,
   findNearbyOpenQueuesByCepPrefix,
   searchOpenQueues,
+  countActiveCommercesByOwnerId,
 } from "../repository/commerce.repository";
 import {
   upsertAddress,
@@ -62,6 +63,12 @@ const commerceController = () => {
 
         if (commerceFromDb) {
           sendError(res, 409, "Commerce already registered");
+          return;
+        }
+
+        const activeCount = await countActiveCommercesByOwnerId(req.user.id);
+        if (activeCount >= 3) {
+          sendError(res, 422, "User cannot have more than 3 active commerces");
           return;
         }
 

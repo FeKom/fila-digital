@@ -91,6 +91,18 @@ export const findCommerceByOwner = async (owner_id: string) => {
     .executeTakeFirst();
 };
 
+export const countActiveCommercesByOwnerId = async (
+  owner_id: string
+): Promise<number> => {
+  const result = await db
+    .selectFrom("commerce")
+    .select(db.fn.countAll<number>().as("count"))
+    .where("owner_id", "=", owner_id)
+    .where("active", "=", true)
+    .executeTakeFirstOrThrow();
+  return Number(result.count);
+};
+
 export const findNearbyOpenQueues = async (
   lat: number,
   lng: number,
