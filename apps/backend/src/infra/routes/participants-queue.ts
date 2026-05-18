@@ -46,6 +46,12 @@ const registerUserRoutes = (server: Server) => {
     { schema: getMyPositionSchema, config: { rateLimit: rateLimits.read } },
     controller.getMyPosition
   );
+  // SSE — no JSON schema (streams), rate-limited as read
+  server.get(
+    ROUTES.participantsQueue.stream,
+    { config: { rateLimit: rateLimits.read } },
+    controller.streamPosition
+  );
   server.put(
     ROUTES.participantsQueue.revert,
     { schema: revertSchema, config: { rateLimit: rateLimits.write } },

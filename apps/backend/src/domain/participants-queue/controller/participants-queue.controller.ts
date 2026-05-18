@@ -1,4 +1,5 @@
 import { createHmac } from "crypto";
+import jwt from "jsonwebtoken";
 import { ServerRequest, ServerResponse } from "../../../infra/types";
 import { parsePaginationParams } from "../../../utils/pagination";
 import {
@@ -28,8 +29,24 @@ import { findUserById } from "../../user/repository/user.repository";
 import cache from "../../../infra/database/cache";
 import { cacheKeys, cacheTTL } from "../../../utils/cacheKeys";
 import { sendError } from "../../../utils/errors";
+import { publishQueueEvent, subscribeQueueUpdates } from "../../../infra/redis";
+import config from "../../../infra/config";
+import { User } from "../../user/type";
+
 const ANONYMOUS_UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function getCookie(
+  cookieHeader: string | undefined,
+  name: string
+): string | undefined {
+  if (!cookieHeader) return undefined;
+  const entry = cookieHeader
+    .split(";")
+    .map((c) => c.trim())
+    .find((c) => c.startsWith(`${name}=`));
+  return entry?.split("=").slice(1).join("=");
+}
 
 const participantsQueueController = () => {
   return {
@@ -101,6 +118,7 @@ const participantsQueueController = () => {
           }
           await enterQueueByQrCode({ queue_id: queue.id, person_id: user.id });
           await c.del(cacheKeys.participantsByQueue(queue.id));
+          publishQueueEvent(queue.id);
           const position = await findParticipantPosition(user.id, queue.id);
           const response = { message: "Entered queue", data: { position } };
           if (idempotencyHeader) {
@@ -129,6 +147,7 @@ const participantsQueueController = () => {
           anonymous_id: anonymousId,
         });
         await c.del(cacheKeys.participantsByQueue(queue.id));
+        publishQueueEvent(queue.id);
         const response = { message: "Entered queue" };
         if (idempotencyHeader) {
           await c.set(
@@ -227,8 +246,8 @@ const participantsQueueController = () => {
         if (!firstParticipant) return sendError(res, 400, "Queue is empty");
 
         await dequeueParticipantById(firstParticipant.id);
-
         await c.del(cacheKeys.participantsByQueue(queue.id));
+        publishQueueEvent(queue.id);
 
         return res.code(200).send({
           message: "Successfully removed the first participant from the queue",
@@ -286,6 +305,7 @@ const participantsQueueController = () => {
         if (removed.length === 0) return sendError(res, 400, "Queue is empty");
 
         await c.del(cacheKeys.participantsByQueue(queue.id));
+        publishQueueEvent(queue.id);
 
         return res.code(200).send({
           message: `Successfully removed ${removed.length} participant(s) from the queue`,
@@ -348,6 +368,7 @@ const participantsQueueController = () => {
           );
 
         await c.del(cacheKeys.participantsByQueue(queue.id));
+        publishQueueEvent(queue.id);
 
         return res.code(200).send({
           message: `Successfully reverted ${reverted.length} participant(s)`,
@@ -414,9 +435,9 @@ const participantsQueueController = () => {
           }
 
           await enterQueueByQrCode({ queue_id: queue.id, person_id: userId });
-          const response = { message: "User entered the queue via QR code" };
-
           await c.del(cacheKeys.participantsByQueue(queue.id));
+          publishQueueEvent(queue.id);
+          const response = { message: "User entered the queue via QR code" };
 
           if (idempotencyHeader) {
             await c.set(
@@ -452,11 +473,11 @@ const participantsQueueController = () => {
             queue_id: queue.id,
             anonymous_id: anonymousId,
           });
+          await c.del(cacheKeys.participantsByQueue(queue.id));
+          publishQueueEvent(queue.id);
           const response = {
             message: "Anonymous user entered the queue via QR code",
           };
-
-          await c.del(cacheKeys.participantsByQueue(queue.id));
 
           if (idempotencyHeader) {
             await c.set(
@@ -527,6 +548,7 @@ const participantsQueueController = () => {
         }
 
         await c.del(cacheKeys.participantsByQueue(queue.id));
+        publishQueueEvent(queue.id);
 
         return res.code(200).send({ message: "Successfully exited the queue" });
       } catch (error) {
@@ -575,6 +597,117 @@ const participantsQueueController = () => {
           `[Participants-Queue Controller] - getMyPosition failed, error: ${error}`
         );
         return sendError(res, 500, "Failed to get queue position");
+      }
+    },
+
+    /**
+     * SSE endpoint — streams live queue position to the connected client.
+     * Auth: reads the JWT from the `digital_queue_jwt` cookie (sent automatically
+     * by browsers with withCredentials). Anonymous users pass ?anonymous_id=<uuid>.
+     * Heartbeat every 25 s prevents Render's 100 s idle-timeout.
+     */
+    streamPosition: async (req: ServerRequest, res: ServerResponse) => {
+      try {
+        const { commerce_id } = req.params as { commerce_id: string };
+        const { anonymous_id: queryAnonId } = req.query as {
+          anonymous_id?: string;
+        };
+
+        // ── Auth (must happen before hijack so we can still send HTTP errors) ──
+        let userId: string | undefined;
+        let anonymousId: string | undefined;
+
+        const jwtToken = getCookie(req.headers.cookie, "digital_queue_jwt");
+        if (jwtToken) {
+          try {
+            const JWT_SECRET = config.get<string>("token.secret");
+            const decoded = jwt.verify(jwtToken, JWT_SECRET) as User;
+            userId = decoded.id;
+          } catch {
+            // expired / invalid — fall through to anonymous
+          }
+        }
+
+        if (!userId) {
+          anonymousId = queryAnonId;
+        }
+
+        if (!userId && !anonymousId) {
+          return sendError(res, 401, "Authentication or anonymous_id required");
+        }
+
+        // ── Resolve queue ──────────────────────────────────────────────────────
+        const c = await cache;
+        const queue = await c.wrap(
+          cacheKeys.queueByCommerce(commerce_id),
+          () => findQueueByCommerceId(commerce_id),
+          cacheTTL.QUEUE_BY_COMMERCE
+        );
+        if (!queue)
+          return sendError(res, 404, "No queue found for this commerce");
+
+        const getCurrentPosition = () =>
+          userId
+            ? findParticipantPosition(userId!, queue.id)
+            : findAnonymousParticipantPosition(anonymousId!, queue.id);
+
+        // Validate the user is actually in the queue before opening the stream
+        const initialPosition = await getCurrentPosition();
+        if (initialPosition === null)
+          return sendError(res, 404, "You are not in this queue");
+
+        // ── Open SSE stream ────────────────────────────────────────────────────
+        res.raw.setHeader("Content-Type", "text/event-stream");
+        res.raw.setHeader("Cache-Control", "no-cache, no-transform");
+        res.raw.setHeader("Connection", "keep-alive");
+        res.raw.setHeader("X-Accel-Buffering", "no"); // disable nginx buffering
+        res.hijack();
+        res.raw.flushHeaders();
+
+        const write = (data: object) => {
+          if (res.raw.writable)
+            res.raw.write(`data: ${JSON.stringify(data)}\n\n`);
+        };
+
+        // Send initial position immediately
+        write({ position: initialPosition, queue_id: queue.id });
+
+        // Heartbeat — keeps the connection alive through Render's idle timeout
+        const heartbeat = setInterval(() => {
+          if (res.raw.writable) res.raw.write(": ping\n\n");
+        }, 25_000);
+
+        let active = true;
+        let unsubscribe = () => {};
+
+        const cleanup = () => {
+          if (!active) return;
+          active = false;
+          clearInterval(heartbeat);
+          unsubscribe();
+          if (res.raw.writable) res.raw.end();
+        };
+
+        unsubscribe = subscribeQueueUpdates(queue.id, async () => {
+          if (!active) return;
+          try {
+            const position = await getCurrentPosition();
+            if (position === null) {
+              write({ event: "exited", queue_id: queue.id });
+              cleanup();
+              return;
+            }
+            write({ position, queue_id: queue.id });
+          } catch {
+            // transient DB error — keep stream open, next event will recover
+          }
+        });
+
+        req.raw.on("close", cleanup);
+        req.raw.on("error", cleanup);
+      } catch (error) {
+        req.log.error(`[SSE] streamPosition failed: ${error}`);
+        if (res.raw.writable) res.raw.end();
       }
     },
   };

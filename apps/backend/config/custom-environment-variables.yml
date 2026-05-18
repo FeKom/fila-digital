@@ -17,7 +17,8 @@ database:
     timeoutInMilli: DATABASE_CONNECTION_TIMEOUT_IN_MILLI # fixed: was at wrong nesting level
     idleTimeoutInMilli: DATABASE_IDLE_TIMEOUT_IN_MILLI
 cache:
-  host: REDIS_HOST
+  url: REDIS_URL   # full Upstash URL e.g. rediss://default:<pw>@<host>:6379
+  host: REDIS_HOST # used when REDIS_URL is not set (local dev)
   port: REDIS_PORT
   ttl: REDIS_TTL
 token:
