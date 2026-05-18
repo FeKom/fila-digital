@@ -10,7 +10,7 @@ import { migrateToLatest } from "./infra/database/setup/runner-up";
 async function main() {
   await migrateToLatest();
   await initServer();
-  startAllSchedulers();
+  await startAllSchedulers();
 }
 
 main().catch((err) => {
