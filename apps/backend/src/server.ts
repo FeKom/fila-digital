@@ -4,7 +4,11 @@ import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import swagger from "@fastify/swagger";
 import scalar from "@scalar/fastify-api-reference";
+import { createBullBoard } from "@bull-board/api";
+import { BullMQAdapter } from "@bull-board/api/bullMQAdapter";
+import { FastifyAdapter as BullBoardFastifyAdapter } from "@bull-board/fastify";
 import { dbCircuitBreaker } from "./utils/circuit-breaker";
+import { getSchedulerQueue } from "./infra/bullmq";
 import registerCommerceRoutes from "./infra/routes/commerce";
 import registerHealthRoute from "./infra/routes/health";
 import config from "./infra/config";
@@ -176,6 +180,49 @@ export const initServer = async () => {
     routePrefix: "/docs",
   });
 
+  // ── Bull Board — queue admin UI ────────────────────────────────────────────
+  // Protected with HTTP Basic Auth. Set BULL_BOARD_USER + BULL_BOARD_PASS in
+  // Render env vars. If either is missing, the UI is not registered.
+  const bullBoardUser = process.env.BULL_BOARD_USER;
+  const bullBoardPass = process.env.BULL_BOARD_PASS;
+  const schedulerQueue = getSchedulerQueue();
+
+  if (bullBoardUser && bullBoardPass && schedulerQueue) {
+    const boardAdapter = new BullBoardFastifyAdapter();
+    createBullBoard({
+      queues: [new BullMQAdapter(schedulerQueue)],
+      serverAdapter: boardAdapter,
+    });
+    boardAdapter.setBasePath("/admin/queues");
+
+    await server.register(boardAdapter.registerPlugin(), {
+      prefix: "/admin/queues",
+      logLevel: "warn",
+    });
+
+    // Basic auth guard — runs before every /admin request
+    server.addHook("onRequest", async (request, reply) => {
+      if (!request.url.startsWith("/admin")) return;
+
+      const authHeader = request.headers.authorization ?? "";
+      if (!authHeader.startsWith("Basic ")) {
+        reply.header("WWW-Authenticate", 'Basic realm="Bull Board"');
+        return reply.code(401).send({ message: "Unauthorized" });
+      }
+
+      const [user, pass] = Buffer.from(authHeader.slice(6), "base64")
+        .toString()
+        .split(":");
+
+      if (user !== bullBoardUser || pass !== bullBoardPass) {
+        reply.header("WWW-Authenticate", 'Basic realm="Bull Board"');
+        return reply.code(401).send({ message: "Unauthorized" });
+      }
+    });
+
+    server.log.info("[BullBoard] UI available at /admin/queues");
+  }
+
   // Infra endpoints — no version prefix
   registerHealthRoute(server);
 
@@ -242,6 +289,7 @@ export const initServer = async () => {
       "/v1/procurar-fila", // public queue search
       "/docs",
       "/healthcheck",
+      "/admin", // Bull Board — has its own Basic Auth guard
     ];
     // Routes that accept both authenticated users and anonymous (X-Anonymous-Id header).
     // Auth is optional: if a JWT is present it is verified; if absent, req.user stays
