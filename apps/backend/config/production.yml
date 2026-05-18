@@ -17,7 +17,8 @@ database:
     timeoutInMilli: 10000
     idleTimeoutInMilli: 60000
 cache:
-  host: "" # set via REDIS_HOST env var (e.g. "redis" when running in Docker)
+  url: ""  # set REDIS_URL in Render — e.g. rediss://default:<pw>@<host>.upstash.io:6379
+  host: "" # alternative: set REDIS_HOST + REDIS_PORT if not using full URL
   port: 6379
   ttl: 3600
 cors:
