@@ -54,12 +54,12 @@ describe("CommerceCard", () => {
     );
   });
 
-  it("renders open badge when queue is open", () => {
+  it("renders open status when queue is open", () => {
     render(<CommerceCard commerce={{ ...baseCommerce, queue: baseQueue }} />);
-    expect(screen.getByText("Fila aberta")).toBeInTheDocument();
+    expect(screen.getByText("Aberta")).toBeInTheDocument();
   });
 
-  it("renders closed badge when queue is closed", () => {
+  it("renders closed status when queue is closed", () => {
     render(
       <CommerceCard
         commerce={{
@@ -68,35 +68,12 @@ describe("CommerceCard", () => {
         }}
       />
     );
-    expect(screen.getByText("Fila fechada")).toBeInTheDocument();
+    expect(screen.getByText("Fechada")).toBeInTheDocument();
   });
 
-  it("does not render queue badge when there is no queue", () => {
+  it("does not render queue status when there is no queue", () => {
     render(<CommerceCard commerce={baseCommerce} />);
-    expect(screen.queryByText(/fila/i)).not.toBeInTheDocument();
-  });
-
-  it("applies open status class when queue is open", () => {
-    render(<CommerceCard commerce={{ ...baseCommerce, queue: baseQueue }} />);
-    expect(screen.getByRole("link")).toHaveClass("commerce-card-open");
-  });
-
-  it("applies closed status class when queue is closed", () => {
-    render(
-      <CommerceCard
-        commerce={{
-          ...baseCommerce,
-          queue: { ...baseQueue, status: "closed" },
-        }}
-      />
-    );
-    expect(screen.getByRole("link")).toHaveClass("commerce-card-closed");
-  });
-
-  it("does not apply status class when there is no queue", () => {
-    render(<CommerceCard commerce={baseCommerce} />);
-    const link = screen.getByRole("link");
-    expect(link).not.toHaveClass("commerce-card-open");
-    expect(link).not.toHaveClass("commerce-card-closed");
+    expect(screen.queryByText("Aberta")).not.toBeInTheDocument();
+    expect(screen.queryByText("Fechada")).not.toBeInTheDocument();
   });
 });
