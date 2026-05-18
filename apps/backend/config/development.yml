@@ -17,6 +17,7 @@ database:
     timeoutInMilli: 5000
     idleTimeoutInMilli: 30000
 cache:
+  url: ""           # empty → falls back to host/port below
   host: "localhost"
   port: 6379
   ttl: 3600

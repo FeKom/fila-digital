@@ -249,6 +249,7 @@ export const initServer = async () => {
     const isOptionalAuthPath = () =>
       request.url.startsWith("/v1/participants-queue/enter/") ||
       request.url.endsWith("/my-position") ||
+      request.url.endsWith("/stream") ||
       request.url.endsWith("/exit") ||
       (request.method === "GET" &&
         /^\/v1\/commerce\/[^/]+$/.test(request.url.split("?")[0]));
