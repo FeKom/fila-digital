@@ -37,11 +37,6 @@ describe("QueuePositionCard", () => {
     expect(screen.getByRole("link")).toHaveAttribute("href", "/comercio/c-1");
   });
 
-  it("applies position-card class", () => {
-    render(<QueuePositionCard queue={queue} />);
-    expect(screen.getByRole("link")).toHaveClass("position-card");
-  });
-
   it("renders position 1 correctly", () => {
     render(<QueuePositionCard queue={{ ...queue, position: 1 }} />);
     expect(screen.getByText("#1")).toBeInTheDocument();

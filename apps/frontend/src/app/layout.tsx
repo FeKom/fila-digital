@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
-import { Unbounded, DM_Sans } from "next/font/google";
+import { Unbounded, DM_Sans, Geist } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/domains/user/components/Header";
 import { GoogleProvider } from "@/domains/user/components/GoogleProvider";
 import { isAuthenticated } from "@/domains/user/user.actions";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 const unbounded = Unbounded({
   variable: "--font-unbounded",
@@ -33,7 +36,7 @@ export default async function RootLayout({
 }>) {
   const authenticated = await isAuthenticated();
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" className={cn("font-sans", geist.variable)}>
       <body className={`${unbounded.variable} ${dmSans.variable} antialiased`}>
         <GoogleProvider>
           <Header authenticated={authenticated} />
