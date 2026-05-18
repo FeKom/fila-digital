@@ -13,6 +13,8 @@ import { verifyToken } from "./utils/token";
 import { Server, ServerRequest } from "./infra/types";
 import registerQueueRoutes from "./infra/routes/queue";
 import registerQueueParticipantsRoutes from "./infra/routes/participants-queue";
+import registerNotificationsRoutes from "./infra/routes/notifications";
+import { initWebPush } from "./infra/push";
 import gracefulShutdown from "fastify-graceful-shutdown";
 import { db } from "./infra/database/connect";
 import compress from "@fastify/compress";
@@ -47,9 +49,11 @@ const setupV1Routes = (server: Server) => {
   registerCommerceRoutes(server);
   registerQueueRoutes(server);
   registerQueueParticipantsRoutes(server);
+  registerNotificationsRoutes(server);
 };
 
 export const initServer = async () => {
+  initWebPush();
   const logLevel = config.get<string>("logging.level");
   const lokiUrl = process.env.LOKI_URL;
 
@@ -248,6 +252,7 @@ export const initServer = async () => {
     // undefined and the controller falls back to the X-Anonymous-Id header.
     const isOptionalAuthPath = () =>
       request.url.startsWith("/v1/participants-queue/enter/") ||
+      request.url.startsWith("/v1/notifications/") ||
       request.url.endsWith("/my-position") ||
       request.url.endsWith("/stream") ||
       request.url.endsWith("/exit") ||

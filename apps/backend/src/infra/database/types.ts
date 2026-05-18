@@ -57,6 +57,19 @@ export interface QueueScheduleTable {
 export type QueueSchedule = Selectable<QueueScheduleTable>;
 export type NewQueueSchedule = Insertable<QueueScheduleTable>;
 
+export interface PushSubscriptionTable {
+  id: Generated<string>;
+  person_id: string | null;
+  anonymous_id: string | null;
+  endpoint: string;
+  auth: string;
+  p256dh: string;
+  created_at: ColumnType<Date, string | undefined, never>;
+}
+
+export type PushSubscription = Selectable<PushSubscriptionTable>;
+export type NewPushSubscription = Insertable<PushSubscriptionTable>;
+
 export interface Database {
   commerce: CommerceTable;
   address: AddressTable;
@@ -66,6 +79,7 @@ export interface Database {
   participants_queue: ParticipantsQueue;
   refresh_tokens: RefreshTokenTable;
   commerce_admins: CommerceAdminsTable;
+  push_subscriptions: PushSubscriptionTable;
 }
 
 export interface CommerceTable {

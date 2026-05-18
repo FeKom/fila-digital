@@ -30,6 +30,7 @@ import cache from "../../../infra/database/cache";
 import { cacheKeys, cacheTTL } from "../../../utils/cacheKeys";
 import { sendError } from "../../../utils/errors";
 import { publishQueueEvent, subscribeQueueUpdates } from "../../../infra/redis";
+import { notifyParticipantCalled } from "../../notifications/repository/notifications.repository";
 import config from "../../../infra/config";
 import { User } from "../../user/type";
 
@@ -248,6 +249,11 @@ const participantsQueueController = () => {
         await dequeueParticipantById(firstParticipant.id);
         await c.del(cacheKeys.participantsByQueue(queue.id));
         publishQueueEvent(queue.id);
+        notifyParticipantCalled(
+          firstParticipant.person_id,
+          firstParticipant.anonymous_id,
+          commerceData?.name ?? ""
+        ).catch(() => {});
 
         return res.code(200).send({
           message: "Successfully removed the first participant from the queue",
@@ -306,6 +312,13 @@ const participantsQueueController = () => {
 
         await c.del(cacheKeys.participantsByQueue(queue.id));
         publishQueueEvent(queue.id);
+        removed.forEach((p) =>
+          notifyParticipantCalled(
+            p.person_id,
+            p.anonymous_id,
+            commerceData?.name ?? ""
+          ).catch(() => {})
+        );
 
         return res.code(200).send({
           message: `Successfully removed ${removed.length} participant(s) from the queue`,
