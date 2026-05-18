@@ -1,0 +1,12 @@
+{
+  "name": "Fila Digital",
+  "short_name": "Fila Digital",
+  "description": "Gerencie filas do seu comércio ou entre em uma fila de qualquer lugar.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090d14",
+  "theme_color": "#799eff",
+  "orientation": "portrait-primary",
+  "categories": ["business", "utilities"],
+  "lang": "pt-BR"
+}

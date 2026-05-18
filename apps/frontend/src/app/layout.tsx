@@ -7,6 +7,7 @@ import { isAuthenticated } from "@/domains/user/user.actions";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 import { cn } from "@/lib/utils";
+import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -27,6 +28,8 @@ export const metadata: Metadata = {
   title: "Fila Digital",
   description:
     "Gerencie filas do seu comércio ou entre em uma fila de qualquer lugar.",
+  manifest: "/manifest.json",
+  themeColor: "#799eff",
 };
 
 export default async function RootLayout({
@@ -43,6 +46,7 @@ export default async function RootLayout({
           {children}
           <SpeedInsights />
           <Analytics />
+          <ServiceWorkerRegister />
         </GoogleProvider>
       </body>
     </html>

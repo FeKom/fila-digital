@@ -31,6 +31,10 @@ notifications:
     fromEmail: NOTIFICATION_FROM_EMAIL
 google:
   clientId: GOOGLE_CLIENT_ID
+vapid:
+  subject: VAPID_SUBJECT     # mailto:contact@yourdomain.com
+  publicKey: VAPID_PUBLIC_KEY
+  privateKey: VAPID_PRIVATE_KEY
 otel:
   endpoint: OTEL_EXPORTER_OTLP_ENDPOINT
   serviceName: OTEL_SERVICE_NAME

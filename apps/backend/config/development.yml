@@ -32,6 +32,10 @@ notifications:
 google:
   clientId: "405473766542-ovntgiflmf7ri619ka9klq7cl2i288md.apps.googleusercontent.com"
   clientSecret: ""
+vapid:
+  subject: "mailto:dev@filadigital.app"
+  publicKey: ""
+  privateKey: ""
 otel:
   endpoint: "http://localhost:4318"
   serviceName: "fila-digital-api"

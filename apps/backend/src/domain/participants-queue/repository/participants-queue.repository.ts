@@ -315,13 +315,13 @@ export const claimAnonymousParticipations = async (
 export const softDeleteNextNParticipants = async (
   queue_id: string,
   count: number
-): Promise<Pick<ParticipantsQueue, "id" | "person_id">[]> => {
+): Promise<Pick<ParticipantsQueue, "id" | "person_id" | "anonymous_id">[]> => {
   return db.transaction().execute(async (trx) => {
     // Lock the selected rows with FOR UPDATE SKIP LOCKED so that if two
     // requests race, each gets a distinct set of participants.
     const participants = await trx
       .selectFrom("participants_queue")
-      .select(["id", "person_id"])
+      .select(["id", "person_id", "anonymous_id"])
       .where("queue_id", "=", queue_id)
       .where("is_active", "=", true)
       .orderBy("created_at", "asc")

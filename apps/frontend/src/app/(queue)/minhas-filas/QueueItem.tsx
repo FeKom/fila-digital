@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { exitQueue } from "@/domains/queue/queue.actions";
 import { getAnonymousId } from "@/lib/anonymousId";
+import { subscribeToPush, isPushSupported, isIOS } from "@/lib/push";
 import type { UserQueue } from "@/types";
 
 const BASE_URL =
@@ -15,11 +16,12 @@ const QueueItem = ({ queue: initialQueue }: { queue: UserQueue }) => {
   const [position, setPosition] = useState(initialQueue.position);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [pushState, setPushState] = useState<
+    "idle" | "subscribed" | "unsupported"
+  >("idle");
 
+  // Live position via SSE
   useEffect(() => {
-    // Authenticated users: JWT cookie is sent automatically with withCredentials.
-    // Anonymous users: pass the stored anonymous ID as a query param because
-    // EventSource does not support custom headers.
     const anonId = getAnonymousId();
     const url = new URL(
       `/v1/participants-queue/${initialQueue.commerce_id}/stream`,
@@ -41,6 +43,25 @@ const QueueItem = ({ queue: initialQueue }: { queue: UserQueue }) => {
 
     return () => es.close();
   }, [initialQueue.commerce_id]);
+
+  // Check if already subscribed on mount
+  useEffect(() => {
+    if (!isPushSupported()) {
+      setPushState("unsupported");
+      return;
+    }
+    navigator.serviceWorker.ready.then((reg) =>
+      reg.pushManager.getSubscription().then((sub) => {
+        if (sub) setPushState("subscribed");
+      })
+    );
+  }, []);
+
+  const handlePushSubscribe = async () => {
+    const anonId = getAnonymousId();
+    const ok = await subscribeToPush(anonId);
+    if (ok) setPushState("subscribed");
+  };
 
   const estimatedMinutes = position * 5;
 
@@ -74,6 +95,49 @@ const QueueItem = ({ queue: initialQueue }: { queue: UserQueue }) => {
         >
           Tempo estimado: ~{estimatedMinutes} min
         </div>
+
+        {/* Push notification opt-in — user gesture only, never auto-prompted */}
+        {pushState === "idle" && (
+          <button
+            type="button"
+            onClick={handlePushSubscribe}
+            style={{
+              marginTop: "0.75rem",
+              fontSize: "0.75rem",
+              color: "var(--primary)",
+              background: "var(--primary-dim)",
+              border: "1px solid var(--primary-glow)",
+              borderRadius: "6px",
+              padding: "0.35rem 0.75rem",
+              cursor: "pointer",
+            }}
+          >
+            🔔 Avisar quando for minha vez
+          </button>
+        )}
+        {pushState === "subscribed" && (
+          <p
+            style={{
+              marginTop: "0.75rem",
+              fontSize: "0.75rem",
+              color: "var(--success)",
+            }}
+          >
+            ✓ Você será notificado quando for chamado
+          </p>
+        )}
+        {isIOS() && pushState !== "subscribed" && (
+          <p
+            style={{
+              marginTop: "0.75rem",
+              fontSize: "0.72rem",
+              color: "var(--text-3)",
+            }}
+          >
+            Para notificações no iOS, instale o app na tela inicial.
+          </p>
+        )}
+
         {error && (
           <div
             style={{
