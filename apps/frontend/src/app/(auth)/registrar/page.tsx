@@ -2,7 +2,7 @@
 import { submitRegisterForm } from "@/domains/user/user.actions";
 import { useActionState, useEffect, useState } from "react";
 import { claimAnonymous } from "@/lib/claimAnonymous";
-import { getAnonymousId } from "@/lib/anonymousId";
+import { useAnonymousId } from "@/lib/useAnonymousId";
 
 const QueueDots = () => (
   <div className="auth-queue-grid" aria-hidden="true">
@@ -28,11 +28,7 @@ const Register = () => {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [anonymousId, setAnonymousId] = useState("");
-
-  useEffect(() => {
-    setAnonymousId(getAnonymousId());
-  }, []);
+  const anonymousId = useAnonymousId();
 
   useEffect(() => {
     if (!pending && !state.error) {
