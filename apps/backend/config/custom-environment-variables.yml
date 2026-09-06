@@ -8,7 +8,13 @@ database:
   user: DATABASE_USER
   password: DATABASE_PASSWORD
   port: DATABASE_PORT
-  ssl: DATABASE_SSL
+  # __format: json faz o node-config parsear o valor em vez de tratar como
+  # string. Sem isso, DATABASE_SSL=false chega como a string "false", que é
+  # truthy em JS — só era possível LIGAR o SSL, nunca desligar. Quebra ao
+  # apontar para um Postgres sem TLS (in-cluster).
+  ssl:
+    __name: DATABASE_SSL
+    __format: json
   applicationName: DATABASE_APPLICATION_NAME
   statementTimeoutMs: DATABASE_STATEMENT_TIMEOUT_MS
   slowQueryThresholdMs: DATABASE_SLOW_QUERY_THRESHOLD_MS

@@ -1,4 +1,4 @@
-import { Job } from "bullmq";
+import { Job, Worker } from "bullmq";
 import {
   closeExpiredQueues,
   openScheduledQueues,
@@ -59,11 +59,29 @@ async function processSchedulerJob(job: Job) {
   }
 }
 
+// Escopo de módulo para que o graceful shutdown consiga fechá-lo.
+let schedulerWorker: Worker | null = null;
+
 export async function startBullMQSchedulers() {
-  const worker = createSchedulerWorker(processSchedulerJob);
-  if (!worker) return false;
+  schedulerWorker = createSchedulerWorker(processSchedulerJob);
+  if (!schedulerWorker) return false;
 
   await registerRepeatableJobs();
   logger.info("[BullMQ] Scheduler worker started");
   return true;
+}
+
+/**
+ * Encerra o worker drenando os jobs em execução.
+ *
+ * `close()` espera o job corrente terminar antes de resolver — sem isso um
+ * rolling update abandonaria um auto-close no meio, e a fila ficaria num
+ * estado que só o próximo ciclo de uma hora corrigiria.
+ */
+export async function closeSchedulers(): Promise<void> {
+  if (!schedulerWorker) return;
+
+  await schedulerWorker.close();
+  schedulerWorker = null;
+  logger.info("[BullMQ] Scheduler worker closed");
 }

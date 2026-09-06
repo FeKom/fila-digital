@@ -21,8 +21,13 @@ import registerNotificationsRoutes from "./infra/routes/notifications";
 import { initWebPush } from "./infra/push";
 import gracefulShutdown from "fastify-graceful-shutdown";
 import { db } from "./infra/database/connect";
+import { closeRedis, getRedisClient } from "./infra/redis";
+import { closeSchedulers } from "./workers/schedulerWorker";
+import { shutdownTelemetry } from "./infra/telemetry/tracer";
+import { markShuttingDown } from "./utils/lifecycle";
 import compress from "@fastify/compress";
 import { uuidv7 } from "uuidv7";
+import ROUTES from "./constants";
 // ─────────────────────────────────────────────────────────────────────────────
 // Sentry — must be initialised before any routes or other imports that could
 // throw. When SENTRY_DSN is not set (e.g. local dev / test), the SDK runs in
@@ -56,17 +61,24 @@ const setupV1Routes = (server: Server) => {
   registerNotificationsRoutes(server);
 };
 
+// Janela entre falhar a readiness e começar a fechar conexões. Dá tempo do
+// kube-proxy e do Traefik removerem o pod do balanceamento. Deve ser menor
+// que o terminationGracePeriodSeconds do Deployment (sugerido: 30s).
+const DRAIN_DELAY_MS = Number(process.env.DRAIN_DELAY_MS ?? 5000);
+
 export const initServer = async () => {
   initWebPush();
   const logLevel = config.get<string>("logging.level");
   const lokiUrl = process.env.LOKI_URL;
+  const isProduction = process.env.NODE_ENV === "production";
 
-  const server = fastify({
-    genReqId: () => uuidv7(),
-    logger: {
-      level: logLevel,
-      transport: {
-        targets: [
+  // pino-pretty é devDependency: não existe na imagem de produção, onde o
+  // node_modules é podado. Em produção o pino escreve JSON no stdout, que é o
+  // que Loki e k8s consomem — sem transport nenhum quando não há LOKI_URL.
+  const logTargets = [
+    ...(isProduction
+      ? []
+      : [
           {
             target: "pino-pretty",
             options: {
@@ -75,24 +87,30 @@ export const initServer = async () => {
               ignore: "pid,hostname",
             },
           },
-          ...(lokiUrl
-            ? [
-                {
-                  target: "pino-loki",
-                  options: {
-                    host: lokiUrl,
-                    labels: {
-                      app: "fila-digital-api",
-                      env: process.env.NODE_ENV ?? "development",
-                    },
-                    interval: 1,
-                    silenceErrors: true,
-                  },
-                },
-              ]
-            : []),
-        ],
-      },
+        ]),
+    ...(lokiUrl
+      ? [
+          {
+            target: "pino-loki",
+            options: {
+              host: lokiUrl,
+              labels: {
+                app: "fila-digital-api",
+                env: process.env.NODE_ENV ?? "development",
+              },
+              interval: 1,
+              silenceErrors: true,
+            },
+          },
+        ]
+      : []),
+  ];
+
+  const server = fastify({
+    genReqId: () => uuidv7(),
+    logger: {
+      level: logLevel,
+      ...(logTargets.length > 0 ? { transport: { targets: logTargets } } : {}),
     },
     ignoreTrailingSlash: true,
     ignoreDuplicateSlashes: true,
@@ -121,10 +139,26 @@ export const initServer = async () => {
   // via `config.rateLimit` — see src/infra/routes/*.ts.
   // trustProxy must be true so req.ip resolves to the real client IP when
   // running behind Traefik + Cloudflare (X-Forwarded-For / CF-Connecting-IP).
+  // Store compartilhado entre réplicas. Sem ele o @fastify/rate-limit guarda
+  // os contadores em memória por processo: com 2 pods e balanceamento
+  // round-robin o limite efetivo dobra. Isso importa mais no perfil `auth`
+  // (10/min), cuja função é travar força bruta em login — 2 réplicas o
+  // transformariam em 20/min.
+  //
+  // Reusa a conexão pub, que só emite comandos não-bloqueantes. Quando o
+  // Redis não está configurado, o plugin volta ao contador em memória.
+  const rateLimitRedis = getRedisClient();
+  if (!rateLimitRedis) {
+    server.log.warn(
+      "[RateLimit] Redis indisponível — contadores em memória, limite por réplica"
+    );
+  }
+
   await server.register(rateLimit, {
     global: true,
     max: 60,
     timeWindow: "1 minute",
+    ...(rateLimitRedis ? { redis: rateLimitRedis } : {}),
     keyGenerator: (req) =>
       (req.headers["cf-connecting-ip"] as string) ||
       (req.headers["x-forwarded-for"] as string)?.split(",")[0].trim() ||
@@ -149,9 +183,27 @@ export const initServer = async () => {
   server.after(() => {
     server.gracefulShutdown(async (signal) => {
       server.log.info(`Received signal to terminate: ${signal}`);
-      await Sentry.close(2000);
+
+      // 1. Readiness passa a falhar → k8s remove o pod dos Endpoints do Service.
+      markShuttingDown();
+
+      // 2. Espera a remoção propagar por kube-proxy e Traefik antes de fechar
+      //    qualquer coisa. O 1s anterior era curto demais: requisições em voo
+      //    tomavam connection reset em todo deploy. Precisa ser menor que o
+      //    terminationGracePeriodSeconds do manifest.
+      await new Promise((resolve) => setTimeout(resolve, DRAIN_DELAY_MS));
+
+      // 3. Drena jobs em execução antes de derrubar as conexões que eles usam.
+      //    A ordem importa: fechar o banco antes do worker abortaria o job
+      //    corrente no meio de uma transação.
+      await closeSchedulers();
+      await closeRedis();
       await db.destroy();
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // 4. Flush do OTEL por último, para que os spans do próprio shutdown saiam.
+      await Sentry.close(2000);
+      await shutdownTelemetry();
+
       server.log.info("Cleanup completed. Shutting down.");
     });
   });
@@ -241,9 +293,15 @@ export const initServer = async () => {
   // ── Circuit breaker ────────────────────────────────────────────────────────
   // onRequest: if the DB circuit is OPEN (or the HALF_OPEN probe slot is
   // busy), reject immediately with 503 — no controller code runs, no DB hit.
-  // /healthcheck is always exempt so UptimeRobot keeps working.
+  // /healthcheck e /livez são sempre isentos: as probes do k8s e o UptimeRobot
+  // não podem tomar 503 do breaker — seria o breaker derrubando a própria
+  // sinalização de saúde do pod.
+  const PROBE_PATHS = new Set<string>([
+    ROUTES.common.health,
+    ROUTES.common.livez,
+  ]);
   server.addHook("onRequest", async (request, reply) => {
-    if (request.url === "/healthcheck") return;
+    if (PROBE_PATHS.has(request.url)) return;
 
     if (!dbCircuitBreaker.attempt()) {
       const { retryInMs } = dbCircuitBreaker.status;
@@ -265,10 +323,13 @@ export const initServer = async () => {
   // circuit breaker state accordingly.
   //   5xx → recordFailure  (server / DB error)
   //   anything else → recordSuccess  (4xx are client errors, not DB failures)
-  // /healthcheck is skipped — probing the DB from the health endpoint should
-  // not influence the circuit state.
+  // /healthcheck e /livez são pulados. O healthcheck porque sondar o banco
+  // não deve influenciar o estado do circuito. O /livez porque responde 200
+  // incondicionalmente: sem esta isenção, cada probe de liveness viraria um
+  // recordSuccess() a cada 10s e, com successThreshold=2, manteria o breaker
+  // fechado à força mesmo com o banco morto.
   server.addHook("onSend", async (request, _reply, payload) => {
-    if (request.url === "/healthcheck") return payload;
+    if (PROBE_PATHS.has(request.url)) return payload;
 
     const status = _reply.statusCode;
     if (status >= 500) {
@@ -293,6 +354,7 @@ export const initServer = async () => {
       "/v1/procurar-fila", // public queue search
       "/docs",
       "/healthcheck",
+      "/livez",
       "/admin", // Bull Board — has its own Basic Auth guard
     ];
     // Routes that accept both authenticated users and anonymous (X-Anonymous-Id header).

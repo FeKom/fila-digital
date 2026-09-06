@@ -21,6 +21,7 @@ const ROUTES = {
   },
   common: {
     health: "/healthcheck",
+    livez: "/livez",
   },
   participantsQueue: {
     enter: "/participants-queue/enter/:commerce_id",

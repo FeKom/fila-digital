@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint src",
     "code:format:verify": "prettier ./src -l",
-    "validate": "pnpm run code:format:verify",
+    "validate": "bun run code:format:verify",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
@@ -49,6 +49,5 @@
     "typescript": "^5",
     "vite": "^6",
     "vitest": "^3.2.4"
-  },
-  "packageManager": "pnpm@9.15.9"
+  }
 }

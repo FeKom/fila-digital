@@ -1,0 +1,24 @@
+# Build context hygiene — without this the whole node_modules tree (~500 MB)
+# is uploaded to the daemon on every build.
+node_modules
+**/node_modules
+dist
+**/dist
+.next
+**/.next
+.turbo
+**/.turbo
+.git
+.github
+.husky
+*.log
+.env
+.env.*
+!.env.example
+coverage
+**/coverage
+.DS_Store
+observability
+postgres
+docker-compose*.yml
+**/stress-tests

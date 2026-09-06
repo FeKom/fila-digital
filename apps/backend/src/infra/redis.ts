@@ -116,3 +116,23 @@ export function subscribeQueueUpdates(
     }
   };
 }
+
+/**
+ * Fecha as conexões pub/sub. Chamado pelo graceful shutdown — sem isso as
+ * conexões ficavam abertas até o processo ser morto, e no k8s cada rolling
+ * update deixava conexão pendurada no Upstash até o timeout dele.
+ *
+ * `quit()` espera os comandos em voo terminarem, ao contrário de `disconnect()`.
+ * `allSettled` porque uma conexão já quebrada não deve impedir o fechamento da outra.
+ */
+export async function closeRedis(): Promise<void> {
+  const clients = [_pub, _sub].filter((c): c is Redis => c !== null);
+  if (clients.length === 0) return;
+
+  await Promise.allSettled(clients.map((c) => c.quit()));
+
+  _pub = null;
+  _sub = null;
+  channelHandlers.clear();
+  logger.info("[Redis] Connections closed");
+}
