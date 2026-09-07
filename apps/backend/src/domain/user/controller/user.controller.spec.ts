@@ -35,6 +35,9 @@ describe("User Controller - Unit Test with Mocks", () => {
 
   it("should register a new user successfully", async () => {
     const req = {
+      // Fastify sempre entrega headers. O controller lê x-anonymous-id
+      // (claim de usuário anônimo) e sem este campo o acesso estoura TypeError.
+      headers: {},
       body: {
         name: "Test User",
         email: "test@example.com",
@@ -76,6 +79,9 @@ describe("User Controller - Unit Test with Mocks", () => {
 
   it("should return 409 if user already exists", async () => {
     const req = {
+      // Fastify sempre entrega headers. O controller lê x-anonymous-id
+      // (claim de usuário anônimo) e sem este campo o acesso estoura TypeError.
+      headers: {},
       body: {
         name: "Existing User",
         email: "existing@example.com",
@@ -118,6 +124,9 @@ describe("User Controller - Unit Test with Mocks", () => {
 
   it("should return 500 if user creation fails", async () => {
     const req = {
+      // Fastify sempre entrega headers. O controller lê x-anonymous-id
+      // (claim de usuário anônimo) e sem este campo o acesso estoura TypeError.
+      headers: {},
       body: {
         name: "Test User",
         email: "test@example.com",

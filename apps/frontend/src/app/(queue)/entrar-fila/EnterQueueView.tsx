@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Commerce } from "@/types";
-import { getAnonymousId } from "@/lib/anonymousId";
+import { useAnonymousId } from "@/lib/useAnonymousId";
 import {
   enterDirect,
   enterViaToken,
@@ -21,12 +21,8 @@ export default function EnterQueueView({ commerce, token, mode }: Props) {
   );
   const [position, setPosition] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [anonymousId, setAnonymousId] = useState("");
+  const anonymousId = useAnonymousId();
   const [exitState, setExitState] = useState<"idle" | "loading">("idle");
-
-  useEffect(() => {
-    setAnonymousId(getAnonymousId());
-  }, []);
 
   const queue = commerce.queue;
   const usesToken =

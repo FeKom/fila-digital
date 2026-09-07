@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useSyncExternalStore } from "react";
 import { exitQueue } from "@/domains/queue/queue.actions";
 import { getAnonymousId } from "@/lib/anonymousId";
 import { subscribeToPush, isPushSupported, isIOS } from "@/lib/push";
@@ -12,13 +12,23 @@ type SSEMessage =
   | { position: number; queue_id: string }
   | { event: "exited"; queue_id: string };
 
+// Suporte a push não muda durante a sessão — não há o que assinar.
+// Referência estável para o React não reassinar a cada render.
+const noopSubscribe = () => () => {};
+
 const QueueItem = ({ queue: initialQueue }: { queue: UserQueue }) => {
   const [position, setPosition] = useState(initialQueue.position);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [pushState, setPushState] = useState<
-    "idle" | "subscribed" | "unsupported"
-  >("idle");
+  // isPushSupported() é síncrona e estável, mas retorna false no servidor
+  // (checa `typeof window`). Ler via useSyncExternalStore mantém SSR e cliente
+  // coerentes sem setState dentro de efeito, que forçava render em cascata.
+  const pushSupported = useSyncExternalStore(
+    noopSubscribe,
+    isPushSupported,
+    () => false
+  );
+  const [pushState, setPushState] = useState<"idle" | "subscribed">("idle");
 
   // Live position via SSE
   useEffect(() => {
@@ -44,18 +54,17 @@ const QueueItem = ({ queue: initialQueue }: { queue: UserQueue }) => {
     return () => es.close();
   }, [initialQueue.commerce_id]);
 
-  // Check if already subscribed on mount
+  // Verifica se já existe inscrição. O setState aqui é assíncrono (dentro do
+  // .then), então não dispara render em cascata na montagem.
   useEffect(() => {
-    if (!isPushSupported()) {
-      setPushState("unsupported");
-      return;
-    }
+    if (!pushSupported) return;
+
     navigator.serviceWorker.ready.then((reg) =>
       reg.pushManager.getSubscription().then((sub) => {
         if (sub) setPushState("subscribed");
       })
     );
-  }, []);
+  }, [pushSupported]);
 
   const handlePushSubscribe = async () => {
     const anonId = getAnonymousId();
@@ -97,7 +106,7 @@ const QueueItem = ({ queue: initialQueue }: { queue: UserQueue }) => {
         </div>
 
         {/* Push notification opt-in — user gesture only, never auto-prompted */}
-        {pushState === "idle" && (
+        {pushSupported && pushState === "idle" && (
           <button
             type="button"
             onClick={handlePushSubscribe}

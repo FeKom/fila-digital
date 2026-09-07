@@ -28,7 +28,6 @@ export async function middleware(request: NextRequest) {
     protectedPaths.some((path) => pathname.startsWith(path)) ||
     isComercioManagement(pathname);
   // No access token but refresh token exists — try a silent refresh
-  let refreshedOk = false;
   if (!accessToken && refreshToken) {
     try {
       const res = await fetch(`${BASE_URL}/v1/user/refresh`, {
@@ -61,9 +60,11 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Only trust accessToken OR a successful refresh — a stale refreshToken alone
-  // does not mean the user is authenticated if the refresh call just failed.
-  const isAuthenticated = !!(accessToken || refreshedOk);
+  // Um refresh bem-sucedido retorna cedo acima, com os cookies novos já
+  // gravados na resposta. Se a execução chegou até aqui, ou não havia refresh
+  // token, ou a chamada falhou — em ambos os casos, não autenticado. Um
+  // refreshToken velho sozinho não prova autenticação.
+  const isAuthenticated = !!accessToken;
 
   if (isProtected && !isAuthenticated) {
     const loginUrl = new URL("/login", request.url);

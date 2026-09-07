@@ -29,22 +29,39 @@ const databaseConfig = config.get<{
 // statement_timeout is passed as a server-side connection option so PostgreSQL
 // automatically aborts any query that runs longer than this duration.
 // This prevents a single runaway query from holding a connection indefinitely.
-export const dialect = new PostgresDialect({
-  pool: new Pool({
-    database: databaseConfig.name,
-    host: databaseConfig.host,
-    user: databaseConfig.user,
-    password: databaseConfig.password,
-    port: databaseConfig.port,
-    max: databaseConfig.connection.max,
-    connectionTimeoutMillis: databaseConfig.connection.timeoutInMilli,
-    idleTimeoutMillis: databaseConfig.connection.idleTimeoutInMilli,
-    ssl: databaseConfig.ssl ? { rejectUnauthorized: false } : false,
-    // PostgreSQL connection parameters set per-connection
-    application_name: databaseConfig.applicationName,
-    options: `-c statement_timeout=${databaseConfig.statementTimeoutMs}`,
-  }),
+export const pool = new Pool({
+  database: databaseConfig.name,
+  host: databaseConfig.host,
+  user: databaseConfig.user,
+  password: databaseConfig.password,
+  port: databaseConfig.port,
+  max: databaseConfig.connection.max,
+  connectionTimeoutMillis: databaseConfig.connection.timeoutInMilli,
+  idleTimeoutMillis: databaseConfig.connection.idleTimeoutInMilli,
+  ssl: databaseConfig.ssl ? { rejectUnauthorized: false } : false,
+  // PostgreSQL connection parameters set per-connection
+  application_name: databaseConfig.applicationName,
+  options: `-c statement_timeout=${databaseConfig.statementTimeoutMs}`,
 });
+
+// OBRIGATÓRIO. Erros em conexões OCIOSAS do pool são emitidos aqui, fora de
+// qualquer try/catch de query. Em Node, um evento 'error' sem listener vira
+// exceção não capturada e MATA o processo.
+//
+// Não é hipotético: Postgres gerenciado recicla conexão rotineiramente e
+// manda `57P01 — terminating connection due to administrator command`. Sem
+// este listener, qualquer failover ou manutenção do Supabase derruba o
+// processo inteiro — e com ele o circuit breaker, a readiness probe e o
+// graceful shutdown, que nunca chegam a rodar.
+//
+// O pool descarta o cliente com erro sozinho; o listener só evita o crash.
+pool.on("error", (err: Error) => {
+  logger.error(
+    `[DB] Idle client error (conexão descartada pelo pool): ${err.message}`
+  );
+});
+
+export const dialect = new PostgresDialect({ pool });
 
 export const db = new Kysely<Database>({
   dialect,

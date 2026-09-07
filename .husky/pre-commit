@@ -1,1 +1,1 @@
-pnpm turbo run validate
+bunx turbo run validate

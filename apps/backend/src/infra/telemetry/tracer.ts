@@ -33,6 +33,19 @@ import config from "config";
 
 const endpoint = config.get<string>("otel.endpoint");
 
+// Flush dos spans no encerramento. Declarado ANTES do bloco que atribui:
+// `let` fica em temporal dead zone até esta linha executar, e a atribuição
+// acontece durante a avaliação do módulo — declarar no fim do arquivo daria
+// ReferenceError no boot.
+//
+// O `beforeExit` anterior não servia: ele não dispara quando o processo é
+// terminado por sinal, e o k8s encerra pod com SIGTERM. Os spans em buffer
+// eram perdidos em todo deploy. Agora quem chama é o graceful shutdown.
+let shutdownTelemetryImpl: () => Promise<void> = async () => {};
+
+/** Encerra o SDK do OTEL e faz flush dos spans pendentes. No-op sem endpoint. */
+export const shutdownTelemetry = (): Promise<void> => shutdownTelemetryImpl();
+
 const fastifyOtelInstrumentation = new FastifyOtelInstrumentation({
   registerOnInitialization: true,
 });
@@ -79,9 +92,9 @@ if (!endpoint) {
     ],
   });
 
-  process.on("beforeExit", async () => {
+  shutdownTelemetryImpl = async () => {
     await sdk.shutdown();
-  });
+  };
 
   sdk.start();
 }

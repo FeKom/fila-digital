@@ -51,7 +51,7 @@ describe("Header", () => {
     it("renders Meus Comércios nav link", () => {
       render(<Header authenticated={true} />);
       const link = screen.getByRole("link", { name: "Meus Comércios" });
-      expect(link).toHaveAttribute("href", "/");
+      expect(link).toHaveAttribute("href", "/meus-comercios");
     });
 
     it("renders Minhas Filas nav link", () => {
