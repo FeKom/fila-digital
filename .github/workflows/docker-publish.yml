@@ -18,9 +18,9 @@ env:
 jobs:
   build-and-push:
     name: Build & push (arm64)
-    # Runner ARM64 nativo — gratuito para repositórios públicos. O alvo é o
-    # Ampere A1 da Oracle, também arm64, então não há emulação QEMU no meio.
-    runs-on: ubuntu-24.04-arm
+    # Os nós do cluster k3s na Oracle são amd64 (shapes E-series x86), não
+    # Ampere ARM. Runner amd64 = build nativo, sem emulação.
+    runs-on: ubuntu-latest
 
     permissions:
       contents: read
@@ -56,7 +56,11 @@ jobs:
           # dos package.json de todos os workspaces para o --frozen-lockfile.
           context: .
           file: apps/backend/Dockerfile
-          platforms: linux/arm64
+          # Precisa casar com a arquitetura dos nós: `kubectl get nodes -o wide`.
+          # Imagem de arquitetura errada falha no pod com "exec format error".
+          # Para publicar as duas, use: linux/amd64,linux/arm64 (exige o passo
+          # docker/setup-qemu-action antes do buildx, e o build fica bem lento).
+          platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
