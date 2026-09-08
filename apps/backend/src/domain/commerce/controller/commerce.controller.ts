@@ -33,7 +33,6 @@ import { cacheKeys, cacheTTL } from "../../../utils/cacheKeys";
 import { parsePaginationParams } from "../../../utils/pagination";
 import { sendError } from "../../../utils/errors";
 import { generateQrCodeBase64 } from "../../../utils/qrcode";
-import config from "../../../infra/config";
 import { canonicalOrigin } from "../../../utils/origins";
 
 const commerceController = () => {

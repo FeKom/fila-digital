@@ -15,7 +15,6 @@ import cache from "../../../infra/database/cache";
 import { cacheKeys, cacheTTL } from "../../../utils/cacheKeys";
 import { generateQrCodeBase64 } from "../../../utils/qrcode";
 import { sendError } from "../../../utils/errors";
-import config from "../../../infra/config";
 import { canonicalOrigin } from "../../../utils/origins";
 
 const queueController = () => {
