@@ -45,3 +45,7 @@ otel:
   endpoint: OTEL_EXPORTER_OTLP_ENDPOINT
   serviceName: OTEL_SERVICE_NAME
   lokiUrl: LOKI_URL
+s3:
+  keyId: KEY_ID
+  keyName: KEY_NAME
+  applicationKey: APPLICATION_KEY

@@ -80,6 +80,7 @@ export interface Database {
   refresh_tokens: RefreshTokenTable;
   commerce_admins: CommerceAdminsTable;
   push_subscriptions: PushSubscriptionTable;
+  plan: PlanTable;
 }
 
 export interface CommerceTable {
@@ -132,6 +133,28 @@ export type Queue = Selectable<QueueTable>;
 export type NewQueue = Insertable<QueueTable>;
 export type QueueUpdate = Updateable<QueueTable>;
 
+export interface PlanTable {
+  id: Generated<string>;
+  code: string;
+  name: string;
+  description: string | null;
+  /** Quantos comercios o usuario pode ter ativos. */
+  max_commerces: number;
+  /** Filas ativas por comercio. */
+  max_active_queues_per_commerce: number;
+  /** NULL = ilimitado. Distingue "sem limite" de "limite zero". */
+  max_participants_per_queue: number | null;
+  /** Em CENTAVOS. Float para dinheiro acumula erro de arredondamento. */
+  price_cents: ColumnType<number, number | undefined, number>;
+  active: ColumnType<boolean, boolean | undefined, boolean>;
+  created_at: ColumnType<Date, string | undefined, never>;
+  updated_at: ColumnType<Date, string | undefined, string>;
+}
+
+export type Plan = Selectable<PlanTable>;
+export type NewPlan = Insertable<PlanTable>;
+export type PlanUpdate = Updateable<PlanTable>;
+
 export interface PersonTable {
   id: Generated<string>;
   name: string;
@@ -143,6 +166,9 @@ export interface PersonTable {
   google_id: string | null;
   role: ColumnType<PersonRole, PersonRole | undefined, PersonRole>;
   active: ColumnType<boolean, boolean | undefined, boolean>;
+  // Preenchido pela migration 26 com o plano gratuito. Generated porque a
+  // migration faz o backfill — o insert nao precisa informar.
+  plan_id: Generated<string>;
   created_at: ColumnType<Date, string | undefined, never>;
   updated_at: ColumnType<Date, string | undefined, string>;
 }

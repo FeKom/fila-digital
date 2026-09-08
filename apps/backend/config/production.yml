@@ -39,3 +39,7 @@ otel:
   endpoint: ""
   serviceName: "fila-digital-api"
   lokiUrl: ""
+s3:
+  keyId: ""
+  keyName: ""
+  applicationKey: ""

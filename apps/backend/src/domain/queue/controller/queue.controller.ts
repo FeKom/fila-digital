@@ -2,8 +2,9 @@ import { ServerRequest, ServerResponse } from "../../../infra/types";
 import { Queue } from "../type";
 import { findCommerceOwnerByUserId } from "../../commerce/repository/commerce.repository";
 import {
-  findQueueByCommerceId,
+  countActiveQueuesByCommerceId,
   createQueue,
+  findQueueByCommerceId,
   updateQueueById,
 } from "../repository/queue.repository";
 import {
@@ -16,6 +17,7 @@ import { cacheKeys, cacheTTL } from "../../../utils/cacheKeys";
 import { generateQrCodeBase64 } from "../../../utils/qrcode";
 import { sendError } from "../../../utils/errors";
 import { canonicalOrigin } from "../../../utils/origins";
+import { getPlanByPersonId } from "../../plan/repository/plan.repository";
 
 const queueController = () => {
   return {
@@ -29,7 +31,7 @@ const queueController = () => {
 
         const c = await cache;
 
-        const [commerceOwner, commerceWithQueue] = await Promise.all([
+        const [commerceOwner] = await Promise.all([
           c.wrap(
             cacheKeys.commerceOwner(req.user.id),
             () => findCommerceOwnerByUserId(req.user!.id),
@@ -42,8 +44,27 @@ const queueController = () => {
           ),
         ]);
 
-        if (commerceWithQueue) {
-          sendError(res, 409, "This commerce already has a queue");
+        // O limite vem do PLANO. Antes era um booleano implicito ("ja tem
+        // fila?"), o que travava em 1 sem possibilidade de configurar.
+        const plan = await getPlanByPersonId(req.user.id);
+        if (!plan) {
+          sendError(res, 422, "Usuário sem plano associado");
+          return;
+        }
+
+        const filasAtivas = await countActiveQueuesByCommerceId(
+          queue.commerce_id
+        );
+        if (filasAtivas >= plan.max_active_queues_per_commerce) {
+          sendError(
+            res,
+            409,
+            `Seu plano ${plan.name} permite até ${plan.max_active_queues_per_commerce} ${
+              plan.max_active_queues_per_commerce === 1
+                ? "fila ativa"
+                : "filas ativas"
+            } por comércio.`
+          );
           return;
         }
 
