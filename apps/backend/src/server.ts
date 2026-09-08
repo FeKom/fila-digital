@@ -25,6 +25,7 @@ import { closeRedis, getRedisClient } from "./infra/redis";
 import { closeSchedulers } from "./workers/schedulerWorker";
 import { shutdownTelemetry } from "./infra/telemetry/tracer";
 import { markShuttingDown } from "./utils/lifecycle";
+import { allowedOrigins } from "./utils/origins";
 import compress from "@fastify/compress";
 import { uuidv7 } from "uuidv7";
 import ROUTES from "./constants";
@@ -119,11 +120,16 @@ export const initServer = async () => {
   });
 
   // ── CORS ──────────────────────────────────────────────────────────────────
-  // Restrict cross-origin requests to the known frontend origin.
-  // NEXT_PUBLIC_FILA_DIGITAL_BASE_URL is set in frontend env; the backend
-  // reads ALLOWED_ORIGIN (or falls back to localhost for local dev).
+  // ALLOWED_ORIGIN aceita uma LISTA separada por virgula. Um valor unico nao
+  // basta: o mesmo frontend e servido em mais de uma origem (apex, www e o
+  // dominio da Vercel), e CORS exige correspondencia EXATA — "example.com" e
+  // "www.example.com" sao origens distintas para o navegador.
+  //
+  // Autorizar so uma delas bloqueia silenciosamente todas as outras: o
+  // preflight responde 204, mas o navegador descarta a resposta porque o
+  // Access-Control-Allow-Origin nao bate com a origem da pagina.
   await server.register(cors, {
-    origin: process.env.ALLOWED_ORIGIN ?? "http://localhost:3000",
+    origin: allowedOrigins(),
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: [
       "Content-Type",
