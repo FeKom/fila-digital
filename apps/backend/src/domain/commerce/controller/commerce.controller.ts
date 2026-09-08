@@ -34,12 +34,13 @@ import { parsePaginationParams } from "../../../utils/pagination";
 import { sendError } from "../../../utils/errors";
 import { generateQrCodeBase64 } from "../../../utils/qrcode";
 import config from "../../../infra/config";
+import { canonicalOrigin } from "../../../utils/origins";
 
 const commerceController = () => {
   return {
     register: async (req: ServerRequest, res: ServerResponse) => {
       const body = req.body as Record<string, unknown>;
-      req.log.debug({ body: req.body }, "[Commerce] register — received body");
+      req.log.debug({ body: req.body }, "[Commerce] register received body");
       try {
         const valid = validateCNPJ(body.document_id as string);
         if (!valid) {
@@ -174,7 +175,7 @@ const commerceController = () => {
                 cacheKeys.qrcodeByQueue(queue.id),
                 () =>
                   generateQrCodeBase64(
-                    `${config.get<string>("cors.allowedOrigin")}/entrar-fila?commerceId=${commerce_id}&token=${queue.qrcode_token}&mode=qrcode`
+                    `${canonicalOrigin()}/entrar-fila?commerceId=${commerce_id}&token=${queue.qrcode_token}&mode=qrcode`
                   ),
                 cacheTTL.QRCODE
               )

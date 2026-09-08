@@ -16,6 +16,7 @@ import { cacheKeys, cacheTTL } from "../../../utils/cacheKeys";
 import { generateQrCodeBase64 } from "../../../utils/qrcode";
 import { sendError } from "../../../utils/errors";
 import config from "../../../infra/config";
+import { canonicalOrigin } from "../../../utils/origins";
 
 const queueController = () => {
   return {
@@ -56,7 +57,7 @@ const queueController = () => {
         await c.del(cacheKeys.queueByCommerce(queue.commerce_id));
 
         const qrcode = await generateQrCodeBase64(
-          `${config.get<string>("cors.allowedOrigin")}/entrar-fila?commerceId=${createdQueue.commerce_id}&token=${createdQueue.qrcode_token}&mode=qrcode`
+          `${canonicalOrigin()}/entrar-fila?commerceId=${createdQueue.commerce_id}&token=${createdQueue.qrcode_token}&mode=qrcode`
         );
 
         return res.code(201).send({
