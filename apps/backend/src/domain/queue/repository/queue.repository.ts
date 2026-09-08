@@ -33,22 +33,6 @@ export const findQueueByCommerceId = async (commerce_id: string) => {
     .executeTakeFirst();
 };
 
-/**
- * Conta filas ATIVAS de um comercio. Existe porque o limite deixou de ser
- * booleano ("ja tem fila?") e passou a ser numerico, vindo do plano.
- */
-export const countActiveQueuesByCommerceId = async (
-  commerce_id: string
-): Promise<number> => {
-  const r = await db
-    .selectFrom("queue")
-    .select((eb) => eb.fn.countAll<string>().as("total"))
-    .where("commerce_id", "=", commerce_id)
-    .where("active", "=", true)
-    .executeTakeFirst();
-  return Number(r?.total ?? 0);
-};
-
 export const deleteExpiredQueues = async () => {
   const twelveHoursAgo = addHours(new Date(), -12);
 

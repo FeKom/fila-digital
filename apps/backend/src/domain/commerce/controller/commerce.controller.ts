@@ -34,7 +34,8 @@ import { parsePaginationParams } from "../../../utils/pagination";
 import { sendError } from "../../../utils/errors";
 import { generateQrCodeBase64 } from "../../../utils/qrcode";
 import { canonicalOrigin } from "../../../utils/origins";
-import { getPlanByPersonId } from "../../plan/repository/plan.repository";
+
+const MAX_COMMERCES = 3 as const;
 
 const commerceController = () => {
   return {
@@ -67,23 +68,9 @@ const commerceController = () => {
           return;
         }
 
-        // O limite vem do PLANO, nao de constante no codigo. MAX_COMMERCES
-        // exigia deploy para mudar; agora e coluna na tabela `plan`.
-        const plan = await getPlanByPersonId(req.user.id);
-        if (!plan) {
-          sendError(res, 422, "Usuário sem plano associado");
-          return;
-        }
-
         const activeCount = await countActiveCommercesByOwnerId(req.user.id);
-        if (activeCount >= plan.max_commerces) {
-          sendError(
-            res,
-            422,
-            `Seu plano ${plan.name} permite até ${plan.max_commerces} ${
-              plan.max_commerces === 1 ? "comércio" : "comércios"
-            }. Faça upgrade para criar mais.`
-          );
+        if (activeCount >= MAX_COMMERCES) {
+          sendError(res, 422, "User cannot have more than 3 active commerces");
           return;
         }
 
