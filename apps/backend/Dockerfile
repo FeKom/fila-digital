@@ -15,6 +15,11 @@
 # Se um dia uma dependência instrumentada for ESM pura, ela deixa de ser
 # rastreada silenciosamente no bun — reavaliar o runtime nesse caso.
 #
+# ATENÇÃO — CPU: no x86_64 o bun exige AVX e faz segfault sem ele ("CPU lacks
+# AVX support"), onde o node rodaria normalmente. O nó atual é um AMD EPYC 9J14
+# (avx, avx2, avx512f), então está coberto — mas isso restringe a escolha de
+# shape numa migração futura. Para CPU antiga existe a variante oven/bun:*-baseline.
+#
 # O contexto de build é a RAIZ do monorepo, não apps/backend. Buildar com:
 #   docker build -f apps/backend/Dockerfile -t fila-digital-backend .
 # ─────────────────────────────────────────────────────────────────────────────

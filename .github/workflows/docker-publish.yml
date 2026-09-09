@@ -17,7 +17,7 @@ env:
 
 jobs:
   build-and-push:
-    name: Build & push (arm64)
+    name: Build & push (amd64)
     # Os nós do cluster k3s na Oracle são amd64 (shapes E-series x86), não
     # Ampere ARM. Runner amd64 = build nativo, sem emulação.
     runs-on: ubuntu-latest
