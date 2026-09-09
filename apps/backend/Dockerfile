@@ -2,11 +2,23 @@
 # Fila Digital Backend — imagem multi-stage
 #
 # Build:   bun (install + tsup)   — install rápido, workspace-aware
-# Runtime: node                   — NÃO trocar por bun: o OTEL auto-instrumenta
-#                                   módulos ESM via import-in-the-middle, que
-#                                   depende de module.register(). No bun esse
-#                                   hook é aceito mas nunca dispara, e o
-#                                   tracing morre em silêncio (zero spans).
+# Runtime: bun
+#
+# Nota sobre OTEL: o bun aceita module.register() mas nunca dispara o hook, então
+# import-in-the-middle (o caminho de patch para módulos ESM puros) não funciona.
+# Isso NÃO afeta este projeto: pg, ioredis e http são pacotes CommonJS, e mesmo
+# importados via `import` são carregados pelo loader CJS, onde o patch acontece
+# via require-in-the-middle — que funciona no bun. Verificado: os quatro alvos
+# (pg.query, ioredis.sendCommand, http.request, http.Server.emit) ficam
+# instrumentados de forma idêntica em node e bun.
+#
+# Se um dia uma dependência instrumentada for ESM pura, ela deixa de ser
+# rastreada silenciosamente no bun — reavaliar o runtime nesse caso.
+#
+# ATENÇÃO — CPU: no x86_64 o bun exige AVX e faz segfault sem ele ("CPU lacks
+# AVX support"), onde o node rodaria normalmente. O nó atual é um AMD EPYC 9J14
+# (avx, avx2, avx512f), então está coberto — mas isso restringe a escolha de
+# shape numa migração futura. Para CPU antiga existe a variante oven/bun:*-baseline.
 #
 # O contexto de build é a RAIZ do monorepo, não apps/backend. Buildar com:
 #   docker build -f apps/backend/Dockerfile -t fila-digital-backend .
@@ -57,9 +69,9 @@ RUN bun install --frozen-lockfile --production \
       --linker=hoisted
 
 # ── Stage 4: runtime ─────────────────────────────────────────────────────────
-FROM node:22-alpine AS runtime
+FROM oven/bun:1.4-alpine AS runtime
 
-# dumb-init encaminha SIGTERM/SIGINT corretamente ao node. Sem ele o
+# dumb-init encaminha SIGTERM/SIGINT corretamente ao processo. Sem ele o
 # `docker stop` espera os 10s de timeout, e no k8s cada rolling update
 # paga esse atraso por pod.
 RUN apk add --no-cache dumb-init wget
@@ -84,4 +96,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
   CMD wget --quiet --tries=1 --spider http://localhost:7070/healthcheck || exit 1
 
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "dist/index.js"]
+CMD ["bun", "dist/index.js"]
