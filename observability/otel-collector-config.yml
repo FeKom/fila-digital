@@ -22,8 +22,12 @@ exporters:
   prometheusremotewrite:
     endpoint: http://prometheus:9090/api/v1/write
 
-  loki:
-    endpoint: http://loki:3100/loki/api/v1/push
+  # O exporter `loki` foi removido do OpenTelemetry Collector. O caminho atual
+  # e mandar OTLP para o endpoint nativo do Loki 3.x.
+  otlphttp/loki:
+    logs_endpoint: http://loki:3100/otlp/v1/logs
+    tls:
+      insecure: true
 
 service:
   extensions: [zpages]
@@ -39,4 +43,4 @@ service:
     logs:
       receivers: [otlp]
       processors: [batch]
-      exporters: [loki]
+      exporters: [otlphttp/loki]

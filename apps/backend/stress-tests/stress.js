@@ -33,6 +33,47 @@ export const options = {
 // Run with: k6 run stress-tests/stress.js
 // ─────────────────────────────────────────────────────────────────────────────
 
+// O access token vive 15 minutos. Sob saturacao o teste leva bem mais que isso
+// de relogio, entao o token do setup() expira no meio e todo o resto vira 401 —
+// o teste passaria a medir expiracao de JWT em vez de capacidade.
+//
+// Estado por VU (cada VU do k6 tem seu proprio isolate, entao isto nao e
+// compartilhado): renova de forma proativa antes de expirar, e reativa se
+// mesmo assim vier um 401.
+const TOKEN_TTL_MS = 15 * 60 * 1000;
+const RENEW_BEFORE_MS = 5 * 60 * 1000; // renova aos 10min de vida
+let vuToken = null;
+let vuTokenAt = 0;
+
+// IP unico por VU — cada VU ganha seu proprio balde de rate limit.
+function vuIp() {
+  return `10.0.${Math.floor(__VU / 255)}.${__VU % 255}`;
+}
+
+function doLogin() {
+  const res = http.post(
+    `${BASE_URL}/v1/user/login`,
+    JSON.stringify({ email: TEST_USER.email, password: TEST_USER.password }),
+    {
+      headers: { "Content-Type": "application/json", "X-Forwarded-For": vuIp() },
+      responseCallback: http.expectedStatuses(200, 429),
+    },
+  );
+  return res.status === 200 ? res.json("access_token") : null;
+}
+
+function tokenFor(data) {
+  const idade = Date.now() - vuTokenAt;
+  if (!vuToken || idade > TOKEN_TTL_MS - RENEW_BEFORE_MS) {
+    const novo = vuToken ? doLogin() : data.token;
+    if (novo) {
+      vuToken = novo;
+      vuTokenAt = Date.now();
+    }
+  }
+  return vuToken;
+}
+
 export function setup() {
   const jsonHeaders = { headers: { "Content-Type": "application/json" } };
 
@@ -71,16 +112,30 @@ export default function (data) {
   // Spoof a unique IP per VU so each VU has its own rate limit bucket.
   // Without this, all 400 VUs share one bucket (127.0.0.1) and the test
   // measures the rate limiter, not the backend.
+  const token = tokenFor(data);
   const authHeaders = {
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${data.token}`,
-      "X-Forwarded-For": `10.0.${Math.floor(__VU / 255)}.${__VU % 255}`,
+      Authorization: `Bearer ${token}`,
+      "X-Forwarded-For": vuIp(),
     },
   };
 
   // 2. Mix of read operations (most common in production)
   const commerces = http.get(`${BASE_URL}/v1/commerce`, { ...authHeaders, responseCallback: expectedResponses });
+
+  // Fallback: token invalidado antes do previsto — renova e tenta na proxima
+  // iteracao, em vez de queimar a iteracao inteira em 401.
+  if (commerces.status === 401) {
+    const novo = doLogin();
+    if (novo) {
+      vuToken = novo;
+      vuTokenAt = Date.now();
+    }
+    sleep(0.5);
+    return;
+  }
+
   check(commerces, {
     "list commerces returns 200 or 429": (r) =>
       r.status === 200 || r.status === 429,
