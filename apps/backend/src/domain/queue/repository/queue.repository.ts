@@ -1,7 +1,7 @@
 import { uuidv7 } from "uuidv7";
 import { Kysely, sql } from "kysely";
 import { Database, NewQueue } from "../../../infra/database/types";
-import { Queue } from "../type";
+import { CreateQueueInput } from "@fila-digital/types";
 import { db } from "../../../infra/database/connect";
 import { addHours } from "date-fns";
 
@@ -11,7 +11,7 @@ type QueueSnapshot = {
   [key: string]: unknown;
 };
 
-export const createQueue = async (queue: Queue) => {
+export const createQueue = async (queue: CreateQueueInput) => {
   const queueToDb: NewQueue = {
     ...queue,
     id: uuidv7(),

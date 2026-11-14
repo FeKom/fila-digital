@@ -1,28 +1,14 @@
 import { OAuth2Client } from "google-auth-library";
 import { randomBytes } from "crypto";
-import jwt from "jsonwebtoken";
 import { uuidv7 } from "uuidv7";
 import { db } from "../../../infra/database/connect";
 import * as refreshTokenRepo from "../repository/refresh-token.repository";
 import config from "../../../infra/config";
 import { ServerRequest, ServerResponse } from "../../../infra/types";
 import { sendError } from "../../../utils/errors";
-
-const ACCESS_TOKEN_TTL = 60 * 15; // 15 minutes
+import { signAccessToken } from "../../../utils/token";
 
 const client = new OAuth2Client(config.get<string>("google.clientId"));
-
-const signAccessToken = (user: {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-}): string =>
-  jwt.sign(
-    { id: user.id, name: user.name, email: user.email, role: user.role },
-    config.get<string>("token.secret"),
-    { expiresIn: ACCESS_TOKEN_TTL }
-  );
 
 const googleLogin = () => ({
   handle: async (req: ServerRequest, res: ServerResponse) => {
@@ -73,6 +59,12 @@ const googleLogin = () => ({
           })
           .returningAll()
           .executeTakeFirstOrThrow();
+      }
+
+      // Google already proved who this is, so the specific message is safe.
+      if (!person.active) {
+        sendError(res, 403, "Account disabled");
+        return;
       }
 
       // 4. Link google_id if user signed up via email but never used Google

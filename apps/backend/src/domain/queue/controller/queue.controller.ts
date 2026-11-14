@@ -1,6 +1,6 @@
 import { ServerRequest, ServerResponse } from "../../../infra/types";
-import { Queue } from "../type";
-import { findCommerceOwnerByUserId } from "../../commerce/repository/commerce.repository";
+import { CreateQueueInput } from "@fila-digital/types";
+import { canManageCommerce } from "../../commerce/repository/commerce.repository";
 import {
   findQueueByCommerceId,
   createQueue,
@@ -20,7 +20,7 @@ import { canonicalOrigin } from "../../../utils/origins";
 const queueController = () => {
   return {
     register: async (req: ServerRequest, res: ServerResponse) => {
-      const queue = req.body as Queue;
+      const queue = req.body as CreateQueueInput;
       try {
         if (!req.user?.id) {
           sendError(res, 401, "Authentication required");
@@ -29,11 +29,11 @@ const queueController = () => {
 
         const c = await cache;
 
-        const [commerceOwner, commerceWithQueue] = await Promise.all([
+        const [canManage, commerceWithQueue] = await Promise.all([
           c.wrap(
-            cacheKeys.commerceOwner(req.user.id),
-            () => findCommerceOwnerByUserId(req.user!.id),
-            cacheTTL.COMMERCE_OWNER
+            cacheKeys.canManageCommerce(req.user.id, queue.commerce_id),
+            () => canManageCommerce(req.user!.id, queue.commerce_id),
+            cacheTTL.CAN_MANAGE_COMMERCE
           ),
           c.wrap(
             cacheKeys.queueByCommerce(queue.commerce_id),
@@ -42,13 +42,17 @@ const queueController = () => {
           ),
         ]);
 
-        if (commerceWithQueue) {
-          sendError(res, 409, "This commerce already has a queue");
+        if (!canManage) {
+          sendError(
+            res,
+            403,
+            "Only commerce owner or admin can create a queue"
+          );
           return;
         }
 
-        if (commerceOwner.owner_id !== req.user.id) {
-          sendError(res, 403, "Only commerce owner can create a queue");
+        if (commerceWithQueue) {
+          sendError(res, 409, "This commerce already has a queue");
           return;
         }
 
@@ -73,13 +77,29 @@ const queueController = () => {
     update: async (req: ServerRequest, res: ServerResponse) => {
       try {
         const user = req.user;
-        const queueToUpdate = req.body as Queue;
+        const queueToUpdate = req.body as Partial<CreateQueueInput>;
         const { commerce_id, queue_id } = req.params as {
           commerce_id: string;
           queue_id: string;
         };
 
         const c = await cache;
+
+        if (user) {
+          const canManage = await c.wrap(
+            cacheKeys.canManageCommerce(user.id, commerce_id),
+            () => canManageCommerce(user.id, commerce_id),
+            cacheTTL.CAN_MANAGE_COMMERCE
+          );
+
+          if (!canManage) {
+            return sendError(
+              res,
+              403,
+              "You need to be a commerce owner or admin to update a queue"
+            );
+          }
+        }
 
         const queue = await c.wrap(
           cacheKeys.queueByCommerce(commerce_id),
@@ -88,30 +108,6 @@ const queueController = () => {
         );
 
         if (!queue) return sendError(res, 404, "Queue not found");
-
-        if (user) {
-          const commerceOwner = await c.wrap(
-            cacheKeys.commerceOwner(user.id),
-            () => findCommerceOwnerByUserId(user.id),
-            cacheTTL.COMMERCE_OWNER
-          );
-
-          if (!commerceOwner) {
-            return sendError(
-              res,
-              403,
-              "You need to be a commerce owner to update a queue"
-            );
-          }
-
-          if (commerceOwner.owner_id !== user.id) {
-            return sendError(
-              res,
-              403,
-              "Only commerce owner can update a queue"
-            );
-          }
-        }
 
         await updateQueueById(queue_id, { ...queueToUpdate });
         await c.del(cacheKeys.queueByCommerce(commerce_id));
@@ -136,6 +132,22 @@ const queueController = () => {
 
         const c = await cache;
 
+        if (user) {
+          const canManage = await c.wrap(
+            cacheKeys.canManageCommerce(user.id, commerce_id),
+            () => canManageCommerce(user.id, commerce_id),
+            cacheTTL.CAN_MANAGE_COMMERCE
+          );
+
+          if (!canManage) {
+            return sendError(
+              res,
+              403,
+              "You need to be a commerce owner or admin to delete a queue"
+            );
+          }
+        }
+
         const queue = await c.wrap(
           cacheKeys.queueByCommerce(commerce_id),
           () => findQueueByCommerceId(commerce_id),
@@ -143,30 +155,6 @@ const queueController = () => {
         );
 
         if (!queue) return sendError(res, 404, "Queue not found");
-
-        if (user) {
-          const commerce = await c.wrap(
-            cacheKeys.commerceOwner(user.id),
-            () => findCommerceOwnerByUserId(user.id),
-            cacheTTL.COMMERCE_OWNER
-          );
-
-          if (!commerce) {
-            return sendError(
-              res,
-              403,
-              "You need to be a commerce owner to delete a queue"
-            );
-          }
-
-          if (commerce.owner_id !== user.id) {
-            return sendError(
-              res,
-              403,
-              "Only commerce owner can delete a queue"
-            );
-          }
-        }
 
         await updateQueueById(queue_id, { active: false });
         await c.del(cacheKeys.queueByCommerce(commerce_id));
@@ -189,20 +177,20 @@ const queueController = () => {
         };
         const body = req.body as {
           type: "once" | "daily";
-          scheduled_at?: string;
+          scheduled_at: string;
         };
 
         const c = await cache;
-        const commerceOwner = await c.wrap(
-          cacheKeys.commerceOwner(req.user.id),
-          () => findCommerceOwnerByUserId(req.user!.id),
-          cacheTTL.COMMERCE_OWNER
+        const canManage = await c.wrap(
+          cacheKeys.canManageCommerce(req.user.id, commerce_id),
+          () => canManageCommerce(req.user!.id, commerce_id),
+          cacheTTL.CAN_MANAGE_COMMERCE
         );
-        if (commerceOwner.owner_id !== req.user.id) {
+        if (!canManage) {
           return sendError(
             res,
             403,
-            "Only commerce owner can manage schedules"
+            "Only commerce owner or admin can manage schedules"
           );
         }
 
@@ -248,26 +236,25 @@ const queueController = () => {
         if (!req.user?.id)
           return sendError(res, 401, "Authentication required");
 
-        const { schedule_id } = req.params as {
+        const { schedule_id, commerce_id } = req.params as {
           commerce_id: string;
           schedule_id: string;
         };
         const body = req.body as { status: "active" | "inactive" };
 
         const c = await cache;
-        const commerceOwner = await c.wrap(
-          cacheKeys.commerceOwner(req.user.id),
-          () => findCommerceOwnerByUserId(req.user!.id),
-          cacheTTL.COMMERCE_OWNER
+        const canManage = await c.wrap(
+          cacheKeys.canManageCommerce(req.user.id, commerce_id),
+          () => canManageCommerce(req.user!.id, commerce_id),
+          cacheTTL.CAN_MANAGE_COMMERCE
         );
-        if (commerceOwner.owner_id !== req.user.id) {
+        if (!canManage) {
           return sendError(
             res,
             403,
-            "Only commerce owner can manage schedules"
+            "Only commerce owner or admin can manage schedules"
           );
         }
-
         await updateScheduleStatus(schedule_id, body.status);
         return res.code(200).send({ message: "Schedule updated" });
       } catch (error) {

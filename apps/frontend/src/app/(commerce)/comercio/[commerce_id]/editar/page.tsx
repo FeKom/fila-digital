@@ -53,7 +53,7 @@ const EditCommerce = async ({ params }: Props) => {
               id="description"
               name="description"
               type="text"
-              defaultValue={commerce.description}
+              defaultValue={commerce.description ?? undefined}
               className="fd-input"
             />
           </div>
@@ -69,7 +69,7 @@ const EditCommerce = async ({ params }: Props) => {
               id="phone"
               name="phone"
               type="tel"
-              defaultValue={commerce.phone}
+              defaultValue={commerce.phone ?? undefined}
               className="fd-input"
             />
           </div>
@@ -91,7 +91,7 @@ const EditCommerce = async ({ params }: Props) => {
                 id="open_at"
                 name="open_at"
                 type="time"
-                defaultValue={commerce.open_at}
+                defaultValue={commerce.open_at ?? undefined}
                 className="fd-input"
               />
             </div>
@@ -103,7 +103,7 @@ const EditCommerce = async ({ params }: Props) => {
                 id="closed_at"
                 name="closed_at"
                 type="time"
-                defaultValue={commerce.closed_at}
+                defaultValue={commerce.closed_at ?? undefined}
                 className="fd-input"
               />
             </div>

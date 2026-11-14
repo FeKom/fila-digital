@@ -2,6 +2,7 @@ import { describe, beforeEach, it, expect, vi } from "vitest";
 import * as userRepository from "../repository/user.repository";
 import userController from "./user.controller";
 import { ServerRequest, ServerResponse } from "../../../infra/types";
+import { hashPassword } from "../../../utils/hash";
 import {
   validatePassword,
   validateName,
@@ -26,7 +27,7 @@ describe("User Controller - Unit Test with Mocks", () => {
       send: vi.fn(),
     };
     vi.mocked(validatePassword).mockReturnValue(true);
-    vi.mocked(validateName).mockReturnValue(true);
+    vi.mocked(validateName).mockImplementation((name) => name);
     vi.mocked(validateEmail).mockImplementation((email) => email);
     vi.mocked(validatePhone).mockImplementation((phone) => phone);
     // vi.mocked(hashPassword).mockResolvedValue("hashedPassword");
@@ -46,7 +47,7 @@ describe("User Controller - Unit Test with Mocks", () => {
       },
     };
 
-    vi.mocked(userRepository.getUserByEmail).mockResolvedValue(undefined);
+    vi.mocked(userRepository.emailExists).mockResolvedValue(false);
     vi.mocked(userRepository.createNewUser).mockResolvedValue({
       id: "mocked-uuid",
       name: "Test User",
@@ -67,9 +68,7 @@ describe("User Controller - Unit Test with Mocks", () => {
       res as unknown as ServerResponse
     );
 
-    expect(userRepository.getUserByEmail).toHaveBeenCalledWith(
-      "test@example.com"
-    );
+    expect(userRepository.emailExists).toHaveBeenCalledWith("test@example.com");
     expect(userRepository.createNewUser).toHaveBeenCalled();
     expect(res.code).toHaveBeenCalledWith(201);
     expect(res.send).toHaveBeenCalledWith(
@@ -92,27 +91,14 @@ describe("User Controller - Unit Test with Mocks", () => {
 
     //vi.mocked(validateEmail).mockReturnValue("existing@example.com");
     //vi.mocked(validatePhone).mockReturnValue("1234567890");
-    vi.mocked(userRepository.getUserByEmail).mockResolvedValue({
-      id: "mocked-uuid",
-      name: "Existing User",
-      email: "existing@example.com",
-      password: "hashedPassword",
-      phone: "1234567890",
-      commerce_id: null,
-      queue_id: null,
-      google_id: null,
-      role: "CUSTOMER",
-      active: true,
-      created_at: new Date(),
-      updated_at: new Date(),
-    });
+    vi.mocked(userRepository.emailExists).mockResolvedValue(true);
 
     await controller.register(
       req as unknown as ServerRequest,
       res as unknown as ServerResponse
     );
 
-    expect(userRepository.getUserByEmail).toHaveBeenCalledWith(
+    expect(userRepository.emailExists).toHaveBeenCalledWith(
       "existing@example.com"
     );
     expect(userRepository.createNewUser).not.toHaveBeenCalled();
@@ -135,7 +121,7 @@ describe("User Controller - Unit Test with Mocks", () => {
       },
     };
 
-    vi.mocked(userRepository.getUserByEmail).mockResolvedValue(undefined);
+    vi.mocked(userRepository.emailExists).mockResolvedValue(false);
     vi.mocked(userRepository.createNewUser).mockRejectedValue(
       new Error("Database error")
     );
@@ -145,13 +131,85 @@ describe("User Controller - Unit Test with Mocks", () => {
       res as unknown as ServerResponse
     );
 
-    expect(userRepository.getUserByEmail).toHaveBeenCalledWith(
-      "test@example.com"
-    );
+    expect(userRepository.emailExists).toHaveBeenCalledWith("test@example.com");
     expect(userRepository.createNewUser).toHaveBeenCalled();
     expect(res.code).toHaveBeenCalledWith(500);
     expect(res.send).toHaveBeenCalledWith(
       expect.objectContaining({ message: "Failed to create User!" })
     );
+  });
+
+  describe("login", () => {
+    const password = "Correct#123";
+    const loginReq = (body: { email: string; password: string }) =>
+      ({
+        body,
+        log: { info: vi.fn(), error: vi.fn() },
+      }) as unknown as ServerRequest;
+    const credentials = async (active: boolean) => ({
+      id: "person-1",
+      name: "Test User",
+      email: "test@example.com",
+      role: "CUSTOMER" as const,
+      password: await hashPassword(password),
+      active,
+    });
+
+    it("returns the same 401 for unknown email and wrong password", async () => {
+      vi.mocked(userRepository.findCredentialsByEmail).mockResolvedValue(
+        undefined
+      );
+      await controller.login(
+        loginReq({ email: "nobody@example.com", password }),
+        res as unknown as ServerResponse
+      );
+      const unknownEmail = res.send.mock.calls[0][0];
+
+      vi.mocked(userRepository.findCredentialsByEmail).mockResolvedValue(
+        await credentials(true)
+      );
+      await controller.login(
+        loginReq({ email: "test@example.com", password: "Wrong#123" }),
+        res as unknown as ServerResponse
+      );
+      const wrongPassword = res.send.mock.calls[1][0];
+
+      expect(res.code).toHaveBeenNthCalledWith(1, 401);
+      expect(res.code).toHaveBeenNthCalledWith(2, 401);
+      expect(unknownEmail).toEqual(wrongPassword);
+    });
+
+    it("returns 403 for a disabled account only after the right password", async () => {
+      vi.mocked(userRepository.findCredentialsByEmail).mockResolvedValue(
+        await credentials(false)
+      );
+      await controller.login(
+        loginReq({ email: "test@example.com", password }),
+        res as unknown as ServerResponse
+      );
+
+      expect(res.code).toHaveBeenCalledWith(403);
+      expect(res.send).toHaveBeenCalledWith(
+        expect.objectContaining({ message: "Account disabled" })
+      );
+    });
+
+    it("returns tokens for an active account with the right password", async () => {
+      vi.mocked(userRepository.findCredentialsByEmail).mockResolvedValue(
+        await credentials(true)
+      );
+      await controller.login(
+        loginReq({ email: "TEST@example.com", password }),
+        res as unknown as ServerResponse
+      );
+
+      expect(userRepository.findCredentialsByEmail).toHaveBeenCalledWith(
+        "test@example.com"
+      );
+      expect(res.code).toHaveBeenCalledWith(200);
+      expect(res.send).toHaveBeenCalledWith(
+        expect.objectContaining({ access_token: expect.any(String) })
+      );
+    });
   });
 });

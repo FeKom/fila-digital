@@ -1,10 +1,8 @@
 import { uuidv7 } from "uuidv7";
 import { ServerRequest, ServerResponse } from "../../../infra/types";
+import { getUserByEmail } from "../../user/repository/user.repository";
 import {
-  updateUserById,
-  getUserByEmail,
-} from "../../user/repository/user.repository";
-import {
+  canManageCommerce,
   createCommerce,
   getCommerceByDocumentId,
   getCommerceById,
@@ -53,9 +51,9 @@ const commerceController = () => {
         const c = await cache;
 
         const commerceFromDb = await c.wrap(
-          cacheKeys.commerceDocument(documentHash),
+          cacheKeys.commerceByDocument(documentHash),
           () => getCommerceByDocumentId(documentHash),
-          cacheTTL.COMMERCE_DOCUMENT
+          cacheTTL.COMMERCE_BY_DOCUMENT
         );
 
         if (!req.user?.id) {
@@ -122,15 +120,9 @@ const commerceController = () => {
         }
 
         await Promise.all([
-          c.del(cacheKeys.commerceDocument(documentHash)),
-          c.del(cacheKeys.commerceOwner(req.user.id)),
+          c.del(cacheKeys.commerceByDocument(documentHash)),
           c.del(cacheKeys.commerceList()),
         ]);
-
-        await updateUserById(req.user.id, {
-          commerce_id: commerceData?.id,
-          role: "OWNER",
-        });
 
         res.code(201).send({
           commerce_id: commerceData?.id,
@@ -153,9 +145,9 @@ const commerceController = () => {
 
         const [commerce, queue] = await Promise.all([
           c.wrap(
-            cacheKeys.commerceId(commerce_id),
+            cacheKeys.commerceById(commerce_id),
             () => getCommerceById(commerce_id),
-            cacheTTL.COMMERCE_ID
+            cacheTTL.COMMERCE_BY_ID
           ),
           c.wrap(
             cacheKeys.queueByCommerce(commerce_id),
@@ -168,10 +160,16 @@ const commerceController = () => {
 
         const address = await getAddressByCommerceId(commerce_id);
 
-        const isOwner = req.user?.id === commerce.owner_id;
+        const canManage = req.user?.id
+          ? await c.wrap(
+              cacheKeys.canManageCommerce(req.user.id, commerce_id),
+              () => canManageCommerce(req.user!.id, commerce_id),
+              cacheTTL.CAN_MANAGE_COMMERCE
+            )
+          : false;
 
         const qrcode =
-          isOwner && queue?.qrcode_token
+          canManage && queue?.qrcode_token
             ? await c.wrap(
                 cacheKeys.qrcodeByQueue(queue.id),
                 () =>
@@ -187,8 +185,8 @@ const commerceController = () => {
         const queueForResponse = queue
           ? {
               ...queue,
-              qrcode: isOwner ? qrcode : undefined,
-              qrcode_token: isOwner ? queue.qrcode_token : undefined,
+              qrcode: canManage ? qrcode : undefined,
+              qrcode_token: canManage ? queue.qrcode_token : undefined,
             }
           : null;
 
@@ -244,9 +242,9 @@ const commerceController = () => {
         const c = await cache;
 
         const commerce = await c.wrap(
-          cacheKeys.commerceId(commerce_id),
+          cacheKeys.commerceById(commerce_id),
           () => getCommerceById(commerce_id),
-          cacheTTL.COMMERCE_ID
+          cacheTTL.COMMERCE_BY_ID
         );
 
         if (!commerce) return sendError(res, 404, "Commerce not found");
@@ -258,15 +256,16 @@ const commerceController = () => {
             "Only commerce owner can delete a commerce"
           );
         }
-
-        await updateCommerceById(commerce_id, { active: false });
-
+        const admins = await listCommerceAdmins(commerce_id);
         await Promise.all([
-          c.del(cacheKeys.commerceId(commerce_id)),
+          c.del(cacheKeys.commerceById(commerce_id)),
           c.del(cacheKeys.commerceList()),
-          c.del(cacheKeys.commerceOwner(user.id)),
+          c.del(cacheKeys.canManageCommerce(user.id, commerce_id)),
+          ...admins.map((admin) =>
+            c.del(cacheKeys.canManageCommerce(admin.person_id, commerce_id))
+          ),
         ]);
-
+        await updateCommerceById(commerce_id, { active: false });
         return res.code(200).send({ message: "Commerce deleted successfully" });
       } catch (error) {
         logger.error(
@@ -291,9 +290,9 @@ const commerceController = () => {
         const c = await cache;
 
         const commerce = await c.wrap(
-          cacheKeys.commerceId(commerce_id),
+          cacheKeys.commerceById(commerce_id),
           () => getCommerceById(commerce_id),
-          cacheTTL.COMMERCE_ID
+          cacheTTL.COMMERCE_BY_ID
         );
 
         if (!commerce) return sendError(res, 404, "Commerce not found");
@@ -346,7 +345,7 @@ const commerceController = () => {
         }
 
         await Promise.all([
-          c.del(cacheKeys.commerceId(commerce_id)),
+          c.del(cacheKeys.commerceById(commerce_id)),
           c.del(cacheKeys.commerceList()),
         ]);
 
@@ -387,6 +386,8 @@ const commerceController = () => {
         }
 
         await grantCommerceAdmin(commerce_id, person.id, user.id);
+        const c = await cache;
+        await c.del(cacheKeys.canManageCommerce(person.id, commerce_id));
         return res.code(200).send({
           message: `Admin access granted to email: ${person.email}, name: ${person.name}`,
         });
@@ -405,17 +406,19 @@ const commerceController = () => {
           commerce_id: string;
           person_id: string;
         };
-
         if (!user) return sendError(res, 401, "Authentication required");
 
         const commerce = await getCommerceById(commerce_id);
-        if (!commerce) return sendError(res, 404, "Commerce not found");
-        if (commerce.owner_id !== user.id) {
+
+        if (commerce?.owner_id !== user.id) {
           return sendError(res, 403, "Only the owner can revoke admin access");
         }
 
-        await revokeCommerceAdmin(commerce_id, person_id);
+        if (!commerce) return sendError(res, 404, "Commerce not found");
 
+        await revokeCommerceAdmin(commerce_id, person_id);
+        const c = await cache;
+        await c.del(cacheKeys.canManageCommerce(person_id, commerce_id));
         return res.code(200).send({ message: "Admin access revoked" });
       } catch (error) {
         logger.error(

@@ -25,9 +25,11 @@ cors:
   allowedOrigin: "" # set via ALLOWED_ORIGIN env var — used in QR code URLs
 token:
   secret: ""
+documentHash:
+  secret: "" # set via DOCUMENT_HASH_SECRET env var
 notifications:
   resend:
-    apiKey: ""
+    apiKey: "" # set via RESEND_API_KEY env var
     fromEmail: "noreply@filadigital.app.br"
 google:
   clientId: ""

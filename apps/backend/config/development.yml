@@ -25,9 +25,11 @@ cors:
   allowedOrigin: "http://localhost:3000"
 token:
   secret: "F996A2C8-80AC-4BDD-A5DA-1BF75811CFA7"
+documentHash:
+  secret: "dev-document-hash-secret"
 notifications:
   resend:
-    apiKey: ""  # defina RESEND_API_KEY no .env — nunca versione a chave
+    apiKey: "" # set via RESEND_API_KEY env var
     fromEmail: "onboarding@resend.dev"
 google:
   clientId: "405473766542-ovntgiflmf7ri619ka9klq7cl2i288md.apps.googleusercontent.com"

@@ -1,11 +1,5 @@
 import { Kysely, sql } from "kysely";
-import { createHmac } from "crypto";
-
-// Read from env directly — migrations run outside the full app bootstrap
-const secret = process.env.AUTH_TOKEN ?? "F996A2C8-80AC-4BDD-A5DA-1BF75811CFA7";
-
-const hashDocument = (doc: string): string =>
-  createHmac("sha256", secret).update(doc).digest("hex");
+import { hashDocument } from "../../../utils/documentHash";
 
 interface CommerceRow {
   id: string;

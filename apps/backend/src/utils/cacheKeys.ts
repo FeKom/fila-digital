@@ -4,9 +4,11 @@
  * This prevents typos causing silent cache-miss/invalidation bugs.
  */
 export const cacheKeys = {
-  commerceDocument: (document_id: string) => `commerce:document:${document_id}`,
-  commerceId: (id: string) => `commerce:id:${id}`,
-  commerceOwner: (owner_id: string) => `commerce:owner:${owner_id}`,
+  commerceByDocument: (document_id: string) =>
+    `commerce:document:${document_id}`,
+  commerceById: (id: string) => `commerce:id:${id}`,
+  canManageCommerce: (user_id: string, commerce_id: string) =>
+    `canManageCommerce:${user_id}:${commerce_id}`,
   commerceList: () => "commerce:list:all",
   queueByCommerce: (commerce_id: string) => `queue:commerce:${commerce_id}`,
   participantsByQueue: (queue_id: string, cursor?: string, limit?: number) =>
@@ -22,11 +24,11 @@ export const cacheKeys = {
  */
 export const cacheTTL = {
   /** Used in uniqueness checks — kept short to avoid stale "not found" results */
-  COMMERCE_DOCUMENT: 60 * 1000, // 60s
+  COMMERCE_BY_DOCUMENT: 60 * 1000, // 60s
   /** Commerce entity — changes rarely (name, hours, description) */
-  COMMERCE_ID: 120 * 1000, // 120s
-  /** Owner lookup for permission checks — changes rarely */
-  COMMERCE_OWNER: 120 * 1000, // 120s
+  COMMERCE_BY_ID: 120 * 1000, // 120s
+  /** Owner/admin permission check — changes rarely */
+  CAN_MANAGE_COMMERCE: 120 * 1000, // 120s
   /** List endpoint — refreshes faster because new commerces appear here */
   COMMERCE_LIST: 30 * 1000, // 30s
   /** Queue per commerce — can change when queue is opened/closed */

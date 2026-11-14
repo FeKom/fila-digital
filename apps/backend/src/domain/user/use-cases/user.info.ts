@@ -1,5 +1,5 @@
 import { ServerRequest, ServerResponse } from "../../../infra/types";
-import { findCommerceIdByUserId } from "../../commerce/repository/commerce.repository";
+import { listCommercesByUserId } from "../../commerce/repository/commerce.repository";
 import { findUserQueuesByUserID } from "../../participants-queue/repository/participants-queue.repository";
 import { findUserById } from "../repository/user.repository";
 import { sendError } from "../../../utils/errors";
@@ -36,20 +36,8 @@ const userInfo = () => {
         return;
       }
       try {
-        const commerces = await findCommerceIdByUserId(req.user.id);
-        return res.code(200).send({
-          commerces: commerces.map(
-            ({ id, name, description, phone, open_at, closed_at, active }) => ({
-              id,
-              name,
-              description,
-              phone,
-              open_at,
-              closed_at,
-              active,
-            })
-          ),
-        });
+        const commerces = await listCommercesByUserId(req.user.id);
+        return res.code(200).send({ commerces });
       } catch (error) {
         req.log.error(
           `[User Commerces] - Something went wrong, error: ${error}`

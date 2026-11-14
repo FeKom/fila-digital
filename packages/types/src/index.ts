@@ -13,7 +13,7 @@ export type QueueStatus = "open" | "closed";
 export type Queue = {
   id: string;
   name: string;
-  description: string;
+  description: string | null;
   type: QueueType;
   status: QueueStatus;
   commerce_id: string;
@@ -38,11 +38,11 @@ export type CommerceAddress = {
 export type Commerce = {
   id: string;
   name: string;
-  description: string;
-  phone: string;
+  description: string | null;
+  phone: string | null;
   document_id: string;
-  open_at: string;
-  closed_at: string;
+  open_at: string | null;
+  closed_at: string | null;
   owner_id: string;
   active: boolean;
   address?: CommerceAddress | null;
@@ -145,6 +145,8 @@ export type QueueInput = {
   type: QueueType;
   status: QueueStatus;
 };
+
+export type CreateQueueInput = QueueInput & { commerce_id: string };
 
 export type QueueScheduleType = "once" | "daily";
 export type QueueScheduleStatus = "active" | "inactive";

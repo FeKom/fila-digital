@@ -45,7 +45,7 @@ const EditQueue = async ({ params }: Props) => {
               id="description"
               name="description"
               type="text"
-              defaultValue={queue.description}
+              defaultValue={queue.description ?? undefined}
               className="fd-input"
             />
           </div>

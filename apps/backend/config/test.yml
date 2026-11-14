@@ -22,6 +22,12 @@ cache:
   ttl: 60
 token:
   secret: "test-secret-key"
+documentHash:
+  secret: "test-document-hash-secret"
+vapid:
+  subject: "mailto:test@filadigital.app"
+  publicKey: ""
+  privateKey: ""
 otel:
   endpoint: ""
   serviceName: "fila-digital-api-test"
