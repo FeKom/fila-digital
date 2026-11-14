@@ -1,5 +1,4 @@
 import { createHmac } from "crypto";
-import jwt from "jsonwebtoken";
 import { ServerRequest, ServerResponse } from "../../../infra/types";
 import { parsePaginationParams } from "../../../utils/pagination";
 import {
@@ -8,7 +7,7 @@ import {
   autoCloseQueueIfExpired,
 } from "../../queue/repository/queue.repository";
 import {
-  findCommerceByOwner,
+  canManageCommerce,
   getCommerceById,
 } from "../../commerce/repository/commerce.repository";
 import {
@@ -31,8 +30,7 @@ import { cacheKeys, cacheTTL } from "../../../utils/cacheKeys";
 import { sendError } from "../../../utils/errors";
 import { publishQueueEvent, subscribeQueueUpdates } from "../../../infra/redis";
 import { notifyParticipantCalled } from "../../notifications/repository/notifications.repository";
-import config from "../../../infra/config";
-import { User } from "../../user/type";
+import { parseToken } from "../../../utils/token";
 
 const ANONYMOUS_UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -219,29 +217,33 @@ const participantsQueueController = () => {
 
         const c = await cache;
 
-        const [queue, commerceData] = await Promise.all([
+        const [queue, canManage, commerceData] = await Promise.all([
           c.wrap(
             cacheKeys.queueByCommerce(commerce_id),
             () => findQueueByCommerceId(commerce_id),
             cacheTTL.QUEUE_BY_COMMERCE
           ),
           c.wrap(
-            cacheKeys.commerceOwner(user.id),
-            () => findCommerceByOwner(user.id),
-            cacheTTL.COMMERCE_OWNER
+            cacheKeys.canManageCommerce(user.id, commerce_id),
+            () => canManageCommerce(user.id, commerce_id),
+            cacheTTL.CAN_MANAGE_COMMERCE
+          ),
+          c.wrap(
+            cacheKeys.commerceById(commerce_id),
+            () => getCommerceById(commerce_id),
+            cacheTTL.COMMERCE_BY_ID
           ),
         ]);
 
-        if (!queue)
-          return sendError(res, 400, "No queue found for this commerce");
-
-        if (!commerceData || commerceData.id !== commerce_id) {
+        if (!canManage)
           return sendError(
             res,
             403,
             "You don't have permission to manage this queue"
           );
-        }
+
+        if (!queue)
+          return sendError(res, 400, "No queue found for this commerce");
 
         const firstParticipant = await findFirstParticipantsByQueueId(queue.id);
         if (!firstParticipant) return sendError(res, 400, "Queue is empty");
@@ -282,29 +284,34 @@ const participantsQueueController = () => {
 
         const c = await cache;
 
-        const [queue, commerceData] = await Promise.all([
+        const [queue, canManage, commerceData] = await Promise.all([
           c.wrap(
             cacheKeys.queueByCommerce(commerce_id),
             () => findQueueByCommerceId(commerce_id),
             cacheTTL.QUEUE_BY_COMMERCE
           ),
           c.wrap(
-            cacheKeys.commerceOwner(user.id),
-            () => findCommerceByOwner(user.id),
-            cacheTTL.COMMERCE_OWNER
+            cacheKeys.canManageCommerce(user.id, commerce_id),
+            () => canManageCommerce(user.id, commerce_id),
+            cacheTTL.CAN_MANAGE_COMMERCE
+          ),
+          c.wrap(
+            cacheKeys.commerceById(commerce_id),
+            () => getCommerceById(commerce_id),
+            cacheTTL.COMMERCE_BY_ID
           ),
         ]);
-
-        if (!queue)
-          return sendError(res, 400, "No queue found for this commerce");
-
-        if (!commerceData || commerceData.id !== commerce_id) {
+        if (!canManage)
           return sendError(
             res,
             403,
             "You don't have permission to manage this queue"
           );
-        }
+
+        if (!queue)
+          return sendError(res, 400, "No queue found for this commerce");
+
+        if (!commerceData) return sendError(res, 400, "Commerce not found");
 
         const removed = await softDeleteNextNParticipants(queue.id, count);
 
@@ -348,28 +355,35 @@ const participantsQueueController = () => {
 
         const c = await cache;
 
-        const [queue, commerceData] = await Promise.all([
+        const [queue, canManage, commerceData] = await Promise.all([
           c.wrap(
             cacheKeys.queueByCommerce(commerce_id),
             () => findQueueByCommerceId(commerce_id),
             cacheTTL.QUEUE_BY_COMMERCE
           ),
           c.wrap(
-            cacheKeys.commerceOwner(user.id),
-            () => findCommerceByOwner(user.id),
-            cacheTTL.COMMERCE_OWNER
+            cacheKeys.canManageCommerce(user.id, commerce_id),
+            () => canManageCommerce(user.id, commerce_id),
+            cacheTTL.CAN_MANAGE_COMMERCE
+          ),
+          c.wrap(
+            cacheKeys.commerceById(commerce_id),
+            () => getCommerceById(commerce_id),
+            cacheTTL.COMMERCE_BY_ID
           ),
         ]);
 
-        if (!queue)
-          return sendError(res, 400, "No queue found for this commerce");
-
-        if (!commerceData || commerceData.id !== commerce_id)
+        if (!canManage)
           return sendError(
             res,
-            403,
+            400,
             "You don't have permission to manage this queue"
           );
+
+        if (!queue)
+          return sendError(res, 403, "No queue found for this commerce");
+
+        if (!commerceData) return sendError(res, 400, "Commerce not found");
 
         const reverted = await reactivateLastDequeued(queue.id, n);
 
@@ -622,30 +636,18 @@ const participantsQueueController = () => {
     streamPosition: async (req: ServerRequest, res: ServerResponse) => {
       try {
         const { commerce_id } = req.params as { commerce_id: string };
-        const { anonymous_id: queryAnonId } = req.query as {
-          anonymous_id?: string;
-        };
-
-        // ── Auth (must happen before hijack so we can still send HTTP errors) ──
-        let userId: string | undefined;
-        let anonymousId: string | undefined;
-
+        const query = req.query as { anonymous_id?: string };
         const jwtToken = getCookie(req.headers.cookie, "digital_queue_jwt");
-        if (jwtToken) {
-          try {
-            const JWT_SECRET = config.get<string>("token.secret");
-            const decoded = jwt.verify(jwtToken, JWT_SECRET) as User;
-            userId = decoded.id;
-          } catch {
-            // expired / invalid — fall through to anonymous
-          }
-        }
-
-        if (!userId) {
-          anonymousId = queryAnonId;
-        }
-
-        if (!userId && !anonymousId) {
+        const userId = jwtToken ? parseToken(jwtToken)?.id : undefined;
+        const anonymousId = query.anonymous_id;
+        // Each branch narrows its own id, so no non-null assertion is needed.
+        const findPosition = userId
+          ? (queueId: string) => findParticipantPosition(userId, queueId)
+          : anonymousId
+            ? (queueId: string) =>
+                findAnonymousParticipantPosition(anonymousId, queueId)
+            : undefined;
+        if (!findPosition) {
           return sendError(res, 401, "Authentication or anonymous_id required");
         }
 
@@ -656,13 +658,10 @@ const participantsQueueController = () => {
           () => findQueueByCommerceId(commerce_id),
           cacheTTL.QUEUE_BY_COMMERCE
         );
-        if (!queue)
-          return sendError(res, 404, "No queue found for this commerce");
+        if (!queue || !queue.active)
+          return sendError(res, 404, "No queue active found for this commerce");
 
-        const getCurrentPosition = () =>
-          userId
-            ? findParticipantPosition(userId!, queue.id)
-            : findAnonymousParticipantPosition(anonymousId!, queue.id);
+        const getCurrentPosition = () => findPosition(queue.id);
 
         // Validate the user is actually in the queue before opening the stream
         const initialPosition = await getCurrentPosition();
@@ -685,7 +684,8 @@ const participantsQueueController = () => {
         // Send initial position immediately
         write({ position: initialPosition, queue_id: queue.id });
 
-        // Heartbeat — keeps the connection alive through Render's idle timeout
+        // Heartbeat: keeps idle proxies (Cloudflare, nginx) from closing the
+        // stream and makes writes fail fast on dead clients, triggering cleanup.
         const heartbeat = setInterval(() => {
           if (res.raw.writable) res.raw.write(": ping\n\n");
         }, 25_000);

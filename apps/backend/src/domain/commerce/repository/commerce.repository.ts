@@ -1,12 +1,30 @@
 import { db } from "../../../infra/database/connect";
-import { NewCommerce, Database } from "../../../infra/database/types";
-import { NearbyCommerce } from "../type";
+import {
+  NewCommerce,
+  Database,
+  CommerceRow,
+  commerceRowColumns,
+} from "../../../infra/database/types";
 import { Kysely, sql } from "kysely";
 import {
   buildPage,
   DEFAULT_PAGE_LIMIT,
   PaginationParams,
 } from "../../../utils/pagination";
+
+// Raw row from the nearby queries: pg returns timestamps as Date and
+// COUNT(*) as a string. The API contract lives in @fila-digital/types.
+export type NearbyCommerce = {
+  commerce_id: string;
+  name: string;
+  description: string | null;
+  queue_id: string;
+  created_at: Date;
+  latitude: number | null;
+  longitude: number | null;
+  participants_waiting: string | number;
+  distance_meters?: number | null;
+};
 
 export const createCommerce = async (commerce: NewCommerce) => {
   return db
@@ -16,11 +34,13 @@ export const createCommerce = async (commerce: NewCommerce) => {
     .executeTakeFirst();
 };
 
-export const getCommerceByDocumentId = async (document_id: string) => {
+export const getCommerceByDocumentId = async (
+  document_hash: string
+): Promise<CommerceRow | undefined> => {
   return db
     .selectFrom("commerce")
-    .selectAll()
-    .where("document_id", "=", document_id)
+    .select(commerceRowColumns)
+    .where("document_id", "=", document_hash)
     .limit(1)
     .executeTakeFirst();
 };
@@ -34,24 +54,17 @@ export const getCommerceById = async (id: string) => {
     .executeTakeFirst();
 };
 
-export const findCommerceById = async (id: string) => {
-  return db
-    .selectFrom("commerce")
-    .selectAll()
-    .where("id", "=", id)
-    .limit(1)
-    .executeTakeFirstOrThrow();
-};
-
 export const updateCommerceByDocumentId = async (
-  document_id: string,
+  document_hash: string,
   data: Record<string, unknown>
 ) => {
   return db
     .updateTable("commerce")
     .set(data)
-    .where("document_id", "=", document_id)
-    .executeTakeFirstOrThrow();
+    .where("document_id", "=", document_hash)
+    .executeTakeFirstOrThrow(
+      () => new Error(`Could not update commerce ${document_hash}`)
+    );
 };
 
 export const updateCommerceById = async (
@@ -62,33 +75,52 @@ export const updateCommerceById = async (
     .updateTable("commerce")
     .set(data)
     .where("id", "=", id)
-    .executeTakeFirstOrThrow();
+    .executeTakeFirstOrThrow(
+      () => new Error(`Could not update commerce ${id}`)
+    );
 };
 
-export const findCommerceIdByUserId = async (id: string) => {
+export const listCommercesByUserId = async (
+  id: string
+): Promise<CommerceRow[]> => {
   return db
     .selectFrom("commerce")
-    .selectAll()
+    .select([
+      "id",
+      "name",
+      "description",
+      "phone",
+      "open_at",
+      "closed_at",
+      "active",
+    ])
     .where("owner_id", "=", id)
     .execute();
 };
 
-export const findCommerceOwnerByUserId = async (id: string) => {
-  return db
-    .selectFrom("commerce")
-    .selectAll()
-    .where("owner_id", "=", id)
-    .limit(1)
-    .executeTakeFirstOrThrow();
-};
-
-export const findCommerceByOwner = async (owner_id: string) => {
-  return db
-    .selectFrom("commerce")
-    .selectAll()
-    .where("owner_id", "=", owner_id)
-    .limit(1)
+export const canManageCommerce = async (
+  person_id: string,
+  commerce_id: string
+): Promise<boolean> => {
+  const row = await db
+    .selectFrom("commerce as c")
+    .select("c.id")
+    .where("c.id", "=", commerce_id)
+    .where("c.active", "=", true)
+    .where((eb) =>
+      eb.or([
+        eb("c.owner_id", "=", person_id),
+        eb.exists(
+          eb
+            .selectFrom("commerce_admins as ca")
+            .select("ca.id")
+            .whereRef("ca.commerce_id", "=", "c.id")
+            .where("ca.person_id", "=", person_id)
+        ),
+      ])
+    )
     .executeTakeFirst();
+  return row !== undefined;
 };
 
 export const countActiveCommercesByOwnerId = async (
