@@ -44,7 +44,16 @@ export const isCommerceAdmin = async (
   return !!row;
 };
 
-export const listCommerceAdmins = async (commerceId: string) => {
+export type CommerceAdminRow = {
+  person_id: string;
+  name: string;
+  email: string;
+  created_at: Date;
+};
+
+export const listCommerceAdmins = async (
+  commerceId: string
+): Promise<CommerceAdminRow[]> => {
   return db
     .selectFrom("commerce_admins as ca")
     .innerJoin("person as p", "p.id", "ca.person_id")

@@ -188,14 +188,9 @@ const participantsQueueController = () => {
           cacheTTL.PARTICIPANTS_LIST
         );
 
-        const participants = page.data.map((p, idx) => ({
-          ...p,
-          position: idx + 1,
-        }));
-
         return res.code(200).send({
           data: {
-            participants,
+            participants: page.data,
             nextCursor: page.nextCursor,
             hasMore: page.hasMore,
           },

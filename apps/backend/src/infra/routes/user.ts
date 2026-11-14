@@ -6,10 +6,15 @@ import { rateLimits } from "../../utils/rateLimits";
 import {
   registerSchema,
   loginSchema,
+  googleLoginSchema,
   refreshTokenSchema,
   logoutSchema,
+  getUserDetailsSchema,
+  getUserCommercesSchema,
+  getUserQueuesSchema,
   updateUserSchema,
   deleteUserSchema,
+  claimAnonymousSchema,
 } from "../schemas/user.schema";
 import { Server } from "../types";
 
@@ -20,7 +25,7 @@ const registerUserRoutes = (server: Server) => {
 
   server.post(
     ROUTES.user.google,
-    { config: { rateLimit: rateLimits.auth } },
+    { schema: googleLoginSchema, config: { rateLimit: rateLimits.auth } },
     googleLoginUseCase.handle
   );
   server.post(
@@ -45,17 +50,17 @@ const registerUserRoutes = (server: Server) => {
   );
   server.get(
     ROUTES.user.details,
-    { config: { rateLimit: rateLimits.read } },
+    { schema: getUserDetailsSchema, config: { rateLimit: rateLimits.read } },
     useCase.getUserInfo
   );
   server.get(
     ROUTES.user.commerces,
-    { config: { rateLimit: rateLimits.read } },
+    { schema: getUserCommercesSchema, config: { rateLimit: rateLimits.read } },
     useCase.getUserCommerces
   );
   server.get(
     ROUTES.user.queues,
-    { config: { rateLimit: rateLimits.read } },
+    { schema: getUserQueuesSchema, config: { rateLimit: rateLimits.read } },
     useCase.listUserQueues
   );
   server.put(
@@ -70,7 +75,7 @@ const registerUserRoutes = (server: Server) => {
   );
   server.post(
     ROUTES.user.claimAnonymous,
-    { config: { rateLimit: rateLimits.write } },
+    { schema: claimAnonymousSchema, config: { rateLimit: rateLimits.write } },
     controller.claimAnonymous
   );
 };

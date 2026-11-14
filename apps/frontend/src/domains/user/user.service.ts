@@ -1,5 +1,5 @@
 import api, { authApi } from "@/lib/api";
-import { User } from "@/types";
+import { AuthResponse, User } from "@/types";
 
 const userService = () => {
   return {
@@ -57,11 +57,7 @@ const userService = () => {
           method: "POST",
           signal: AbortSignal.timeout(10000),
         });
-        const data = (await response.json()) as {
-          access_token: string;
-          refresh_token: string;
-          message?: string;
-        };
+        const data = (await response.json()) as AuthResponse;
         if (!response.ok)
           return { access_token: "", refresh_token: "", message: data.message };
         return data;
@@ -86,11 +82,7 @@ const userService = () => {
           method: "POST",
           signal: AbortSignal.timeout(10000),
         });
-        const data = (await response.json()) as {
-          access_token: string;
-          refresh_token: string;
-          message?: string;
-        };
+        const data = (await response.json()) as AuthResponse;
         if (!response.ok)
           return { access_token: "", refresh_token: "", message: data.message };
         return data;

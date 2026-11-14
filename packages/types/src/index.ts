@@ -96,6 +96,10 @@ export type ApiResponse<T> = {
   message?: string;
 };
 
+export type MessageResponse = {
+  message: string;
+};
+
 export type ErrorResponse = {
   statusCode: number;
   error: string;
@@ -103,9 +107,46 @@ export type ErrorResponse = {
 };
 
 export type AuthResponse = {
-  token: string;
+  access_token: string;
+  refresh_token: string;
   message?: string;
 };
+
+export type RegisterCommerceResponse = {
+  commerce_id: string;
+  name: string;
+  message: string;
+};
+
+export type CommerceListResponse = ApiResponse<{
+  commerces: Commerce[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}>;
+
+export type UserCommercesResponse = {
+  commerces: Commerce[];
+};
+
+export type ListAdminsResponse = ApiResponse<CommerceAdmin[]>;
+
+export type RegisterQueueResponse = {
+  queue: { id: string; commerce_id: string };
+  qrcode: string;
+  message: string;
+};
+
+export type UserQueuesResponse = ApiResponse<{
+  userQueues: UserQueue[];
+}>;
+
+export type ParticipantsListResponse = ApiResponse<{
+  participants: Participant[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}>;
+
+export type QueueScheduleResponse = ApiResponse<QueueSchedule | null>;
 
 // ─── Input types ──────────────────────────────────────────────────────────────
 

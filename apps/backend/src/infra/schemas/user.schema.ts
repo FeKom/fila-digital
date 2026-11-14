@@ -186,3 +186,128 @@ export const logoutSchema: FastifySchema = {
     },
   },
 };
+
+export const googleLoginSchema: FastifySchema = {
+  tags: ["User"],
+  description: "Authenticate a user with a Google ID token",
+  security: [],
+  body: {
+    type: "object",
+    required: ["idToken"],
+    additionalProperties: false,
+    properties: {
+      idToken: { type: "string", minLength: 1 },
+    },
+  },
+  response: {
+    200: {
+      description: "Google login successful",
+      type: "object",
+      properties: {
+        access_token: { type: "string" },
+        refresh_token: { type: "string" },
+        message: { type: "string" },
+      },
+    },
+    400: { description: "Missing idToken", ...errorResponse },
+    401: { description: "Invalid Google token", ...errorResponse },
+    403: { description: "Account disabled", ...errorResponse },
+  },
+};
+
+export const getUserDetailsSchema: FastifySchema = {
+  tags: ["User"],
+  description: "Get the authenticated user's profile",
+  response: {
+    200: {
+      description: "User profile",
+      type: "object",
+      properties: {
+        name: { type: "string" },
+        email: { type: "string" },
+        phone: { type: "string" },
+      },
+    },
+    401: { description: "Unauthorized", ...errorResponse },
+    404: { description: "User not found", ...errorResponse },
+  },
+};
+
+export const getUserCommercesSchema: FastifySchema = {
+  tags: ["User"],
+  description: "List commerces owned by the authenticated user",
+  response: {
+    200: {
+      description: "User commerces",
+      type: "object",
+      properties: {
+        commerces: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              name: { type: "string" },
+              description: { type: "string", nullable: true },
+              phone: { type: "string", nullable: true },
+              open_at: { type: "string", nullable: true },
+              closed_at: { type: "string", nullable: true },
+              active: { type: "boolean" },
+            },
+          },
+        },
+      },
+    },
+    401: { description: "Unauthorized", ...errorResponse },
+  },
+};
+
+export const getUserQueuesSchema: FastifySchema = {
+  tags: ["User"],
+  description: "List active queues the authenticated user is participating in",
+  response: {
+    200: {
+      description: "User queues",
+      type: "object",
+      properties: {
+        message: { type: "string" },
+        data: {
+          type: "object",
+          properties: {
+            userQueues: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  queue_id: { type: "string" },
+                  commerce_id: { type: "string" },
+                  queue_name: { type: "string" },
+                  commerce_name: { type: "string" },
+                  position: { type: "number" },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    401: { description: "Unauthorized", ...errorResponse },
+  },
+};
+
+export const claimAnonymousSchema: FastifySchema = {
+  tags: ["User"],
+  description:
+    "Claim anonymous queue participations for the authenticated user",
+  response: {
+    200: {
+      description: "Anonymous participations claimed",
+      type: "object",
+      properties: {
+        message: { type: "string" },
+      },
+    },
+    400: { description: "Missing X-Anonymous-Id header", ...errorResponse },
+    401: { description: "Unauthorized", ...errorResponse },
+  },
+};

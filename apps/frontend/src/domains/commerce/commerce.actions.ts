@@ -1,7 +1,13 @@
 "use server";
 import commerceService from "@/domains/commerce/commerce.service";
 import { authApi } from "@/lib/api";
-import { Commerce, CommerceAdmin, CommerceInput, UserQueue } from "@/types";
+import {
+  Commerce,
+  CommerceAdmin,
+  CommerceInput,
+  ListAdminsResponse,
+  UserQueue,
+} from "@/types";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -144,7 +150,7 @@ export const listAdmins = async (
 ): Promise<CommerceAdmin[]> => {
   try {
     const response = await authApi(`/commerce/${commerceId}/admins`);
-    const json = (await response.json()) as { data?: CommerceAdmin[] };
+    const json = (await response.json()) as Partial<ListAdminsResponse>;
     return json.data ?? [];
   } catch {
     return [];

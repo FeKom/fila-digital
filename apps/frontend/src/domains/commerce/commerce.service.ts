@@ -1,5 +1,12 @@
 import { authApi } from "@/lib/api";
-import { Commerce, CommerceInput, NearbyCommerce } from "@/types";
+import {
+  Commerce,
+  CommerceInput,
+  CommerceListResponse,
+  NearbyCommerce,
+  RegisterCommerceResponse,
+  UserCommercesResponse,
+} from "@/types";
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_FILA_DIGITAL_BASE_URL ?? "http://localhost:7070";
@@ -14,19 +21,15 @@ const commerceService = () => {
         method: "POST",
         body: JSON.stringify(payload),
       });
-      const json = (await response.json()) as {
-        commerce_id?: string;
-        id?: string;
-        name?: string;
-        message?: string;
-      };
+      const json = (await response.json()) as Partial<RegisterCommerceResponse>;
       if (!response.ok)
         throw new Error(json.message ?? "Failed to register commerce");
-      return { id: json.id ?? json.commerce_id, name: json.name } as Commerce;
+      return { id: json.commerce_id, name: json.name } as Commerce;
     },
     list: async () => {
       const response = await authApi("/commerce");
-      return (await response.json()) as Commerce[];
+      const json = (await response.json()) as Partial<CommerceListResponse>;
+      return json.data?.commerces ?? [];
     },
     getById: async (commerceId: string) => {
       const response = await authApi(`/commerce/${commerceId}`);
@@ -34,7 +37,7 @@ const commerceService = () => {
     },
     getUserCommerces: async () => {
       const response = await authApi("/user/commerces");
-      const json = (await response.json()) as { commerces?: Commerce[] };
+      const json = (await response.json()) as Partial<UserCommercesResponse>;
       return json.commerces ?? [];
     },
     update: async (commerceId: string, data: Partial<CommerceInput>) => {

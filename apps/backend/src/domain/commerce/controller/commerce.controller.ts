@@ -511,10 +511,6 @@ const commerceController = () => {
 
         const commerce = await getCommerceById(commerce_id);
         if (!commerce) return sendError(res, 404, "Commerce not found");
-        if (commerce.owner_id !== user.id) {
-          return sendError(res, 403, "Only the owner can list admins");
-        }
-
         const admins = await listCommerceAdmins(commerce_id);
         return res.code(200).send({ data: admins });
       } catch (error) {
