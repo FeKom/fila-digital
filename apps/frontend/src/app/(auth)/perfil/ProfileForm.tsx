@@ -76,7 +76,8 @@ export default function ProfileForm({ user }: Props) {
           <div
             style={{
               background: "var(--success-bg)",
-              border: "1px solid rgba(74,222,128,0.2)",
+              border:
+                "1px solid color-mix(in srgb, var(--success) 20%, transparent)",
               borderRadius: "8px",
               padding: "0.5rem 0.75rem",
               fontSize: "0.85rem",

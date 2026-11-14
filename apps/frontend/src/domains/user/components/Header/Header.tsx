@@ -7,7 +7,6 @@ const Header = ({ authenticated }: { authenticated: boolean }) => {
       <div className="app-header-inner">
         {/* Logo */}
         <Link href="/" className="app-logo">
-          <span className="app-logo-dot" />
           Fila Digital
         </Link>
 
