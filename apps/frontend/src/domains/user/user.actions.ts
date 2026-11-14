@@ -65,11 +65,11 @@ export const submitLoginForm = async (
             "O servidor está iniciando. Aguarde ~30 segundos e tente novamente.",
         };
       }
-      if (
-        response.message === "User Not Found" ||
-        response.message === "Invalid User"
-      ) {
+      if (response.message === "Invalid credentials") {
         return { error: "E-mail ou senha inválidos." };
+      }
+      if (response.message === "Account disabled") {
+        return { error: "Esta conta foi desativada." };
       }
       return { error: response.message ?? "E-mail ou senha inválidos." };
     }

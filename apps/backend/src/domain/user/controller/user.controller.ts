@@ -1,13 +1,14 @@
-import { Person } from "../../../infra/database/types";
 import { claimAnonymousParticipations } from "../../participants-queue/repository/participants-queue.repository";
 import { ServerRequest, ServerResponse } from "../../../infra/types";
-import jwt from "jsonwebtoken";
 import { randomBytes } from "crypto";
-import { hashPassword, verifyPassword } from "../../../utils/hash";
+import {
+  DUMMY_PASSWORD_HASH,
+  hashPassword,
+  verifyPassword,
+} from "../../../utils/hash";
 import * as userRepo from "../repository/user.repository";
 import * as refreshTokenRepo from "../repository/refresh-token.repository";
-import config from "../../../infra/config";
-import { User } from "../type";
+import { LoginInput, RegisterInput } from "@fila-digital/types";
 import {
   validateEmail,
   validateName,
@@ -17,80 +18,64 @@ import {
 import { logger } from "../../../utils/logger";
 import { uuidv7 } from "uuidv7";
 import { sendError } from "../../../utils/errors";
-
-const ACCESS_TOKEN_TTL = 60 * 15; // 15 minutes
-
-const signAccessToken = (user: {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-}): string =>
-  jwt.sign(
-    { id: user.id, name: user.name, email: user.email, role: user.role },
-    config.get<string>("token.secret"),
-    { expiresIn: ACCESS_TOKEN_TTL }
-  );
+import { signAccessToken } from "../../../utils/token";
 
 const userController = () => {
   return {
     register: async (req: ServerRequest, res: ServerResponse) => {
-      const user = req.body as User;
+      const user = req.body as RegisterInput;
       try {
-        const isValidPassword = validatePassword(user.password);
-        if (!isValidPassword) {
-          sendError(
-            res,
-            400,
-            "Invalid Password. Minimum eight characters, at least one uppercase letter, one lowercase letter, one number and one special character"
-          );
-          return;
-        }
-        const isValidName = validateName(user.name);
-        if (!isValidName) {
-          sendError(res, 400, "Invalid Name");
-          return;
-        }
-        const isValidEmail = validateEmail(user.email);
-        if (!isValidEmail) {
-          sendError(res, 400, "Invalid Email");
-          return;
-        }
-        const isValidPhone = validatePhone(user.phone);
-        if (!isValidPhone) {
-          sendError(res, 400, "Invalid Phone");
-          return;
-        }
-        const userFromDb = await userRepo.getUserByEmail(isValidEmail);
+        const [isValidName, isValidEmail, isValidPhone, isValidPassword] =
+          await Promise.all([
+            validateName(user.name),
+            validateEmail(user.email),
+            validatePhone(user.phone),
+            validatePassword(user.password),
+          ]);
 
-        if (userFromDb) {
-          if (
-            userFromDb.email === isValidEmail ||
-            userFromDb.phone === isValidPhone
-          ) {
-            sendError(res, 409, "User Already Exists");
+        switch (true) {
+          case !isValidPassword:
+            sendError(
+              res,
+              400,
+              "Invalid Password. Minimum eight characters, at least one uppercase letter, one lowercase letter, one number and one special character"
+            );
             return;
-          }
+          case isValidName === "":
+            sendError(res, 400, "Invalid Name");
+            return;
+          case !isValidEmail:
+            sendError(res, 400, "Invalid Email");
+            return;
+          case !isValidPhone:
+            sendError(res, 400, "Invalid Phone");
+            return;
+        }
+        if (await userRepo.emailExists(isValidEmail)) {
+          sendError(res, 409, "User Already Exists");
+          return;
         }
         const hasedPassword = await hashPassword(user.password);
         const anonymousId = req.headers["x-anonymous-id"] as string | undefined;
         const response = await userRepo.createNewUser({
-          ...user,
           id: anonymousId ?? uuidv7(),
+          name: isValidName,
           phone: isValidPhone!,
           email: isValidEmail,
           password: hasedPassword,
         });
-        if (response) {
-          const access_token = signAccessToken(response);
-          const rawRefreshToken = randomBytes(40).toString("hex");
-          await refreshTokenRepo.saveRefreshToken(response.id, rawRefreshToken);
-          res.code(201).send({
-            message: "User Created!",
-            access_token,
-            refresh_token: rawRefreshToken,
-          });
+        if (!response) {
+          sendError(res, 500, "Failed to create User!");
+          return;
         }
+        const access_token = signAccessToken(response);
+        const rawRefreshToken = randomBytes(40).toString("hex");
+        await refreshTokenRepo.saveRefreshToken(response.id, rawRefreshToken);
+        res.code(201).send({
+          message: "User Created!",
+          access_token,
+          refresh_token: rawRefreshToken,
+        });
       } catch (error) {
         logger.error(
           `[User Controller] - something went wrong, error: ${error}`
@@ -99,32 +84,37 @@ const userController = () => {
       }
     },
     login: async (req: ServerRequest, res: ServerResponse) => {
-      const user = req.body as Person;
+      const user = req.body as LoginInput;
       try {
-        const userFromDb = await userRepo.getUserByEmail(
+        const userFromDb = await userRepo.findCredentialsByEmail(
           user.email.toLowerCase()
         );
-        if (!userFromDb) {
-          sendError(res, 404, "User Not Found");
+        // Runs bcrypt even for unknown emails so both failures take as long.
+        const valid = await verifyPassword(
+          user.password,
+          userFromDb?.password ?? DUMMY_PASSWORD_HASH
+        );
+        if (!userFromDb || !valid) {
+          req.log.info(
+            `[User Controller] - login failed: ${userFromDb ? "wrong password" : "unknown email"}`
+          );
+          sendError(res, 401, "Invalid credentials");
           return;
         }
-        const valid = await verifyPassword(user.password, userFromDb.password);
-
-        if (valid) {
-          const access_token = signAccessToken(userFromDb);
-          const rawRefreshToken = randomBytes(40).toString("hex");
-          await refreshTokenRepo.saveRefreshToken(
-            userFromDb.id,
-            rawRefreshToken
-          );
-          res.code(200).send({
-            access_token,
-            refresh_token: rawRefreshToken,
-            message: "success",
-          });
-        } else {
-          sendError(res, 403, "Invalid credentials");
+        // Checked only after the password, so only the owner learns this.
+        if (!userFromDb.active) {
+          sendError(res, 403, "Account disabled");
+          return;
         }
+
+        const access_token = signAccessToken(userFromDb);
+        const rawRefreshToken = randomBytes(40).toString("hex");
+        await refreshTokenRepo.saveRefreshToken(userFromDb.id, rawRefreshToken);
+        res.code(200).send({
+          access_token,
+          refresh_token: rawRefreshToken,
+          message: "success",
+        });
       } catch (error) {
         req.log.error(
           `[User Controller] - something went wrong, error: ${error}`

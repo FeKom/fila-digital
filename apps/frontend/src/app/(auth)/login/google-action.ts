@@ -20,6 +20,9 @@ export const submitGoogleLogin = async (
     const data = await response.json();
 
     if (!response.ok || !data.access_token) {
+      if (data.message === "Account disabled") {
+        return { error: "Esta conta foi desativada." };
+      }
       return { error: data.message ?? "Erro ao autenticar com Google." };
     }
 

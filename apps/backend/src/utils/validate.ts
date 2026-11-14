@@ -46,13 +46,13 @@ export const validateEmail = (email: string): string | false => {
   return email.toLowerCase();
 };
 
-export const validateName = (name: string): boolean => {
+export const validateName = (name: string): string => {
   const trimmedName = name.trim();
   if (trimmedName.length < 2 || trimmedName.length > 100) {
     logger.error(`[Validate Name] - Invalid name length: ${name}`);
-    return false;
+    return "";
   }
-  return true;
+  return trimmedName;
 };
 
 export const validatePassword = (password: string): boolean => {

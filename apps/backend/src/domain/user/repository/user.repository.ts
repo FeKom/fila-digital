@@ -1,5 +1,5 @@
 import { db } from "../../../infra/database/connect";
-import { NewPerson } from "../../../infra/database/types";
+import { NewPerson, Person, PersonUpdate } from "../../../infra/database/types";
 import cache from "../../../infra/database/cache";
 
 export const createNewUser = async (user: NewPerson) => {
@@ -7,14 +7,43 @@ export const createNewUser = async (user: NewPerson) => {
     .insertInto("person")
     .values(user)
     .returningAll()
-    .executeTakeFirstOrThrow();
+    .executeTakeFirstOrThrow(() => new Error("Failed to create user"));
 };
 
-export const getUserByEmail = async (email: string) => {
+// Login only. Deliberately ignores `active`: the controller checks it after
+// the password, so a disabled account is only revealed to its owner.
+export const findCredentialsByEmail = async (
+  email: string
+): Promise<
+  | Pick<Person, "id" | "name" | "email" | "role" | "password" | "active">
+  | undefined
+> => {
   return db
     .selectFrom("person")
-    .selectAll()
+    .select(["id", "name", "email", "role", "password", "active"])
     .where("email", "=", email)
+    .executeTakeFirst();
+};
+
+// Counts disabled accounts too: their email stays taken until reactivation
+// is designed.
+export const emailExists = async (email: string): Promise<boolean> => {
+  const row = await db
+    .selectFrom("person")
+    .select("id")
+    .where("email", "=", email)
+    .executeTakeFirst();
+  return row !== undefined;
+};
+
+export const getUserByEmail = async (
+  email: string
+): Promise<Pick<Person, "id" | "name" | "email"> | undefined> => {
+  return db
+    .selectFrom("person")
+    .select(["id", "name", "email"])
+    .where("email", "=", email)
+    .where("active", "=", true)
     .executeTakeFirst();
 };
 
@@ -26,7 +55,7 @@ export const findUserById = async (id: string) => {
 
 export const updateUserById = async (
   id: string,
-  data: Record<string, unknown>
+  data: Pick<PersonUpdate, "name" | "phone">
 ) => {
   const result = await db
     .updateTable("person")

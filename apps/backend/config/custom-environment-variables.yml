@@ -29,6 +29,8 @@ cache:
   ttl: REDIS_TTL
 token:
   secret: AUTH_TOKEN
+documentHash:
+  secret: DOCUMENT_HASH_SECRET
 cors:
   allowedOrigin: ALLOWED_ORIGIN
 notifications:
