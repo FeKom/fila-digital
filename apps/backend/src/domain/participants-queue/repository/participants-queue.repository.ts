@@ -41,10 +41,14 @@ export const findParticipantsByQueueId = async (
   { cursor, limit = DEFAULT_PAGE_LIMIT }: PaginationParams = {}
 ): Promise<
   PageResult<
-    ParticipantsQueue & { user_id: string | null; person_name: string | null }
+    ParticipantsQueue & {
+      user_id: string | null;
+      person_name: string | null;
+      position: number;
+    }
   >
 > => {
-  let query = db
+  const numbered = db
     .selectFrom("participants_queue as pq")
     .leftJoin("person as p", "p.id", "pq.person_id")
     .select([
@@ -55,14 +59,21 @@ export const findParticipantsByQueueId = async (
       "pq.is_active",
       "pq.created_at",
       "p.name as person_name",
+      sql<number>`ROW_NUMBER() OVER (ORDER BY pq.created_at ASC)::int`.as(
+        "position"
+      ),
     ])
     .where("pq.queue_id", "=", queue_id)
     .where("pq.is_active", "=", true)
-    .orderBy("pq.created_at", "asc")
-    .limit(limit + 1);
+    .as("numbered");
 
+  let query = db
+    .selectFrom(numbered)
+    .selectAll()
+    .orderBy("created_at", "asc")
+    .limit(limit + 1);
   if (cursor) {
-    query = query.where("pq.created_at", ">", new Date(cursor));
+    query = query.where("created_at", ">", new Date(cursor));
   }
 
   const rows = await query.execute();
@@ -72,7 +83,11 @@ export const findParticipantsByQueueId = async (
     limit
   );
   return page as unknown as PageResult<
-    ParticipantsQueue & { user_id: string | null; person_name: string | null }
+    ParticipantsQueue & {
+      user_id: string | null;
+      person_name: string | null;
+      position: number;
+    }
   >;
 };
 

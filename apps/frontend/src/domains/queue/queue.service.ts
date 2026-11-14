@@ -1,5 +1,5 @@
 import { authApi } from "@/lib/api";
-import { Queue, QueueInput } from "@/types";
+import { Queue, QueueInput, RegisterQueueResponse } from "@/types";
 
 const queueService = () => {
   return {
@@ -8,10 +8,8 @@ const queueService = () => {
         method: "POST",
         body: JSON.stringify(data),
       });
-      const json = (await response.json()) as {
-        queue?: Queue;
-        qrcode?: string;
-      } & Partial<Queue>;
+      const json = (await response.json()) as Partial<RegisterQueueResponse> &
+        Partial<Queue>;
       const queue = json.queue ?? (json as Queue);
       return { ...queue, qrcode: json.qrcode } as Queue;
     },

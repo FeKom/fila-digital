@@ -4,10 +4,14 @@ import { rateLimits } from "../../utils/rateLimits";
 import {
   registerCommerceSchema,
   listCommercesSchema,
+  getCommerceByIdSchema,
   updateCommerceSchema,
   deleteCommerceSchema,
   nearbyQueuesSchema,
   searchQueuesSchema,
+  grantAdminSchema,
+  revokeAdminSchema,
+  listAdminsSchema,
 } from "../schemas/commerce.schema";
 import { Server } from "../types";
 
@@ -36,7 +40,7 @@ const registerCommerceRoutes = (server: Server) => {
   );
   server.get(
     ROUTES.commerce.getById,
-    { config: { rateLimit: rateLimits.read } },
+    { schema: getCommerceByIdSchema, config: { rateLimit: rateLimits.read } },
     controller.getById
   );
   server.put(
@@ -51,17 +55,17 @@ const registerCommerceRoutes = (server: Server) => {
   );
   server.post(
     ROUTES.commerce.grantAdmin,
-    { config: { rateLimit: rateLimits.write } },
+    { schema: grantAdminSchema, config: { rateLimit: rateLimits.write } },
     controller.grantAdmin
   );
   server.delete(
     ROUTES.commerce.revokeAdmin,
-    { config: { rateLimit: rateLimits.write } },
+    { schema: revokeAdminSchema, config: { rateLimit: rateLimits.write } },
     controller.revokeAdmin
   );
   server.get(
     ROUTES.commerce.listAdmins,
-    { config: { rateLimit: rateLimits.read } },
+    { schema: listAdminsSchema, config: { rateLimit: rateLimits.read } },
     controller.listAdmins
   );
 };

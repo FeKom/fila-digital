@@ -8,8 +8,10 @@ import {
   Queue,
   QueueInput,
   UserQueue,
+  UserQueuesResponse,
   Participant,
   QueueSchedule,
+  QueueScheduleResponse,
 } from "@/types";
 import { revalidatePath } from "next/cache";
 
@@ -79,7 +81,7 @@ export const getQueueSchedule = async (
 ): Promise<QueueSchedule | null> => {
   try {
     const response = await authApi(`/queue/${commerceId}/${queueId}/schedule`);
-    const json = (await response.json()) as { data?: QueueSchedule | null };
+    const json = (await response.json()) as Partial<QueueScheduleResponse>;
     return json.data ?? null;
   } catch {
     return null;
@@ -151,9 +153,7 @@ export const callNextParticipant = async (commerceId: string) => {
 export const getUserQueues = async (): Promise<UserQueue[]> => {
   try {
     const response = await authApi("/user/queues");
-    const json = (await response.json()) as {
-      data?: { userQueues?: UserQueue[] };
-    };
+    const json = (await response.json()) as Partial<UserQueuesResponse>;
     return json.data?.userQueues ?? [];
   } catch {
     return [];

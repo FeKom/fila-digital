@@ -94,7 +94,20 @@ export const listCommercesByUserId = async (
       "closed_at",
       "active",
     ])
-    .where("owner_id", "=", id)
+    .where("active", "=", true)
+    .where((eb) =>
+      eb.or([
+        eb("owner_id", "=", id),
+        eb(
+          "id",
+          "in",
+          eb
+            .selectFrom("commerce_admins")
+            .select("commerce_id")
+            .where("person_id", "=", id)
+        ),
+      ])
+    )
     .execute();
 };
 

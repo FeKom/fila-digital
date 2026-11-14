@@ -1,13 +1,11 @@
 import { authApi } from "@/lib/api";
-import { Participant } from "@/types";
+import { Participant, ParticipantsListResponse } from "@/types";
 
 const participantService = () => {
   return {
-    list: async (commerceId: string) => {
+    list: async (commerceId: string): Promise<Participant[]> => {
       const response = await authApi(`/participants-queue/${commerceId}`);
-      const json = (await response.json()) as {
-        data?: { participants?: Participant[] };
-      };
+      const json = (await response.json()) as Partial<ParticipantsListResponse>;
       return json.data?.participants ?? [];
     },
     exit: async (commerceId: string) => {

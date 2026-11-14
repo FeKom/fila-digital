@@ -41,7 +41,9 @@ const CommerceDashboard = async ({ params }: Props) => {
       ).id
     : undefined;
 
-  if (currentUserId !== commerce.owner_id) {
+  const isOwner = currentUserId === commerce.owner_id;
+  const isAdmin = admins.some((a) => a.person_id === currentUserId);
+  if (!isOwner && !isAdmin) {
     redirect(`/comercio/${commerce_id}`);
   }
 

@@ -269,3 +269,135 @@ export const updateCommerceSchema: FastifySchema = {
     401: { description: "Unauthorized", ...errorResponse },
   },
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /commerce/:commerce_id/admins
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const listAdminsSchema: FastifySchema = {
+  tags: ["Commerce"],
+  description: "List all admins granted access to a commerce",
+  params: commerceIdParam,
+  response: {
+    200: {
+      description: "Commerce admins list",
+      type: "object",
+      properties: {
+        data: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              person_id: { type: "string" },
+              name: { type: "string" },
+              email: { type: "string" },
+              created_at: { type: "string", format: "date-time" },
+            },
+          },
+        },
+      },
+    },
+    401: { description: "Unauthorized", ...errorResponse },
+    403: { description: "Forbidden", ...errorResponse },
+    404: { description: "Commerce not found", ...errorResponse },
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /commerce/:commerce_id
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const getCommerceByIdSchema: FastifySchema = {
+  tags: ["Commerce"],
+  description: "Get commerce details, address, and active queue",
+  params: commerceIdParam,
+  response: {
+    200: {
+      description: "Commerce details",
+      type: "object",
+      additionalProperties: true,
+      properties: {
+        id: { type: "string" },
+        name: { type: "string" },
+        description: { type: "string", nullable: true },
+        phone: { type: "string", nullable: true },
+        open_at: { type: "string", nullable: true },
+        closed_at: { type: "string", nullable: true },
+        owner_id: { type: "string" },
+        active: { type: "boolean" },
+        address: {
+          type: "object",
+          nullable: true,
+          additionalProperties: true,
+        },
+        queue: {
+          type: "object",
+          nullable: true,
+          additionalProperties: true,
+        },
+      },
+    },
+    404: { description: "Commerce not found", ...errorResponse },
+    500: { description: "Internal error", ...errorResponse },
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /commerce/:commerce_id/admins
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const grantAdminSchema: FastifySchema = {
+  tags: ["Commerce"],
+  description: "Grant commerce admin access by email",
+  params: commerceIdParam,
+  body: {
+    type: "object",
+    required: ["email"],
+    additionalProperties: false,
+    properties: {
+      email: { type: "string", minLength: 5, maxLength: 255 },
+    },
+  },
+  response: {
+    200: {
+      description: "Admin access granted",
+      type: "object",
+      properties: {
+        message: { type: "string" },
+      },
+    },
+    400: { description: "Validation error", ...errorResponse },
+    401: { description: "Unauthorized", ...errorResponse },
+    403: { description: "Forbidden", ...errorResponse },
+    404: { description: "Commerce or user not found", ...errorResponse },
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DELETE /commerce/:commerce_id/admins/:person_id
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const revokeAdminSchema: FastifySchema = {
+  tags: ["Commerce"],
+  description: "Revoke commerce admin access",
+  params: {
+    type: "object",
+    required: ["commerce_id", "person_id"],
+    properties: {
+      commerce_id: { type: "string", minLength: 1 },
+      person_id: { type: "string", minLength: 1 },
+    },
+  },
+  response: {
+    200: {
+      description: "Admin access revoked",
+      type: "object",
+      properties: {
+        message: { type: "string" },
+      },
+    },
+    401: { description: "Unauthorized", ...errorResponse },
+    403: { description: "Forbidden", ...errorResponse },
+    404: { description: "Commerce not found", ...errorResponse },
+  },
+};
