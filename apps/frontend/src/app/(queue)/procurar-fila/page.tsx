@@ -80,12 +80,7 @@ function CommerceCard({ commerce }: { commerce: NearbyCommerce }) {
     >
       <div className="commerce-card-header">
         <span className="commerce-card-name">{commerce.name}</span>
-        <span
-          className="queue-status-badge open"
-          style={{ fontSize: "0.7rem" }}
-        >
-          aberta
-        </span>
+        <span className="fd-badge fd-badge-success">Aberta</span>
       </div>
 
       {commerce.description && (
@@ -201,9 +196,9 @@ export default function SearchQueuePage() {
             disabled={geoState === "loading" || geoState === "done"}
             style={{ whiteSpace: "nowrap" }}
           >
-            {geoState === "idle" && "📍 Usar minha localização"}
+            {geoState === "idle" && "Usar minha localização"}
             {geoState === "loading" && "Detectando..."}
-            {geoState === "done" && "✓ Localização ativada"}
+            {geoState === "done" && "Localização ativada"}
             {geoState === "denied" && "Localização negada"}
             {geoState === "error" && "Não foi possível detectar"}
           </button>

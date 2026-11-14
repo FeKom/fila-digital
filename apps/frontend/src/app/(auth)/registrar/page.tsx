@@ -4,22 +4,6 @@ import { useActionState, useEffect, useState } from "react";
 import { claimAnonymous } from "@/lib/claimAnonymous";
 import { useAnonymousId } from "@/lib/useAnonymousId";
 
-const QueueDots = () => (
-  <div className="auth-queue-grid" aria-hidden="true">
-    {Array.from({ length: 8 }).map((_, col) => (
-      <div key={col} className="auth-queue-col">
-        {Array.from({ length: 20 }).map((_, row) => (
-          <div
-            key={row}
-            className="auth-queue-dot"
-            style={{ animationDelay: `${(col * 0.18 + row * 0.09) % 2.4}s` }}
-          />
-        ))}
-      </div>
-    ))}
-  </div>
-);
-
 const Register = () => {
   const [state, action, pending] = useActionState(submitRegisterForm, {
     error: null,
@@ -40,7 +24,6 @@ const Register = () => {
     <div className="auth-layout">
       {/* Brand panel */}
       <div className="auth-panel-brand">
-        <QueueDots />
         <div>
           <p className="auth-brand-tagline">Sistema de filas</p>
           <h1 className="auth-brand-text">
@@ -48,10 +31,7 @@ const Register = () => {
             <span className="auth-brand-accent">Digital</span>
           </h1>
         </div>
-        <div className="auth-brand-badge">
-          <span className="auth-brand-badge-dot" />
-          Comece a gerenciar suas filas
-        </div>
+        <div className="auth-brand-badge">Comece a gerenciar suas filas</div>
       </div>
 
       {/* Form panel */}
@@ -136,14 +116,14 @@ const Register = () => {
                   fill="none"
                   aria-hidden="true"
                 >
-                  <circle cx="7" cy="7" r="6.5" stroke="#dc2626" />
+                  <circle cx="7" cy="7" r="6.5" stroke="currentColor" />
                   <path
                     d="M7 4v3.5"
-                    stroke="#dc2626"
+                    stroke="currentColor"
                     strokeWidth="1.2"
                     strokeLinecap="round"
                   />
-                  <circle cx="7" cy="10" r="0.7" fill="#dc2626" />
+                  <circle cx="7" cy="10" r="0.7" fill="currentColor" />
                 </svg>
                 {state.error}
               </div>

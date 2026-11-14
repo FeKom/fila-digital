@@ -12,9 +12,7 @@ const QueuePositionCard = ({
 }: QueuePositionCardProps): React.ReactElement => {
   return (
     <Link href={`/comercio/${queue.commerce_id}`} className="group block">
-      <Card className="relative h-full overflow-hidden border-0 ring-1 ring-primary/15 transition-all duration-200 hover:shadow-[0_0_24px_rgba(121,158,255,0.08)] hover:ring-primary/35">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent" />
-
+      <Card className="relative h-full overflow-hidden border border-border transition-colors duration-150 hover:border-primary/40">
         <CardContent className="pt-5 pb-5">
           <div className="mb-4 flex items-start justify-between gap-2">
             <div className="min-w-0">
@@ -25,9 +23,8 @@ const QueuePositionCard = ({
                 {queue.commerce_name}
               </p>
             </div>
-            <span className="relative mt-1 flex h-2.5 w-2.5 shrink-0">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-50" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary" />
+            <span className="shrink-0 font-mono text-[11px] font-semibold tracking-wider text-text-3 uppercase">
+              Ativa
             </span>
           </div>
 

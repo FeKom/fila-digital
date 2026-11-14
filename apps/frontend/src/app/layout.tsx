@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   description:
     "Gerencie filas do seu comércio ou entre em uma fila de qualquer lugar.",
   manifest: "/manifest.json",
-  themeColor: "#799eff",
+  themeColor: "#002d67",
 };
 
 export default async function RootLayout({

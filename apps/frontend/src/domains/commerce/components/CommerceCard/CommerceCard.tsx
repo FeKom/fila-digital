@@ -19,20 +19,18 @@ const CommerceCard = ({ commerce }: CommerceCardProps) => {
   const hasQueue = !!commerce.queue;
 
   return (
-    <Link href={`/comercio/${commerce.id}/dashboard`} className="block group">
+    <Link href={`/comercio/${commerce.id}/dashboard`} className="group block">
       <Card
         className={cn(
-          "relative h-full transition-all duration-200 border-0",
-          "ring-1 hover:ring-2",
+          "relative h-full border border-border transition-colors duration-150",
           hasQueue && isOpen
-            ? "ring-success/20 hover:ring-success/40 shadow-[0_0_20px_rgba(74,222,128,0.04)]"
-            : "ring-foreground/8 hover:ring-primary/30 hover:shadow-[0_0_20px_rgba(121,158,255,0.06)]"
+            ? "hover:border-success/50"
+            : "hover:border-primary/40"
         )}
       >
-        {/* Status bar */}
         <div
           className={cn(
-            "absolute top-0 left-0 right-0 h-[2px] transition-opacity",
+            "absolute top-0 right-0 left-0 h-[2px] transition-opacity",
             hasQueue && isOpen ? "bg-success opacity-70" : "bg-muted opacity-0"
           )}
         />
@@ -41,7 +39,7 @@ const CommerceCard = ({ commerce }: CommerceCardProps) => {
           <div className="flex items-start justify-between gap-2">
             <CardTitle
               className={cn(
-                "text-sm font-semibold leading-tight transition-colors",
+                "text-sm leading-tight font-semibold transition-colors",
                 "group-hover:text-primary"
               )}
             >
@@ -51,10 +49,10 @@ const CommerceCard = ({ commerce }: CommerceCardProps) => {
             {hasQueue && (
               <span
                 className={cn(
-                  "shrink-0 mt-0.5 text-[10px] font-semibold tracking-wide px-2 py-0.5 rounded-full",
+                  "mt-0.5 shrink-0 rounded-[4px] border px-1.5 py-0.5 font-mono text-[10px] font-semibold tracking-wide uppercase",
                   isOpen
-                    ? "bg-success/10 text-success"
-                    : "bg-muted text-muted-foreground"
+                    ? "border-success/25 bg-success/10 text-success"
+                    : "border-border bg-muted text-muted-foreground"
                 )}
               >
                 {isOpen ? "Aberta" : "Fechada"}
@@ -70,7 +68,7 @@ const CommerceCard = ({ commerce }: CommerceCardProps) => {
         </CardHeader>
 
         <CardContent className="pb-4">
-          <div className="flex items-center justify-between mt-1">
+          <div className="mt-1 flex items-center justify-between">
             {commerce.open_at && commerce.closed_at ? (
               <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                 <Clock size={10} className="shrink-0" />
@@ -85,8 +83,8 @@ const CommerceCard = ({ commerce }: CommerceCardProps) => {
             <ChevronRight
               size={13}
               className={cn(
-                "text-muted-foreground/30 transition-all duration-200",
-                "group-hover:text-primary group-hover:translate-x-0.5"
+                "text-muted-foreground/40 transition-transform duration-150",
+                "group-hover:translate-x-0.5 group-hover:text-primary"
               )}
             />
           </div>

@@ -88,25 +88,33 @@ const CommerceDashboard = async ({
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="dash-grid-3 section-gap">
-        <div className="stat-card">
-          <div className="stat-label">Telefone</div>
-          <div className="stat-value">{commerce.phone ?? "—"}</div>
+      {/* Editorial Metadata Strip */}
+      <dl className="section-gap grid grid-cols-1 gap-4 border-y border-border py-4 sm:grid-cols-3 sm:divide-x sm:divide-border">
+        <div>
+          <dt className="font-mono text-xs font-semibold tracking-wider text-text-3 uppercase">
+            Telefone
+          </dt>
+          <dd className="mt-1 text-sm font-medium text-text-1">
+            {commerce.phone ?? "—"}
+          </dd>
         </div>
-        <div className="stat-card">
-          <div className="stat-label">CNPJ</div>
-          <div className="stat-value">Cadastrado</div>
+        <div className="sm:pl-5">
+          <dt className="font-mono text-xs font-semibold tracking-wider text-text-3 uppercase">
+            CNPJ
+          </dt>
+          <dd className="mt-1 text-sm font-medium text-text-1">Cadastrado</dd>
         </div>
-        <div className="stat-card">
-          <div className="stat-label">Horário</div>
-          <div className="stat-value">
+        <div className="sm:pl-5">
+          <dt className="font-mono text-xs font-semibold tracking-wider text-text-3 uppercase">
+            Horário
+          </dt>
+          <dd className="mt-1 text-sm font-medium text-text-1">
             {commerce.open_at && commerce.closed_at
               ? `${commerce.open_at} — ${commerce.closed_at}`
               : "—"}
-          </div>
+          </dd>
         </div>
-      </div>
+      </dl>
 
       {/* Admins section */}
       <div className="mt-6">

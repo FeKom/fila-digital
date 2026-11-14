@@ -34,19 +34,12 @@ const ParticipantList = ({
                 </span>
               </td>
               <td>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-                      participant.user_id ? "bg-primary" : "bg-text-3"
-                    }`}
-                  />
-                  <span className="font-mono text-xs text-text-2">
-                    {participant.user_id
-                      ? (participant.person_name ??
-                        `Usuário: ${participant.user_id.slice(0, 8)}...`)
-                      : `Anônimo: ${participant.anonymous_id?.slice(0, 8) ?? "?"}...`}
-                  </span>
-                </div>
+                <span className="font-mono text-xs text-text-2">
+                  {participant.user_id
+                    ? (participant.person_name ??
+                      `[Conta] ${participant.user_id.slice(0, 8)}...`)
+                    : `[Anônimo] ${participant.anonymous_id?.slice(0, 8) ?? "?"}...`}
+                </span>
               </td>
             </tr>
           ))}

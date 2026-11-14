@@ -20,7 +20,7 @@ describe("QueueStanchions", () => {
       "called"
     );
     expect(screen.getByText("Sua vez chegou")).toBeInTheDocument();
-    expect(screen.getByText("SUA VEZ!")).toBeInTheDocument();
+    expect(screen.getByText("SUA VEZ")).toBeInTheDocument();
     expect(screen.getByText("PASSE")).toBeInTheDocument();
   });
 

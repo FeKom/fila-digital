@@ -6,7 +6,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import CommerceCard from "@/domains/commerce/components/CommerceCard/CommerceCard";
 import QueuePositionCard from "@/domains/queue/components/QueuePositionCard/QueuePositionCard";
 import EmptyState from "@/components/EmptyState/EmptyState";
-import { Store, ListOrdered } from "lucide-react";
 
 type Props = {
   commerces: Commerce[];
@@ -22,59 +21,50 @@ export function MeusComerciosDashboard({ commerces, queues }: Props) {
   return (
     <div className="page-container">
       {/* Page header */}
-      <div className="flex flex-col gap-1 mb-8">
+      <div className="mb-8 flex flex-col gap-1">
         <h1 className="page-title">Minha área</h1>
         <p className="text-sm text-muted-foreground">
           Gerencie seus comércios e acompanhe suas filas
         </p>
 
-        {/* Quick stats */}
         {(commerces.length > 0 || queues.length > 0) && (
-          <div className="flex items-center gap-3 mt-3">
+          <p className="mt-2 font-mono text-xs text-text-2">
             {commerces.length > 0 && (
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-full">
-                <Store size={11} />
-                <span>
-                  {commerces.length}{" "}
-                  {commerces.length === 1 ? "comércio" : "comércios"}
-                </span>
-                {openCommerces > 0 && (
-                  <span className="text-success font-medium">
-                    · {openCommerces} aberto{openCommerces > 1 ? "s" : ""}
-                  </span>
-                )}
-              </div>
+              <>
+                {commerces.length}{" "}
+                {commerces.length === 1 ? "comércio" : "comércios"}
+                {openCommerces > 0 &&
+                  ` · ${openCommerces} aberto${openCommerces > 1 ? "s" : ""}`}
+              </>
             )}
+            {commerces.length > 0 && queues.length > 0 && " · "}
             {queues.length > 0 && (
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-full">
-                <ListOrdered size={11} />
-                <span>
-                  {openQueues} fila{openQueues !== 1 ? "s" : ""} ativa
-                  {openQueues !== 1 ? "s" : ""}
-                </span>
-              </div>
+              <>
+                {openQueues} fila{openQueues !== 1 ? "s" : ""} ativa
+                {openQueues !== 1 ? "s" : ""}
+              </>
             )}
-          </div>
+          </p>
         )}
       </div>
 
       {/* Tabs */}
       <Tabs defaultValue="comercios">
-        <div className="flex items-center justify-between mb-5">
+        <div className="mb-5 flex items-center justify-between">
           <TabsList variant="line">
             <TabsTrigger value="comercios">
               Comércios
               {commerces.length > 0 && (
-                <span className="ml-1.5 text-[10px] tabular-nums bg-primary/15 text-primary px-1.5 py-0.5 rounded-full font-semibold">
-                  {commerces.length}
+                <span className="ml-1.5 font-mono text-xs text-muted-foreground tabular-nums">
+                  ({commerces.length})
                 </span>
               )}
             </TabsTrigger>
             <TabsTrigger value="filas">
               Posições em fila
               {queues.length > 0 && (
-                <span className="ml-1.5 text-[10px] tabular-nums bg-primary/15 text-primary px-1.5 py-0.5 rounded-full font-semibold">
-                  {queues.length}
+                <span className="ml-1.5 font-mono text-xs text-muted-foreground tabular-nums">
+                  ({queues.length})
                 </span>
               )}
             </TabsTrigger>
@@ -107,15 +97,15 @@ export function MeusComerciosDashboard({ commerces, queues }: Props) {
         <TabsContent value="filas">
           {queues.length > 0 ? (
             <div className="dash-grid-2">
-              {queues.map((queue) => (
-                <QueuePositionCard key={queue.queue_id} queue={queue} />
+              {queues.map((q) => (
+                <QueuePositionCard key={q.queue_id} queue={q} />
               ))}
             </div>
           ) : (
             <EmptyState
-              message="Você não está em nenhuma fila no momento."
-              ctaLabel="Entrar em uma fila"
-              ctaHref="/entrar-fila"
+              message="Você não está aguardando em nenhuma fila no momento."
+              ctaLabel="Procurar fila"
+              ctaHref="/procurar-fila"
             />
           )}
         </TabsContent>

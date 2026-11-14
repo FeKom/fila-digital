@@ -106,12 +106,7 @@ function CommerceCard({ commerce }: { commerce: NearbyCommerce }) {
     >
       <div className="commerce-card-header">
         <span className="commerce-card-name">{commerce.name}</span>
-        <span
-          className="queue-status-badge open"
-          style={{ fontSize: "0.7rem" }}
-        >
-          fila aberta
-        </span>
+        <span className="fd-badge fd-badge-success">Fila aberta</span>
       </div>
 
       {commerce.description && (
@@ -129,7 +124,7 @@ function CommerceCard({ commerce }: { commerce: NearbyCommerce }) {
             textDecoration: "none",
           }}
         >
-          📍 Ver no mapa
+          Ver no mapa
         </a>
       )}
 

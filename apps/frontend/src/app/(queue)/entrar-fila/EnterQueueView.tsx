@@ -285,11 +285,9 @@ export default function EnterQueueView({
       {queue ? (
         <>
           <div className="flex items-center gap-2">
-            <span
-              className={`queue-status-badge ${queue.status === "open" ? "open" : "closed"}`}
-            >
+            <Badge variant={queue.status === "open" ? "success" : "error"}>
               Fila {queue.status === "open" ? "aberta" : "fechada"}
-            </span>
+            </Badge>
             {queue.name && (
               <span className="text-xs text-text-3">{queue.name}</span>
             )}
