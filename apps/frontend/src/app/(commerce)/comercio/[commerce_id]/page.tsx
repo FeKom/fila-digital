@@ -1,13 +1,17 @@
+import React from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCommerce } from "@/domains/commerce/commerce.actions";
 import { Badge } from "@/components/Badge";
+import { QueueStanchions } from "@/domains/queue/components/QueueStanchions";
 
 type Props = {
   params: Promise<{ commerce_id: string }>;
 };
 
-const CommercePublicPage = async ({ params }: Props) => {
+const CommercePublicPage = async ({
+  params,
+}: Props): Promise<React.ReactElement> => {
   const { commerce_id } = await params;
   const commerce = await getCommerce(commerce_id);
 
@@ -33,7 +37,7 @@ const CommercePublicPage = async ({ params }: Props) => {
   return (
     <div className="page-container-sm">
       {/* Header */}
-      <div style={{ marginBottom: "1.5rem" }}>
+      <div className="mb-6">
         <h1 className="page-title">{commerce.name}</h1>
         {commerce.description && (
           <p className="page-subtitle">{commerce.description}</p>
@@ -41,90 +45,39 @@ const CommercePublicPage = async ({ params }: Props) => {
       </div>
 
       {/* Info card */}
-      <div
-        style={{
-          background: "var(--bg-surface)",
-          border: "1px solid var(--border)",
-          borderRadius: "16px",
-          padding: "1.5rem",
-          display: "flex",
-          flexDirection: "column",
-          gap: "1rem",
-          marginBottom: "1rem",
-        }}
-      >
+      <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-border bg-bg-surface p-6">
         {(commerce.open_at || commerce.closed_at) && (
-          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-            <span style={{ fontSize: "0.8rem", color: "var(--text-3)" }}>
-              Horário:
-            </span>
-            <span style={{ fontSize: "0.9rem", color: "var(--text-1)" }}>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-text-3">Horário:</span>
+            <span className="text-sm text-text-1">
               {commerce.open_at} — {commerce.closed_at}
             </span>
           </div>
         )}
 
         {commerce.phone && (
-          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-            <span style={{ fontSize: "0.8rem", color: "var(--text-3)" }}>
-              Telefone:
-            </span>
-            <span style={{ fontSize: "0.9rem", color: "var(--text-1)" }}>
-              {commerce.phone}
-            </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-text-3">Telefone:</span>
+            <span className="text-sm text-text-1">{commerce.phone}</span>
           </div>
         )}
 
         {addressLine && (
-          <div
-            style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start" }}
-          >
-            <span
-              style={{
-                fontSize: "0.8rem",
-                color: "var(--text-3)",
-                whiteSpace: "nowrap",
-              }}
-            >
+          <div className="flex items-start gap-2">
+            <span className="shrink-0 text-xs font-medium text-text-3">
               Endereço:
             </span>
-            <span style={{ fontSize: "0.9rem", color: "var(--text-1)" }}>
-              {addressLine}
-            </span>
+            <span className="text-sm text-text-1">{addressLine}</span>
           </div>
         )}
       </div>
 
       {/* Queue status + join */}
-      {queue && (
-        <div
-          style={{
-            background: "var(--bg-surface)",
-            border: "1px solid var(--border)",
-            borderRadius: "16px",
-            padding: "1.5rem",
-            display: "flex",
-            flexDirection: "column",
-            gap: "1rem",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <span
-              style={{
-                fontSize: "0.75rem",
-                fontWeight: 700,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                color: "var(--text-3)",
-              }}
-            >
-              Fila
+      {queue ? (
+        <div className="flex flex-col gap-4 rounded-2xl border border-border bg-bg-surface p-6">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold tracking-widest text-text-3 uppercase">
+              Fila de atendimento
             </span>
             <Badge variant={queue.status === "open" ? "success" : "error"}>
               {queue.status === "open" ? "Aberta" : "Fechada"}
@@ -132,40 +85,28 @@ const CommercePublicPage = async ({ params }: Props) => {
           </div>
 
           {queue.name && (
-            <p
-              style={{ fontSize: "0.9rem", color: "var(--text-2)", margin: 0 }}
-            >
-              {queue.name}
-            </p>
+            <p className="m-0 text-sm font-medium text-text-2">{queue.name}</p>
           )}
 
           {queue.status === "open" ? (
-            <Link
-              href={`/entrar-fila?commerceId=${commerce_id}&mode=search`}
-              className="fd-btn fd-btn-primary"
-              style={{ textAlign: "center" }}
-            >
-              Entrar na fila
-            </Link>
+            <>
+              <QueueStanchions position={1} status="waiting" />
+              <Link
+                href={`/entrar-fila?commerceId=${commerce_id}&mode=search`}
+                className="fd-btn fd-btn-primary text-center"
+              >
+                Entrar na fila
+              </Link>
+            </>
           ) : (
-            <p style={{ fontSize: "0.875rem", color: "var(--text-3)" }}>
+            <p className="text-sm text-text-3">
               A fila está fechada no momento.
             </p>
           )}
         </div>
-      )}
-
-      {!queue && (
-        <div
-          style={{
-            background: "var(--bg-surface)",
-            border: "1px solid var(--border)",
-            borderRadius: "16px",
-            padding: "1.5rem",
-            textAlign: "center",
-          }}
-        >
-          <p style={{ fontSize: "0.875rem", color: "var(--text-3)" }}>
+      ) : (
+        <div className="rounded-2xl border border-border bg-bg-surface p-6 text-center">
+          <p className="text-sm text-text-3">
             Este comércio não tem uma fila ativa.
           </p>
         </div>

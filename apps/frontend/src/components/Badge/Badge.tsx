@@ -1,23 +1,35 @@
-import { cnJoin } from "@/utils/cnjoin";
+import React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "@/lib/utils";
 
-type BadgeProps = {
+export const badgeVariants = cva("fd-badge", {
+  variants: {
+    variant: {
+      primary: "fd-badge-primary",
+      secondary: "fd-badge-primary",
+      info: "fd-badge-primary",
+      success: "fd-badge-success",
+      error: "fd-badge-error",
+      warning: "fd-badge-warning",
+    },
+  },
+  defaultVariants: {
+    variant: "primary",
+  },
+});
+
+export type BadgeProps = {
   children: React.ReactNode;
-  variant?: "success" | "error" | "warning" | "info" | "primary" | "secondary";
   className?: string;
-};
+} & VariantProps<typeof badgeVariants>;
 
-const Badge = ({ children, variant = "primary", className }: BadgeProps) => {
-  const variantMap: Record<string, string> = {
-    success: "fd-badge-success",
-    error: "fd-badge-error",
-    warning: "fd-badge-warning",
-    info: "fd-badge-primary",
-    primary: "fd-badge-primary",
-    secondary: "fd-badge-primary",
-  };
-
+const Badge = ({
+  children,
+  variant = "primary",
+  className,
+}: BadgeProps): React.ReactElement => {
   return (
-    <span className={cnJoin("fd-badge", variantMap[variant], className)}>
+    <span className={cn(badgeVariants({ variant }), className)}>
       {children}
     </span>
   );
