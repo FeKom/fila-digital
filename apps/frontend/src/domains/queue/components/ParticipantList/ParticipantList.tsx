@@ -1,31 +1,27 @@
+import React from "react";
 import { Participant } from "@/types";
 
 type ParticipantListProps = {
   participants: Participant[];
 };
 
-const ParticipantList = ({ participants }: ParticipantListProps) => {
+const ParticipantList = ({
+  participants,
+}: ParticipantListProps): React.ReactElement => {
   if (participants.length === 0) {
     return (
-      <p
-        style={{
-          fontSize: "0.875rem",
-          color: "var(--text-2)",
-          textAlign: "center",
-          padding: "2rem 0",
-        }}
-      >
+      <p className="py-8 text-center text-sm text-text-2">
         Nenhum participante na fila.
       </p>
     );
   }
 
   return (
-    <div style={{ overflowX: "auto" }}>
+    <div className="overflow-x-auto">
       <table className="fd-table">
         <thead>
           <tr>
-            <th style={{ width: "80px" }}>Posição</th>
+            <th className="w-20">Posição</th>
             <th>Identificação</th>
           </tr>
         </thead>
@@ -33,43 +29,18 @@ const ParticipantList = ({ participants }: ParticipantListProps) => {
           {participants.map((participant) => (
             <tr key={participant.id}>
               <td>
-                <span
-                  style={{
-                    fontFamily: "var(--font-mono)",
-                    fontSize: "1.1rem",
-                    fontWeight: 700,
-                    color: "var(--primary)",
-                  }}
-                >
+                <span className="font-mono text-lg font-bold text-primary">
                   #{participant.position}
                 </span>
               </td>
               <td>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                  }}
-                >
+                <div className="flex items-center gap-2">
                   <span
-                    style={{
-                      width: "6px",
-                      height: "6px",
-                      borderRadius: "50%",
-                      background: participant.user_id
-                        ? "var(--primary)"
-                        : "var(--text-3)",
-                      flexShrink: 0,
-                    }}
+                    className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                      participant.user_id ? "bg-primary" : "bg-text-3"
+                    }`}
                   />
-                  <span
-                    style={{
-                      color: "var(--text-2)",
-                      fontFamily: "var(--font-mono)",
-                      fontSize: "0.8rem",
-                    }}
-                  >
+                  <span className="font-mono text-xs text-text-2">
                     {participant.user_id
                       ? (participant.person_name ??
                         `Usuário: ${participant.user_id.slice(0, 8)}...`)

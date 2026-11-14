@@ -1,16 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CommerceAdmin } from "@/types";
 import { grantAdmin, revokeAdmin } from "@/domains/commerce/commerce.actions";
+import { Button } from "@/components/Button";
 
 type Props = {
   commerceId: string;
   initialAdmins: CommerceAdmin[];
 };
 
-function formatDate(iso: string) {
+function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "2-digit",
@@ -18,7 +19,10 @@ function formatDate(iso: string) {
   });
 }
 
-export default function AdminsCard({ commerceId, initialAdmins }: Props) {
+export default function AdminsCard({
+  commerceId,
+  initialAdmins,
+}: Props): React.ReactElement {
   const router = useRouter();
   const [admins, setAdmins] = useState<CommerceAdmin[]>(initialAdmins);
   const [email, setEmail] = useState("");
@@ -27,12 +31,14 @@ export default function AdminsCard({ commerceId, initialAdmins }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const showSuccess = (msg: string) => {
+  const showSuccess = (msg: string): void => {
     setSuccess(msg);
     setTimeout(() => setSuccess(null), 3000);
   };
 
-  const handleGrant = async (e: React.SyntheticEvent<HTMLFormElement>) => {
+  const handleGrant = async (
+    e: React.SyntheticEvent<HTMLFormElement>
+  ): Promise<void> => {
     e.preventDefault();
     if (!email.trim()) return;
     setLoading(true);
@@ -48,7 +54,10 @@ export default function AdminsCard({ commerceId, initialAdmins }: Props) {
     setLoading(false);
   };
 
-  const handleRevoke = async (personId: string, name: string) => {
+  const handleRevoke = async (
+    personId: string,
+    name: string
+  ): Promise<void> => {
     setRevoking(personId);
     setError(null);
     const result = await revokeAdmin(commerceId, personId);
@@ -63,161 +72,69 @@ export default function AdminsCard({ commerceId, initialAdmins }: Props) {
   };
 
   return (
-    <div
-      style={{
-        background: "var(--bg-surface)",
-        border: "1px solid var(--border)",
-        borderRadius: "16px",
-        padding: "1.5rem",
-        display: "flex",
-        flexDirection: "column",
-        gap: "1.25rem",
-      }}
-    >
-      {/* Header */}
-      <p
-        style={{
-          fontSize: "0.75rem",
-          fontWeight: 700,
-          letterSpacing: "0.1em",
-          textTransform: "uppercase",
-          color: "var(--text-3)",
-          margin: 0,
-        }}
-      >
+    <div className="flex flex-col gap-5 rounded-2xl border border-border bg-bg-surface p-6">
+      <p className="m-0 text-xs font-bold tracking-widest text-text-3 uppercase">
         Administradores
       </p>
 
-      {/* Grant form */}
-      <form
-        onSubmit={handleGrant}
-        style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}
-      >
+      <form onSubmit={handleGrant} className="flex items-center gap-2">
         <input
           type="email"
-          className="fd-input"
+          className="fd-input flex-1 text-sm"
           placeholder="E-mail do usuário"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={loading}
-          style={{ flex: 1, fontSize: "0.85rem" }}
         />
-        <button
+        <Button
           type="submit"
-          className="fd-btn fd-btn-primary fd-btn-sm"
+          intent="primary"
+          size="sm"
           disabled={loading || !email.trim()}
         >
           {loading ? "..." : "Adicionar"}
-        </button>
+        </Button>
       </form>
 
-      {/* Admin list */}
       {admins.length === 0 ? (
-        <p
-          style={{
-            fontSize: "0.85rem",
-            color: "var(--text-3)",
-            margin: 0,
-            textAlign: "center",
-            padding: "0.5rem 0",
-          }}
-        >
+        <p className="m-0 py-2 text-center text-sm text-text-3">
           Nenhum administrador cadastrado.
         </p>
       ) : (
-        <div
-          style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}
-        >
+        <div className="flex flex-col gap-2">
           {admins.map((admin) => (
             <div
               key={admin.person_id}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "0.6rem 0.75rem",
-                background: "var(--bg-base)",
-                borderRadius: "10px",
-                border: "1px solid var(--border)",
-                gap: "0.75rem",
-              }}
+              className="flex items-center justify-between gap-3 rounded-xl border border-border bg-bg-page px-3 py-2.5"
             >
-              <div style={{ minWidth: 0 }}>
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: "0.875rem",
-                    fontWeight: 600,
-                    color: "var(--text-1)",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
+              <div className="min-w-0">
+                <p className="m-0 truncate text-sm font-semibold text-text-1">
                   {admin.name}
                 </p>
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: "0.75rem",
-                    color: "var(--text-2)",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
+                <p className="m-0 truncate text-xs text-text-2">
                   {admin.email}
                 </p>
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: "0.7rem",
-                    color: "var(--text-3)",
-                    fontFamily: "var(--font-mono)",
-                  }}
-                >
+                <p className="m-0 font-mono text-xs text-text-3">
                   Admin desde {formatDate(admin.created_at)}
                 </p>
               </div>
-              <button
-                className="fd-btn fd-btn-sm"
-                style={{
-                  flexShrink: 0,
-                  background: "transparent",
-                  border: "1px solid var(--error)",
-                  color: "var(--error)",
-                  fontSize: "0.75rem",
-                }}
+              <Button
+                type="button"
+                intent="danger"
+                size="sm"
+                className="shrink-0"
                 disabled={revoking === admin.person_id}
                 onClick={() => handleRevoke(admin.person_id, admin.name)}
               >
                 {revoking === admin.person_id ? "..." : "Remover"}
-              </button>
+              </Button>
             </div>
           ))}
         </div>
       )}
 
-      {/* Feedback */}
-      {error && (
-        <div className="fd-alert-error" style={{ fontSize: "0.85rem" }}>
-          {error}
-        </div>
-      )}
-      {success && (
-        <div
-          style={{
-            background: "var(--success-bg)",
-            border: "1px solid rgba(74,222,128,0.2)",
-            borderRadius: "8px",
-            padding: "0.5rem 0.75rem",
-            fontSize: "0.85rem",
-            color: "var(--success)",
-          }}
-        >
-          {success}
-        </div>
-      )}
+      {error && <div className="fd-alert-error text-sm">{error}</div>}
+      {success && <p className="m-0 text-sm text-success">{success}</p>}
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import React from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
@@ -21,7 +22,9 @@ type Props = {
   params: Promise<{ commerce_id: string }>;
 };
 
-const CommerceDashboard = async ({ params }: Props) => {
+const CommerceDashboard = async ({
+  params,
+}: Props): Promise<React.ReactElement> => {
   const { commerce_id } = await params;
   const [commerce, participants, admins] = await Promise.all([
     getCommerce(commerce_id),
@@ -51,7 +54,7 @@ const CommerceDashboard = async ({ params }: Props) => {
     ? await getQueueSchedule(commerce_id, commerce.queue.id)
     : null;
 
-  const deleteAction = async () => {
+  const deleteAction = async (): Promise<void> => {
     "use server";
     await deleteCommerce(commerce_id);
   };
@@ -75,11 +78,13 @@ const CommerceDashboard = async ({ params }: Props) => {
           >
             Editar
           </Link>
-          <form action={deleteAction}>
-            <Button type="submit" intent="error" size="sm">
-              Excluir
-            </Button>
-          </form>
+          {isOwner && (
+            <form action={deleteAction}>
+              <Button type="submit" intent="error" size="sm">
+                Excluir
+              </Button>
+            </form>
+          )}
         </div>
       </div>
 
@@ -91,7 +96,7 @@ const CommerceDashboard = async ({ params }: Props) => {
         </div>
         <div className="stat-card">
           <div className="stat-label">CNPJ</div>
-          <div className="stat-value">Cadastrado ✓</div>
+          <div className="stat-value">Cadastrado</div>
         </div>
         <div className="stat-card">
           <div className="stat-label">Horário</div>
@@ -104,9 +109,9 @@ const CommerceDashboard = async ({ params }: Props) => {
       </div>
 
       {/* Admins section */}
-      <div style={{ marginTop: "1.5rem" }}>
+      <div className="mt-6">
         <span className="section-label">Administradores</span>
-        <div style={{ marginTop: "0.75rem" }}>
+        <div className="mt-3">
           <AdminsCard commerceId={commerce_id} initialAdmins={admins} />
         </div>
       </div>
@@ -115,9 +120,7 @@ const CommerceDashboard = async ({ params }: Props) => {
       <div className="queue-section">
         <div className="section-header">
           <div className="queue-section-label-group">
-            <span className="section-label" style={{ margin: 0 }}>
-              Fila
-            </span>
+            <span className="section-label m-0">Fila</span>
             {queue && (
               <Badge variant={queue.status === "open" ? "success" : "error"}>
                 {queue.status === "open" ? "Aberta" : "Fechada"}
@@ -146,14 +149,7 @@ const CommerceDashboard = async ({ params }: Props) => {
         {queue ? (
           <>
             {/* Two-card layout: Share | Manage */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-                gap: "1rem",
-                marginTop: "0.5rem",
-              }}
-            >
+            <div className="mt-2 grid grid-cols-1 gap-4 md:grid-cols-2">
               <QueueShareCard commerceId={commerce_id} queue={queue} />
               <QueueManageCard
                 commerce={commerce}
@@ -163,7 +159,7 @@ const CommerceDashboard = async ({ params }: Props) => {
             </div>
 
             {/* Participant list */}
-            <div style={{ marginTop: "1.5rem" }}>
+            <div className="mt-6">
               <span className="section-label">Participantes na fila</span>
               <ParticipantList participants={participants} />
             </div>

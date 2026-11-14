@@ -1,23 +1,31 @@
-type SelectOption = {
+import React, { SelectHTMLAttributes } from "react";
+import { cn } from "@/lib/utils";
+
+export type SelectOption = {
   value: string;
   label: string;
 };
 
-type SelectProps = {
+export type SelectProps = {
   name: string;
   label?: string;
   options: SelectOption[];
   defaultValue?: string;
+  hint?: string;
+  error?: string;
   className?: string;
-};
+} & Omit<SelectHTMLAttributes<HTMLSelectElement>, "name" | "defaultValue">;
 
 const Select = ({
   name,
   label,
   options,
   defaultValue,
+  hint,
+  error,
   className,
-}: SelectProps) => {
+  ...props
+}: SelectProps): React.ReactElement => {
   return (
     <div className="fd-field">
       {label && (
@@ -29,7 +37,9 @@ const Select = ({
         id={name}
         name={name}
         defaultValue={defaultValue}
-        className={`fd-select${className ? ` ${className}` : ""}`}
+        aria-invalid={error ? true : undefined}
+        className={cn("fd-select", error && "border-error", className)}
+        {...props}
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -37,6 +47,11 @@ const Select = ({
           </option>
         ))}
       </select>
+      {error ? (
+        <span className="text-xs text-error">{error}</span>
+      ) : (
+        hint && <span className="text-xs text-text-3">{hint}</span>
+      )}
     </div>
   );
 };
