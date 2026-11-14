@@ -125,7 +125,7 @@ export interface QueueTable {
   qrcode_token: string;
   created_at: ColumnType<Date, string | undefined, never>;
   updated_at: ColumnType<Date, string | undefined, string>;
-  active: boolean;
+  active: ColumnType<boolean, boolean | undefined, boolean>;
 }
 
 export type Queue = Selectable<QueueTable>;
@@ -181,3 +181,19 @@ export interface RefreshTokenTable {
 
 export type RefreshToken = Selectable<RefreshTokenTable>;
 export type NewRefreshToken = Insertable<RefreshTokenTable>;
+
+/*
+Types with Pick<> for reusable type definitions in query returns
+*/
+
+export const commerceRowColumns = [
+  "id",
+  "name",
+  "description",
+  "phone",
+  "open_at",
+  "closed_at",
+  "active",
+] as const;
+
+export type CommerceRow = Pick<Commerce, (typeof commerceRowColumns)[number]>;

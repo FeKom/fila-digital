@@ -264,3 +264,29 @@ export const removeNextNSchema: FastifySchema = {
     404: { description: "Queue empty or not found", ...errorResponse },
   },
 };
+
+export const streamPositionSchema: FastifySchema = {
+  tags: ["Participants Queue"],
+  description: "Get the current stream position in the queue",
+  params: {
+    type: "object",
+    required: ["commerce_id"],
+    properties: {
+      commerce_id: { type: "string", format: "uuid" },
+    },
+  },
+  querystring: {
+    type: "object",
+    properties: {
+      anonymous_id: { type: "string", format: "uuid" },
+    },
+    additionalProperties: false,
+  },
+  // No 200 schema: the success response is a hijacked text/event-stream,
+  // which Fastify never serializes.
+  response: {
+    400: { description: "Invalid params or query", ...errorResponse },
+    401: { description: "Unauthorized", ...errorResponse },
+    404: { description: "Queue empty or not found", ...errorResponse },
+  },
+};

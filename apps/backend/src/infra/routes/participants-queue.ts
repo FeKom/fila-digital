@@ -10,6 +10,7 @@ import {
   removeNextNSchema,
   revertSchema,
   exitQueueSchema,
+  streamPositionSchema,
 } from "../schemas/participants-queue.schema";
 import { Server } from "../types";
 
@@ -43,13 +44,23 @@ const registerUserRoutes = (server: Server) => {
   );
   server.get(
     ROUTES.participantsQueue.myPosition,
-    { schema: getMyPositionSchema, config: { rateLimit: rateLimits.read } },
+    {
+      schema: getMyPositionSchema,
+      config: {
+        rateLimit: rateLimits.read,
+      },
+    },
     controller.getMyPosition
   );
   // SSE — no JSON schema (streams), rate-limited as read
   server.get(
     ROUTES.participantsQueue.stream,
-    { config: { rateLimit: rateLimits.read } },
+    {
+      schema: streamPositionSchema,
+      config: {
+        rateLimit: rateLimits.read,
+      },
+    },
     controller.streamPosition
   );
   server.put(

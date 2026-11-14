@@ -4,7 +4,6 @@ import { Kysely } from "kysely";
 import { Database, NewPerson } from "../../infra/database/types";
 import { StartedPostgreSqlContainer } from "@testcontainers/postgresql";
 import { uuidv7 } from "uuidv7";
-import { User } from "../../domain/user/type";
 import { hashPassword } from "../../utils/hash";
 
 describe("User Controller - Integration Test with Testcontainers", () => {
@@ -14,7 +13,7 @@ describe("User Controller - Integration Test with Testcontainers", () => {
   };
   let dbInstance: Kysely<Database>;
   let startedContainer: StartedPostgreSqlContainer;
-  const testUser: User = {
+  const testUser: NewPerson = {
     id: "",
     name: "Integration Test User",
     email: "integration@example.com",
@@ -39,7 +38,7 @@ describe("User Controller - Integration Test with Testcontainers", () => {
     it("Should register a new user successfully", async () => {
       const user = { ...testUser };
 
-      const createUser = async (user: User) => {
+      const createUser = async (user: NewPerson) => {
         const hasedPassword = await hashPassword(user.password);
         const userWithHasedPassword: NewPerson = {
           ...user,
@@ -71,7 +70,7 @@ describe("User Controller - Integration Test with Testcontainers", () => {
     });
     describe("Register Existing User", () => {
       it("should return an error if user already exists", async () => {
-        const user: User = {
+        const user: NewPerson = {
           id: "",
           name: "Integration Test User",
           email: "integration@example.com",
@@ -82,7 +81,7 @@ describe("User Controller - Integration Test with Testcontainers", () => {
           updated_at: new Date().toDateString(),
         };
 
-        const createUser = async (user: User) => {
+        const createUser = async (user: NewPerson) => {
           const hasedPassword = await hashPassword(user.password);
           const userWithHasedPassword: NewPerson = {
             ...user,

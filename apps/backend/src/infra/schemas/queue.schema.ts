@@ -140,7 +140,7 @@ export const createScheduleSchema: FastifySchema = {
     required: ["type"],
     properties: {
       type: { type: "string", enum: ["once", "daily"] },
-      scheduled_at: { type: "string" },
+      scheduled_at: { type: "string", format: "date-time" },
     },
     additionalProperties: false,
   },
